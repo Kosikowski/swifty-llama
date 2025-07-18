@@ -9,7 +9,6 @@ struct SwiftyLlamaCppTests {
     func testSwiftyLlamaCppInitAndCleanup() throws {
         // Test initialization and cleanup
         SwiftyLlamaCpp.initialize()
-        SwiftyLlamaCpp.cleanup()
         
         // Test system info
         let currentTime = SwiftyLlamaCpp.getCurrentTime()
@@ -30,5 +29,8 @@ struct SwiftyLlamaCppTests {
         
         #expect(maxDevices >= 0, "maxDevices should be non-negative")
         #expect(maxParallelSequences >= 0, "maxParallelSequences should be non-negative")
+        
+        // Cleanup at the end
+        SwiftyLlamaCpp.cleanup()
     }
 } 

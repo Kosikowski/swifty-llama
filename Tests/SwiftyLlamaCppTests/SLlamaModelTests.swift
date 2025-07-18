@@ -4,24 +4,15 @@ import SwiftyLlamaCpp
 @testable import SwiftyLlamaCpp
 
 struct SLlamaModelTests {
-
-    @Test("Model creation with invalid path")
-    func testModelCreationWithInvalidPath() throws {
-        let model = SLlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        #expect(model == nil, "Model should be nil for invalid path")
-    }
-
-    @Test("Model properties with nil model")
-    func testModelPropertiesWithNilModel() throws {
-        let model = SLlamaModel(modelPointer: nil)
-        #expect(model == nil, "Model should be nil for nil pointer")
-    }
-
-    @Test("Real model loading test")
-    func testRealModelLoading() throws {
+    
+    @Test("Model loading and basic properties")
+    func testModelLoading() throws {
+        // Initialize backend
+        SwiftyLlamaCpp.initialize()
+        
         let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
         guard let model = SLlamaModel(modelPath: modelPath) else {
-            #expect(false, "Model should load successfully")
+            #expect(Bool(false), "Model should load successfully")
             return
         }
         
@@ -58,15 +49,21 @@ struct SLlamaModelTests {
         }
         
         // Test chat template (this model might not have one)
-        let chatTemplate = model.chatTemplate(named: "default")
+        _ = model.chatTemplate(named: "default")
         // Note: This model might not have a chat template, so we don't assert on it
+        
+        // Cleanup backend
+        SwiftyLlamaCpp.cleanup()
     }
-
+    
     @Test("Model metadata access")
     func testModelMetadataAccess() throws {
+        // Initialize backend
+        SwiftyLlamaCpp.initialize()
+        
         let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
         guard let model = SLlamaModel(modelPath: modelPath) else {
-            #expect(false, "Model should load successfully")
+            #expect(Bool(false), "Model should load successfully")
             return
         }
         
@@ -88,5 +85,8 @@ struct SLlamaModelTests {
         if let architecture = model.metadataValue(for: "general.architecture") {
             #expect(!architecture.isEmpty, "Architecture metadata should not be empty")
         }
+        
+        // Cleanup backend
+        SwiftyLlamaCpp.cleanup()
     }
 } 

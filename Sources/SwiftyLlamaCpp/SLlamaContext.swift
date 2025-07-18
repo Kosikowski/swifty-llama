@@ -44,6 +44,25 @@ public class SLlamaContext {
         return llama_n_seq_max(context)
     }
 
+    /// Get the model from context
+    public var contextModel: SLlamaModel? {
+        guard let context else { return nil }
+        let modelPtr = llama_get_model(context)
+        return SLlamaModel(modelPointer: modelPtr)
+    }
+
+    /// Get memory from context
+    public var contextMemory: SLlamaMemory? {
+        guard let context else { return nil }
+        return llama_get_memory(context)
+    }
+
+    /// Get pooling type from context
+    public var poolingType: SLlamaPoolingType {
+        guard let context else { return .unspecified }
+        return llama_pooling_type(context)
+    }
+
     // MARK: Lifecycle
 
     public init?(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) {
