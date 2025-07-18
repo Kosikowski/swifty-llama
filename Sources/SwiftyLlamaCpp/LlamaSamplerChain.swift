@@ -336,7 +336,7 @@ public extension LlamaSamplerChainParams {
         topP: Float = 0.9,
         repetitionPenalty: Float = 1.1
     ) -> LlamaSamplerChainParams {
-        var params = LlamaSamplerChainParams()
+        let params = LlamaSamplerChainParams()
         // Note: The actual structure fields would depend on the C API
         // This is a placeholder for the actual implementation
         return params
