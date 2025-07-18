@@ -118,7 +118,9 @@ public class SLlamaModel {
         let result = llama_model_meta_val_str(model, key, &buffer, bufferSize)
         
         if result > 0 {
-            return String(cString: buffer)
+            // Convert CChar array to UInt8 array for UTF8 decoding
+            let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
+            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
         }
         return nil
     }
@@ -141,7 +143,9 @@ public class SLlamaModel {
         let result = llama_model_meta_key_by_index(model, index, &buffer, bufferSize)
         
         if result > 0 {
-            return String(cString: buffer)
+            // Convert CChar array to UInt8 array for UTF8 decoding
+            let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
+            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
         }
         return nil
     }
@@ -158,7 +162,9 @@ public class SLlamaModel {
         let result = llama_model_meta_val_str_by_index(model, index, &buffer, bufferSize)
         
         if result > 0 {
-            return String(cString: buffer)
+            // Convert CChar array to UInt8 array for UTF8 decoding
+            let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
+            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
         }
         return nil
     }
@@ -173,7 +179,9 @@ public class SLlamaModel {
         let result = llama_model_desc(model, &buffer, bufferSize)
         
         if result > 0 {
-            return String(cString: buffer)
+            // Convert CChar array to UInt8 array for UTF8 decoding
+            let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
+            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
         }
         return nil
     }
