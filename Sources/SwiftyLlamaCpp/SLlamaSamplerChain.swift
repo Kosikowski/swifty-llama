@@ -270,74 +270,7 @@ public extension SLlamaSamplerChain {
     }
 }
 
-// MARK: - Extension to SLlamaSampler for Chain Support
 
-public extension SLlamaSampler {
-    
-    /// Create a temperature sampler
-    /// - Parameters:
-    ///   - context: The llama context
-    ///   - temperature: Temperature for sampling
-    /// - Returns: A temperature sampler, or nil if initialization failed
-    static func temperature(
-        context: SLlamaContext,
-        temperature: Float
-    ) -> SLlamaSampler? {
-        guard let samplerPtr = llama_sampler_init_temp(temperature) else { return nil }
-        
-        let sampler = SLlamaSampler(context: context)
-        sampler.sampler = samplerPtr
-        return sampler
-    }
-    
-    /// Create a top-k sampler
-    /// - Parameters:
-    ///   - context: The llama context
-    ///   - k: Number of top tokens to consider
-    /// - Returns: A top-k sampler, or nil if initialization failed
-    static func topK(
-        context: SLlamaContext,
-        k: Int32
-    ) -> SLlamaSampler? {
-        guard let samplerPtr = llama_sampler_init_top_k(k) else { return nil }
-        
-        let sampler = SLlamaSampler(context: context)
-        sampler.sampler = samplerPtr
-        return sampler
-    }
-    
-    /// Create a top-p (nucleus) sampler
-    /// - Parameters:
-    ///   - context: The llama context
-    ///   - p: Cumulative probability threshold
-    /// - Returns: A top-p sampler, or nil if initialization failed
-    static func topP(
-        context: SLlamaContext,
-        p: Float
-    ) -> SLlamaSampler? {
-        guard let samplerPtr = llama_sampler_init_top_p(p, 1) else { return nil }
-        
-        let sampler = SLlamaSampler(context: context)
-        sampler.sampler = samplerPtr
-        return sampler
-    }
-    
-    /// Create a repetition penalty sampler
-    /// - Parameters:
-    ///   - context: The llama context
-    ///   - penalty: Repetition penalty factor
-    /// - Returns: A repetition penalty sampler, or nil if initialization failed
-    static func repetitionPenalty(
-        context: SLlamaContext,
-        penalty: Float
-    ) -> SLlamaSampler? {
-        guard let samplerPtr = llama_sampler_init_penalties(0, penalty, 0.0, 0.0) else { return nil }
-        
-        let sampler = SLlamaSampler(context: context)
-        sampler.sampler = samplerPtr
-        return sampler
-    }
-}
 
 // MARK: - Extension to SLlamaContext for Chain Sampling
 

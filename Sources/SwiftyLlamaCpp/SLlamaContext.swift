@@ -62,4 +62,28 @@ public class SLlamaContext {
             llama_free(context)
         }
     }
+    
+    // MARK: System Configuration
+    
+    /// Configure context for optimal performance
+    /// - Parameters:
+    ///   - useOptimalThreads: Whether to use optimal thread count
+    ///   - enableEmbeddings: Whether to enable embeddings mode
+    ///   - enableCausalAttention: Whether to enable causal attention
+    ///   - enableWarmup: Whether to enable warmup
+    func configureForOptimalPerformance(
+        useOptimalThreads: Bool = true,
+        enableEmbeddings: Bool = false,
+        enableCausalAttention: Bool = true,
+        enableWarmup: Bool = true
+    ) {
+        if useOptimalThreads {
+            let threadCount = Self.optimalThreadCount()
+            setThreadCount(threadCount)
+        }
+        
+        setEmbeddings(enableEmbeddings)
+        setCausalAttention(enableCausalAttention)
+        setWarmup(enableWarmup)
+    }
 }
