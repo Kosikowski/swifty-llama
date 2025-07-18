@@ -14,6 +14,11 @@ public struct SwiftyLlamaCpp {
         llama_backend_free()
     }
     
+    /// Disable all logging output
+    public static func disableLogging() {
+        llama_log_set(nil, nil)
+    }
+    
     /// Get the current time in microseconds
     /// - Returns: Current time in microseconds
     public static func getCurrentTime() -> Int64 {
@@ -33,19 +38,19 @@ public struct SwiftyLlamaCpp {
     }
     
     /// Check if mmap is supported
-    /// - Returns: true if mmap is supported, false otherwise
+    /// - Returns: True if mmap is supported
     public static func supportsMmap() -> Bool {
         return llama_supports_mmap()
     }
     
     /// Check if mlock is supported
-    /// - Returns: true if mlock is supported, false otherwise
+    /// - Returns: True if mlock is supported
     public static func supportsMlock() -> Bool {
         return llama_supports_mlock()
     }
     
     /// Check if GPU offload is supported
-    /// - Returns: true if GPU offload is supported, false otherwise
+    /// - Returns: True if GPU offload is supported
     public static func supportsGPUOffload() -> Bool {
         return llama_supports_gpu_offload()
     }

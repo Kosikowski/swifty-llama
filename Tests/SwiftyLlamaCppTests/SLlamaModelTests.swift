@@ -7,6 +7,9 @@ struct SLlamaModelTests {
     
     @Test("Model loading and basic properties")
     func testModelLoading() throws {
+        // Disable logging to suppress verbose output
+        SwiftyLlamaCpp.disableLogging()
+        
         // Initialize backend
         SwiftyLlamaCpp.initialize()
         
@@ -21,12 +24,12 @@ struct SLlamaModelTests {
         #expect(model.layers > 0, "Layers should be positive")
         #expect(model.attentionHeads > 0, "Attention heads should be positive")
         #expect(model.kvAttentionHeads > 0, "KV attention heads should be positive")
+        #expect(model.kvAttentionHeads <= model.attentionHeads, "KV attention heads should not exceed attention heads")
         #expect(model.parameters > 0, "Parameters should be positive")
         #expect(model.size > 0, "Size should be positive")
         #expect(model.trainingContextLength > 0, "Training context length should be positive")
         
         // Test model type properties
-        // Note: This GPT-2 model has rope type -1, which is valid for some models
         #expect(model.ropeType.rawValue >= -1, "RoPE type should be valid")
         #expect(model.ropeFreqScaleTrain > 0, "RoPE frequency scale should be positive")
         #expect(model.slidingWindowAttention >= 0, "Sliding window attention should be non-negative")
@@ -37,7 +40,6 @@ struct SLlamaModelTests {
         #expect(model.isRecurrent == false, "GPT-2 model should not be recurrent")
         
         // Test decoder start token (GPT-2 might not have a specific decoder start token)
-        // Note: Some models return -1 for decoder start token, which is valid
         #expect(model.decoderStartToken >= -1, "Decoder start token should be valid")
         
         // Test metadata
@@ -48,16 +50,15 @@ struct SLlamaModelTests {
             #expect(!description.isEmpty, "Model description should not be empty")
         }
         
-        // Test chat template (this model might not have one)
-        _ = model.chatTemplate(named: "default")
-        // Note: This model might not have a chat template, so we don't assert on it
-        
-        // Cleanup backend
+        // Cleanup
         SwiftyLlamaCpp.cleanup()
     }
     
     @Test("Model metadata access")
-    func testModelMetadataAccess() throws {
+    func testModelMetadata() throws {
+        // Disable logging to suppress verbose output
+        SwiftyLlamaCpp.disableLogging()
+        
         // Initialize backend
         SwiftyLlamaCpp.initialize()
         
@@ -67,6 +68,7 @@ struct SLlamaModelTests {
             return
         }
         
+        // Test metadata access
         let metadataCount = model.metadataCount
         #expect(metadataCount > 0, "Model should have metadata entries")
         
@@ -86,7 +88,7 @@ struct SLlamaModelTests {
             #expect(!architecture.isEmpty, "Architecture metadata should not be empty")
         }
         
-        // Cleanup backend
+        // Cleanup
         SwiftyLlamaCpp.cleanup()
     }
 } 

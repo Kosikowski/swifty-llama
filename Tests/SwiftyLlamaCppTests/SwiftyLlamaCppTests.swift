@@ -7,6 +7,9 @@ struct SwiftyLlamaCppTests {
     
     @Test("SwiftyLlamaCpp initialization and cleanup")
     func testSwiftyLlamaCppInitAndCleanup() throws {
+        // Disable logging to suppress verbose output
+        SwiftyLlamaCpp.disableLogging()
+        
         // Test initialization and cleanup
         SwiftyLlamaCpp.initialize()
         
@@ -27,10 +30,10 @@ struct SwiftyLlamaCppTests {
         let maxDevices = SwiftyLlamaCpp.getMaxDevices()
         let maxParallelSequences = SwiftyLlamaCpp.getMaxParallelSequences()
         
-        #expect(maxDevices >= 0, "maxDevices should be non-negative")
-        #expect(maxParallelSequences >= 0, "maxParallelSequences should be non-negative")
+        #expect(maxDevices >= 0, "Max devices should be non-negative")
+        #expect(maxParallelSequences >= 0, "Max parallel sequences should be non-negative")
         
-        // Cleanup at the end
+        // Cleanup
         SwiftyLlamaCpp.cleanup()
     }
 } 
