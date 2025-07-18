@@ -2,13 +2,13 @@ import Foundation
 import Testing
 @testable import SwiftyLlamaCpp
 
-class DummyContext: LlamaContext {
-    override init?(model: LlamaModel, contextParams: LlamaContextParams? = nil) {
+class DummyContext: SLlamaContext {
+    override init?(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) {
         super.init(model: model, contextParams: contextParams)
     }
     
-    override var pointer: LlamaContextPointer? { nil }
-    override var associatedModel: LlamaModel? { nil }
+    override var pointer: SLlamaContextPointer? { nil }
+    override var associatedModel: SLlamaModel? { nil }
 }
 
 // MARK: - Test Utilities
@@ -18,7 +18,7 @@ class TestUtilities {
     /// Create a dummy context for testing purposes
     /// - Returns: A DummyContext instance, or nil if creation fails
     static func createDummyContext() -> DummyContext? {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
+        let dummyModel = SLlamaModel(modelPath: "/nonexistent/path/model.gguf")
         guard let model = dummyModel else { return nil }
         return DummyContext(model: model)
     }

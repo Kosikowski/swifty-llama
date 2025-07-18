@@ -234,11 +234,11 @@ public class SLlamaSampler {
         var selectedCandidates: [SLlamaTokenData] = []
         
         for candidate in candidates {
-            let prob = exp(candidate.logit)
+            let prob = exp(Double(candidate.logit))
             cumulativeProb += prob
             selectedCandidates.append(candidate)
             
-            if cumulativeProb >= p {
+            if cumulativeProb >= Double(p) {
                 break
             }
         }

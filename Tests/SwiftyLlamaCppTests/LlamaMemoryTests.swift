@@ -3,12 +3,12 @@ import Testing
 @testable import SwiftyLlamaCpp
 
 @Suite 
-struct LlamaMemoryTests {
+struct SLlamaMemoryTests {
     
-    @Test("LlamaMemoryManager construction and basic API")
-    func testLlamaMemoryManagerConstruction() throws {
+    @Test("SLlamaMemoryManager construction and basic API")
+    func testSLlamaMemoryManagerConstruction() throws {
         let executed = TestUtilities.withDummyContext { ctx in
-            let memory = LlamaMemoryManager(context: ctx)
+            let memory = SLlamaMemoryManager(context: ctx)
             #expect(memory.cMemory == nil)
             memory.clear(data: false)
             memory.clear(data: true)
@@ -19,10 +19,10 @@ struct LlamaMemoryTests {
         }
     }
     
-    @Test("LlamaMemoryManager sequence operations")
-    func testLlamaMemoryManagerSequenceOperations() throws {
+    @Test("SLlamaMemoryManager sequence operations")
+    func testSLlamaMemoryManagerSequenceOperations() throws {
         let executed = TestUtilities.withDummyContext { ctx in
-            let memory = LlamaMemoryManager(context: ctx)
+            let memory = SLlamaMemoryManager(context: ctx)
             
             // Test sequence removal
             #expect(memory.removeSequence(0, from: 0, to: 10) == false)
@@ -63,8 +63,8 @@ struct LlamaMemoryTests {
         }
     }
     
-    @Test("LlamaContext memory manager extension")
-    func testLlamaContextMemoryManagerExtension() throws {
+    @Test("SLlamaContext memory manager extension")
+    func testSLlamaContextMemoryManagerExtension() throws {
         let executed = TestUtilities.withDummyContext { ctx in
             let memory = ctx.memoryManager()
             #expect(memory.cMemory == nil)
@@ -75,8 +75,8 @@ struct LlamaMemoryTests {
         }
     }
     
-    @Test("LlamaContext memory convenience methods")
-    func testLlamaContextMemoryConvenienceMethods() throws {
+    @Test("SLlamaContext memory convenience methods")
+    func testSLlamaContextMemoryConvenienceMethods() throws {
         let executed = TestUtilities.withDummyContext { ctx in
             // Test memory clearing
             ctx.clearMemory(data: false)

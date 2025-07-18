@@ -2,18 +2,18 @@ import Foundation
 import llama
 
 /// A wrapper for llama logits and embeddings access
-public class LlamaLogits {
-    private let context: LlamaContext
+public class SLlamaLogits {
+    private let context: SLlamaContext
     
     /// Initialize with a context
     /// - Parameter context: The llama context to use for logits access
-    public init(context: LlamaContext) {
+    public init(context: SLlamaContext) {
         self.context = context
     }
     
     /// Get logits from the last decode call
     /// - Returns: Pointer to logits array, or nil if not available
-    public func getLogits() -> LlamaFloatPointer? {
+    public func getLogits() -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_logits(ctx)
     }
@@ -21,14 +21,14 @@ public class LlamaLogits {
     /// Get logits for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to logits for the token, or nil if invalid
-    public func getLogits(for index: Int32) -> LlamaFloatPointer? {
+    public func getLogits(for index: Int32) -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_logits_ith(ctx, index)
     }
     
     /// Get embeddings from the last decode call
     /// - Returns: Pointer to embeddings array, or nil if not available
-    public func getEmbeddings() -> LlamaFloatPointer? {
+    public func getEmbeddings() -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings(ctx)
     }
@@ -36,7 +36,7 @@ public class LlamaLogits {
     /// Get embeddings for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to embeddings for the token, or nil if invalid
-    public func getEmbeddings(for index: Int32) -> LlamaFloatPointer? {
+    public func getEmbeddings(for index: Int32) -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings_ith(ctx, index)
     }
@@ -44,7 +44,7 @@ public class LlamaLogits {
     /// Get embeddings for a specific sequence
     /// - Parameter sequenceId: The sequence ID
     /// - Returns: Pointer to embeddings for the sequence, or nil if not available
-    public func getEmbeddingsForSequence(_ sequenceId: LlamaSeqId) -> LlamaFloatPointer? {
+    public func getEmbeddingsForSequence(_ sequenceId: SLlamaSeqId) -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings_seq(ctx, sequenceId)
     }
@@ -86,7 +86,7 @@ public class LlamaLogits {
     /// Get embeddings as an array for a specific sequence
     /// - Parameter sequenceId: The sequence ID
     /// - Returns: Array of embeddings for the sequence, or nil if not available
-    public func getEmbeddingsArrayForSequence(_ sequenceId: LlamaSeqId) -> [Float]? {
+    public func getEmbeddingsArrayForSequence(_ sequenceId: SLlamaSeqId) -> [Float]? {
         guard let embeddingsPtr = getEmbeddingsForSequence(sequenceId) else { return nil }
         
         // Get embedding dimensions from the model
@@ -100,112 +100,84 @@ public class LlamaLogits {
         return nil
     }
     
-    /// Get the most likely token from logits
+    /// Get the token with highest logit for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: The token ID with highest logit, or nil if invalid
-    public func getMostLikelyToken(for index: Int32) -> LlamaToken? {
+    public func getMostLikelyToken(for index: Int32) -> SLlamaToken? {
         guard let logitsArray = getLogitsArray(for: index) else { return nil }
-        
-        guard let maxIndex = logitsArray.enumerated().max(by: { $0.element < $1.element })?.offset else {
-            return nil
-        }
-        
-        return LlamaToken(maxIndex)
+        guard let maxIndex = logitsArray.enumerated().max(by: { $0.element < $1.element })?.offset else { return nil }
+        return SLlamaToken(maxIndex)
     }
     
-    /// Get top-k tokens from logits
+    /// Get the top-k tokens with highest logits for a specific token index
     /// - Parameters:
     ///   - index: Token index (negative for reverse order, -1 is last)
     ///   - k: Number of top tokens to return
     /// - Returns: Array of (token, logit) pairs sorted by logit value, or nil if invalid
-    public func getTopKTokens(for index: Int32, k: Int) -> [(token: LlamaToken, logit: Float)]? {
+    public func getTopKTokens(for index: Int32, k: Int) -> [(token: SLlamaToken, logit: Float)]? {
         guard let logitsArray = getLogitsArray(for: index) else { return nil }
-        
         let sortedIndices = logitsArray.enumerated()
             .sorted { $0.element > $1.element }
             .prefix(k)
-            .map { (LlamaToken($0.offset), $0.element) }
-        
+            .map { (SLlamaToken($0.offset), $0.element) }
         return Array(sortedIndices)
-    }
-    
-    /// Get token probabilities from logits (softmax)
-    /// - Parameter index: Token index (negative for reverse order, -1 is last)
-    /// - Returns: Array of probabilities for each token, or nil if invalid
-    public func getTokenProbabilities(for index: Int32) -> [Float]? {
-        guard let logitsArray = getLogitsArray(for: index) else { return nil }
-        
-        // Apply softmax
-        let maxLogit = logitsArray.max() ?? 0
-        let expLogits = logitsArray.map { exp($0 - maxLogit) }
-        let sumExp = expLogits.reduce(0, +)
-        
-        return expLogits.map { $0 / sumExp }
     }
 }
 
-/// Extension to LlamaContext for logits access
-public extension LlamaContext {
-    
+/// Extension to SLlamaContext for logits access
+public extension SLlamaContext {
     /// Create a logits wrapper for this context
-    /// - Returns: A LlamaLogits instance
-    func logits() -> LlamaLogits {
-        return LlamaLogits(context: self)
+    /// - Returns: A SLlamaLogits instance
+    func logits() -> SLlamaLogits {
+        return SLlamaLogits(context: self)
     }
     
     /// Get logits from the last decode call
     /// - Returns: Pointer to logits array, or nil if not available
-    func getLogits() -> LlamaFloatPointer? {
+    func getLogits() -> SLlamaFloatPointer? {
         return logits().getLogits()
     }
     
     /// Get logits for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to logits for the token, or nil if invalid
-    func getLogits(for index: Int32) -> LlamaFloatPointer? {
+    func getLogits(for index: Int32) -> SLlamaFloatPointer? {
         return logits().getLogits(for: index)
     }
     
     /// Get embeddings from the last decode call
     /// - Returns: Pointer to embeddings array, or nil if not available
-    func getEmbeddings() -> LlamaFloatPointer? {
+    func getEmbeddings() -> SLlamaFloatPointer? {
         return logits().getEmbeddings()
     }
     
     /// Get embeddings for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to embeddings for the token, or nil if invalid
-    func getEmbeddings(for index: Int32) -> LlamaFloatPointer? {
+    func getEmbeddings(for index: Int32) -> SLlamaFloatPointer? {
         return logits().getEmbeddings(for: index)
     }
     
     /// Get embeddings for a specific sequence
     /// - Parameter sequenceId: The sequence ID
     /// - Returns: Pointer to embeddings for the sequence, or nil if not available
-    func getEmbeddingsForSequence(_ sequenceId: LlamaSeqId) -> LlamaFloatPointer? {
+    func getEmbeddingsForSequence(_ sequenceId: SLlamaSeqId) -> SLlamaFloatPointer? {
         return logits().getEmbeddingsForSequence(sequenceId)
     }
     
-    /// Get the most likely token from logits
+    /// Get the token with highest logit for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: The token ID with highest logit, or nil if invalid
-    func getMostLikelyToken(for index: Int32) -> LlamaToken? {
+    func getMostLikelyToken(for index: Int32) -> SLlamaToken? {
         return logits().getMostLikelyToken(for: index)
     }
     
-    /// Get top-k tokens from logits
+    /// Get the top-k tokens with highest logits for a specific token index
     /// - Parameters:
     ///   - index: Token index (negative for reverse order, -1 is last)
     ///   - k: Number of top tokens to return
     /// - Returns: Array of (token, logit) pairs sorted by logit value, or nil if invalid
-    func getTopKTokens(for index: Int32, k: Int) -> [(token: LlamaToken, logit: Float)]? {
+    func getTopKTokens(for index: Int32, k: Int) -> [(token: SLlamaToken, logit: Float)]? {
         return logits().getTopKTokens(for: index, k: k)
-    }
-    
-    /// Get token probabilities from logits (softmax)
-    /// - Parameter index: Token index (negative for reverse order, -1 is last)
-    /// - Returns: Array of probabilities for each token, or nil if invalid
-    func getTokenProbabilities(for index: Int32) -> [Float]? {
-        return logits().getTokenProbabilities(for: index)
     }
 } 

@@ -331,7 +331,7 @@ public extension SLlamaSampler {
         context: SLlamaContext,
         penalty: Float
     ) -> SLlamaSampler? {
-        guard let samplerPtr = llama_sampler_init_repeat_penalty(0, penalty, 0.0, 0.0) else { return nil }
+        guard let samplerPtr = llama_sampler_init_penalties(0, penalty, 0.0, 0.0) else { return nil }
         
         let sampler = SLlamaSampler(context: context)
         sampler.sampler = samplerPtr

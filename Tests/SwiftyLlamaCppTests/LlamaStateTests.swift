@@ -3,12 +3,12 @@ import Testing
 @testable import SwiftyLlamaCpp
 
 @Suite 
-struct LlamaStateTests {
+struct SLlamaStateTests {
     
-    @Test("LlamaState construction and basic API")
-    func testLlamaStateConstruction() throws {
+    @Test("SLlamaState construction and basic API")
+    func testSLlamaStateConstruction() throws {
         let executed = TestUtilities.withDummyContext { ctx in
-            let state = LlamaState(context: ctx)
+            let state = SLlamaState(context: ctx)
             #expect(state.getStateSize() == 0)
         }
         
@@ -17,10 +17,10 @@ struct LlamaStateTests {
         }
     }
     
-    @Test("LlamaState data operations")
-    func testLlamaStateDataOperations() throws {
+    @Test("SLlamaState data operations")
+    func testSLlamaStateDataOperations() throws {
         let executed = TestUtilities.withDummyContext { ctx in
-            let state = LlamaState(context: ctx)
+            let state = SLlamaState(context: ctx)
             
             // Test state data operations with dummy buffers
             var dummyBuffer: [UInt8] = Array(repeating: 0, count: 1024)
@@ -40,22 +40,22 @@ struct LlamaStateTests {
         }
     }
     
-    @Test("LlamaState file operations")
-    func testLlamaStateFileOperations() throws {
+    @Test("SLlamaState file operations")
+    func testSLlamaStateFileOperations() throws {
         let executed = TestUtilities.withDummyContext { ctx in
-            let state = LlamaState(context: ctx)
+            let state = SLlamaState(context: ctx)
             
             // Test file operations
             var tokenCount: size_t = 0
             let loadResult = state.loadFromFile(
                 "/nonexistent/path/state.bin",
-                tokensOut: nil as UnsafeMutablePointer<LlamaToken>?,
+                tokensOut: nil as UnsafeMutablePointer<SLlamaToken>?,
                 nTokenCapacity: 0,
                 nTokenCountOut: &tokenCount
             )
             #expect(loadResult == false)
             
-            let emptyTokens: [LlamaToken] = []
+            let emptyTokens: [SLlamaToken] = []
             let saveResult = emptyTokens.withUnsafeBufferPointer { tokens in
                 state.saveToFile(
                     "/nonexistent/path/state.bin",
@@ -71,10 +71,10 @@ struct LlamaStateTests {
         }
     }
     
-    @Test("LlamaState sequence operations")
-    func testLlamaStateSequenceOperations() throws {
+    @Test("SLlamaState sequence operations")
+    func testSLlamaStateSequenceOperations() throws {
         let executed = TestUtilities.withDummyContext { ctx in
-            let state = LlamaState(context: ctx)
+            let state = SLlamaState(context: ctx)
             
             // Test sequence state size
             #expect(state.getSequenceStateSize(0) == 0)
@@ -93,7 +93,7 @@ struct LlamaStateTests {
             #expect(bytesRead == 0)
             
             // Test sequence state file operations
-            let emptyTokens: [LlamaToken] = []
+            let emptyTokens: [SLlamaToken] = []
             let saveBytes = emptyTokens.withUnsafeBufferPointer { tokens in
                 state.saveSequenceStateToFile(
                     "/nonexistent/path/seq_state.bin",
@@ -108,7 +108,7 @@ struct LlamaStateTests {
             let loadBytes = state.loadSequenceStateFromFile(
                 "/nonexistent/path/seq_state.bin",
                 destSeqId: 0,
-                tokensOut: nil as UnsafeMutablePointer<LlamaToken>?,
+                tokensOut: nil as UnsafeMutablePointer<SLlamaToken>?,
                 nTokenCapacity: 0,
                 nTokenCountOut: &tokenCount
             )
@@ -120,8 +120,8 @@ struct LlamaStateTests {
         }
     }
     
-    @Test("LlamaContext state extension")
-    func testLlamaContextStateExtension() throws {
+    @Test("SLlamaContext state extension")
+    func testSLlamaContextStateExtension() throws {
         let executed = TestUtilities.withDummyContext { ctx in
             let state = ctx.state()
             #expect(state.getStateSize() == 0)
@@ -132,8 +132,8 @@ struct LlamaStateTests {
         }
     }
     
-    @Test("LlamaContext state convenience methods")
-    func testLlamaContextStateConvenienceMethods() throws {
+    @Test("SLlamaContext state convenience methods")
+    func testSLlamaContextStateConvenienceMethods() throws {
         let executed = TestUtilities.withDummyContext { ctx in
             // Test state size
             #expect(ctx.getStateSize() == 0)
@@ -154,13 +154,13 @@ struct LlamaStateTests {
             var tokenCount: size_t = 0
             let loadResult = ctx.loadStateFromFile(
                 "/nonexistent/path/state.bin",
-                tokensOut: nil as UnsafeMutablePointer<LlamaToken>?,
+                tokensOut: nil as UnsafeMutablePointer<SLlamaToken>?,
                 nTokenCapacity: 0,
                 nTokenCountOut: &tokenCount
             )
             #expect(loadResult == false)
             
-            let emptyTokens: [LlamaToken] = []
+            let emptyTokens: [SLlamaToken] = []
             let saveResult = emptyTokens.withUnsafeBufferPointer { tokens in
                 ctx.saveStateToFile(
                     "/nonexistent/path/state.bin",
@@ -197,7 +197,7 @@ struct LlamaStateTests {
             let seqLoadBytes = ctx.loadSequenceStateFromFile(
                 "/nonexistent/path/seq_state.bin",
                 destSeqId: 0,
-                tokensOut: nil as UnsafeMutablePointer<LlamaToken>?,
+                tokensOut: nil as UnsafeMutablePointer<SLlamaToken>?,
                 nTokenCapacity: 0,
                 nTokenCountOut: &tokenCount
             )
@@ -209,8 +209,8 @@ struct LlamaStateTests {
         }
     }
     
-    @Test("LlamaContext state convenience data methods")
-    func testLlamaContextStateConvenienceDataMethods() throws {
+    @Test("SLlamaContext state convenience data methods")
+    func testSLlamaContextStateConvenienceDataMethods() throws {
         let executed = TestUtilities.withDummyContext { ctx in
             // Test complete state operations
             #expect(ctx.saveCompleteState("/nonexistent/path/complete_state.bin") == false)

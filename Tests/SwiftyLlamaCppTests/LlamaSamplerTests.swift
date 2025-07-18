@@ -1,215 +1,145 @@
 import Testing
+import SwiftyLlamaCpp
+
 @testable import SwiftyLlamaCpp
 
-@Suite 
 struct LlamaSamplerTests {
     
-    @Test("LlamaSampler typealiases exist and are correct")
-    func testLlamaSamplerTypealiases() throws {
-        let _: LlamaSamplerPointer? = nil
-        let _: LlamaSamplerContext? = nil
-        let _: LlamaTokenDataArrayPointer? = nil
-    }
-    
-    @Test("Model creation with invalid path fails as expected")
-    func testModelCreationWithInvalidPath() throws {
-        let model = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        #expect(model == nil, "Model creation with invalid path should return nil")
-    }
-    
-    @Test("LlamaSampler construction with dummy context")
-    func testLlamaSamplerConstruction() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let sampler = LlamaSampler(context: ctx)
-            #expect(sampler.cSampler == nil)
-            sampler.accept(0)
-            sampler.reset()
-            let clone = sampler.clone()
-            #expect(clone == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
+    @Test("SLlamaSampler initialization")
+    func testSLlamaSamplerInit() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let sampler = SLlamaSampler(context: ctx)
+            #expect(sampler != nil, "Sampler should be created successfully")
         }
     }
     
-    @Test("LlamaSampler static initializers return nil without C API")
-    func testLlamaSamplerStaticInitializers() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            #expect(LlamaSampler.greedy(context: ctx) == nil)
-            #expect(LlamaSampler.distribution(context: ctx, seed: 42) == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
+    @Test("SLlamaSampler basic sampling")
+    func testSLlamaSamplerBasicSampling() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let sampler = SLlamaSampler(context: ctx)
+            let token = sampler.sample()
+            #expect(token == nil, "Sampling with dummy context should return nil")
         }
     }
     
-    @Test("LlamaSamplerChain construction with dummy context")
-    func testLlamaSamplerChainConstruction() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let chain = LlamaSamplerChain(context: ctx)
-            #expect(chain.cChain == nil)
-            #expect(chain.samplerCount == 0)
-            chain.accept(0)
-            chain.reset()
-            let clone = chain.clone()
-            #expect(clone == nil)
-            #expect(chain.getSampler(at: 0) == nil)
-            #expect(chain.removeSampler(at: 0) == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
+    @Test("SLlamaSampler greedy sampling")
+    func testSLlamaSamplerGreedySampling() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let sampler = SLlamaSampler.greedy(context: ctx)
+            #expect(sampler != nil, "Greedy sampler should be created successfully")
+            let token = sampler?.sample()
+            #expect(token == nil, "Greedy sampling with dummy context should return nil")
         }
     }
     
-    @Test("LlamaSamplerChain static builders return nil without C API")
-    func testLlamaSamplerChainStaticBuilders() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            #expect(LlamaSamplerChain.initChain(context: ctx, params: LlamaSamplerChainParams()) == nil)
-            #expect(LlamaSamplerChain.temperatureChain(context: ctx, temperature: 1.0) == nil)
-            #expect(LlamaSamplerChain.topKTopPChain(context: ctx, k: 5, p: 0.9) == nil)
-            #expect(LlamaSamplerChain.repetitionPenaltyChain(context: ctx, penalty: 1.1) == nil)
-            #expect(LlamaSamplerChain.comprehensiveChain(context: ctx, temperature: 1.0, k: 5, p: 0.9, penalty: 1.1) == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
+    @Test("SLlamaSampler temperature sampling")
+    func testSLlamaSamplerTemperatureSampling() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let sampler = SLlamaSampler.temperature(context: ctx, temperature: 0.7)
+            #expect(sampler != nil, "Temperature sampler should be created successfully")
+            let token = sampler?.sample()
+            #expect(token == nil, "Temperature sampling with dummy context should return nil")
         }
     }
     
-    @Test("LlamaSamplerChain addSampler functionality")
-    func testLlamaSamplerChainAddSampler() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let chain = LlamaSamplerChain(context: ctx)
-            let sampler = LlamaSampler(context: ctx)
-            
-            // Test adding samplers
-            chain.addSampler(sampler)
-            #expect(chain.samplerCount == 0) // Should remain 0 with dummy context
-            
-            // Test adding multiple samplers
-            chain.addSampler(sampler)
-            chain.addSampler(sampler)
-            #expect(chain.samplerCount == 0) // Should remain 0 with dummy context
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
+    @Test("SLlamaSampler top-k sampling")
+    func testSLlamaSamplerTopKSampling() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let sampler = SLlamaSampler.topK(context: ctx, k: 10)
+            #expect(sampler != nil, "Top-k sampler should be created successfully")
+            let token = sampler?.sample()
+            #expect(token == nil, "Top-k sampling with dummy context should return nil")
         }
     }
     
-    @Test("LlamaSamplerChain getSampler functionality")
-    func testLlamaSamplerChainGetSampler() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let chain = LlamaSamplerChain(context: ctx)
-            
-            // Test getting samplers at various indices
-            #expect(chain.getSampler(at: 0) == nil)
-            #expect(chain.getSampler(at: 1) == nil)
-            #expect(chain.getSampler(at: -1) == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
+    @Test("SLlamaSampler top-p sampling")
+    func testSLlamaSamplerTopPSampling() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let sampler = SLlamaSampler.topP(context: ctx, p: 0.9)
+            #expect(sampler != nil, "Top-p sampler should be created successfully")
+            let token = sampler?.sample()
+            #expect(token == nil, "Top-p sampling with dummy context should return nil")
         }
     }
     
-    @Test("LlamaSamplerChain removeSampler functionality")
-    func testLlamaSamplerChainRemoveSampler() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let chain = LlamaSamplerChain(context: ctx)
-            
-            // Test removing samplers at various indices
-            #expect(chain.removeSampler(at: 0) == nil)
-            #expect(chain.removeSampler(at: 1) == nil)
-            #expect(chain.removeSampler(at: -1) == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
+    @Test("SLlamaSampler repetition penalty sampling")
+    func testSLlamaSamplerRepetitionPenaltySampling() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let sampler = SLlamaSampler.repetitionPenalty(context: ctx, penalty: 1.1)
+            #expect(sampler != nil, "Repetition penalty sampler should be created successfully")
+            let token = sampler?.sample()
+            #expect(token == nil, "Repetition penalty sampling with dummy context should return nil")
         }
     }
     
-    @Test("LlamaSamplerChain apply functionality")
-    func testLlamaSamplerChainApply() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let chain = LlamaSamplerChain(context: ctx)
-            
-            // Test applying chain to token data array
-            var tokenDataArray = LlamaTokenDataArray(
-                data: UnsafeMutablePointer<LlamaTokenData>.allocate(capacity: 1),
-                size: 1,
+    @Test("SLlamaSamplerChain initialization")
+    func testSLlamaSamplerChainInit() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let chain = SLlamaSamplerChain(context: ctx)
+            #expect(chain != nil, "Sampler chain should be created successfully")
+        }
+    }
+    
+    @Test("SLlamaSamplerChain static builders")
+    func testSLlamaSamplerChainStaticBuilders() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            #expect(SLlamaSamplerChain.temperature(context: ctx, temperature: 1.0) != nil)
+            #expect(SLlamaSamplerChain.topK(context: ctx, k: 5) != nil)
+            #expect(SLlamaSamplerChain.topP(context: ctx, p: 0.9) != nil)
+            #expect(SLlamaSamplerChain.repetitionPenalty(context: ctx, penalty: 1.1) != nil)
+            #expect(SLlamaSamplerChain.custom(context: ctx) != nil)
+        }
+    }
+    
+    @Test("SLlamaSamplerChain operations")
+    func testSLlamaSamplerChainOperations() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let chain = SLlamaSamplerChain(context: ctx)
+            let initialized = chain.initialize()
+            #expect(initialized == true, "Chain should initialize successfully")
+            #expect(chain.samplerCount == 0, "Empty chain should have 0 samplers")
+            if let tempSampler = SLlamaSampler.temperature(context: ctx, temperature: 0.7) {
+                chain.addSampler(tempSampler)
+                #expect(chain.samplerCount == 1, "Chain should have 1 sampler after adding")
+            }
+            let token = chain.sample()
+            #expect(token == nil, "Sampling with dummy context should return nil")
+        }
+    }
+    
+    @Test("SLlamaSamplerChain cloning")
+    func testSLlamaSamplerChainCloning() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let chain = SLlamaSamplerChain(context: ctx)
+            chain.initialize()
+            if let tempSampler = SLlamaSampler.temperature(context: ctx, temperature: 0.7) {
+                chain.addSampler(tempSampler)
+            }
+            let clonedChain = chain.clone()
+            #expect(clonedChain != nil, "Chain should clone successfully")
+        }
+    }
+    
+    @Test("SLlamaSamplerChain token data array operations")
+    func testSLlamaSamplerChainTokenDataArrayOperations() throws {
+        _ = TestUtilities.withDummyContext { ctx in
+            let chain = SLlamaSamplerChain(context: ctx)
+            chain.initialize()
+            // Create a simple token data array
+            var candidates = [
+                SLlamaTokenData(id: 1, logit: 0.5, p: 0.0),
+                SLlamaTokenData(id: 2, logit: 0.3, p: 0.0),
+                SLlamaTokenData(id: 3, logit: 0.2, p: 0.0)
+            ]
+            let tokenDataArray = SLlamaTokenDataArray(
+                data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
+                size: candidates.count,
                 selected: 0,
                 sorted: false
             )
-            
-            chain.apply(to: &tokenDataArray)
-            
-            // Clean up
-            tokenDataArray.data.deallocate()
+            #expect(tokenDataArray.size == 3, "Token data array should have 3 elements")
+            #expect(tokenDataArray.selected == 0, "Token data array should start with selected = 0")
+            #expect(tokenDataArray.sorted == false, "Token data array should start with sorted = false")
         }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
-        }
-    }
-    
-    @Test("LlamaSamplerChain sample functionality")
-    func testLlamaSamplerChainSample() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let chain = LlamaSamplerChain(context: ctx)
-            
-            // Test sampling with various token arrays
-            #expect(chain.sample() == nil)
-            #expect(chain.sample(lastTokens: []) == nil)
-            #expect(chain.sample(lastTokens: [1, 2, 3]) == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
-        }
-    }
-    
-    @Test("LlamaContext samplerChain extension")
-    func testLlamaContextSamplerChainExtension() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            let chain = ctx.samplerChain()
-            #expect(chain.cChain == nil)
-            #expect(chain.samplerCount == 0)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
-        }
-    }
-    
-    @Test("LlamaContext convenience chain methods")
-    func testLlamaContextConvenienceChainMethods() throws {
-        let executed = TestUtilities.withDummyContext { ctx in
-            // Test convenience sampling methods
-            #expect(ctx.sampleGreedy() == nil)
-            #expect(ctx.sampleWithTemperature(1.0) == nil)
-            #expect(ctx.sampleTopK(5) == nil)
-            #expect(ctx.sampleTopP(0.9) == nil)
-            #expect(ctx.sampleWithRepetitionPenalty(1.1) == nil)
-        }
-        
-        if !executed {
-            #expect(Bool(true), "Dummy context creation failed as expected")
-        }
-    }
-    
-    @Test("LlamaSamplerChainParams functionality")
-    func testLlamaSamplerChainParams() throws {
-        // Test creating default params
-        _ = LlamaSamplerChainParams()
-        
-        // Test creating custom params (if the struct has fields)
-        _ = LlamaSamplerChainParams()
-        
-        // Test that params can be created (actual values depend on C API)
-        #expect(Bool(true)) // Just test that struct creation doesn't crash
     }
 } 

@@ -2,19 +2,19 @@ import Testing
 @testable import SwiftyLlamaCpp
 
 @Suite 
-struct LlamaModelTests {
+struct SLlamaModelTests {
     
     @Test("Model creation with invalid path")
     func testModelCreationWithInvalidPath() throws {
         // Test that model creation fails gracefully with invalid path
-        let model = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
+        let model = SLlamaModel(modelPath: "/nonexistent/path/model.gguf")
         #expect(model == nil, "Model creation should fail with invalid path")
     }
     
     @Test("Model properties with nil model")
     func testModelPropertiesWithNilModel() throws {
         // Test that model properties return safe defaults when model is nil
-        let model = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
+        let model = SLlamaModel(modelPath: "/nonexistent/path/model.gguf")
         
         if let model = model {
             // This shouldn't happen with invalid path, but test properties anyway

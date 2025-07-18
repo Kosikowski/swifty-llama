@@ -1,53 +1,65 @@
 import Testing
+import SwiftyLlamaCpp
+
 @testable import SwiftyLlamaCpp
 
-@Suite 
 struct LlamaVocabTests {
     
-    @Test("Vocabulary creation with nil pointer")
-    func testVocabularyCreationWithNilPointer() throws {
-        // Test that vocabulary creation fails gracefully with nil pointer
-        let vocab = LlamaVocab(vocab: nil)
-        #expect(vocab == nil, "Vocabulary creation should fail with nil pointer")
+    @Test("SLlamaVocab initialization with nil pointer")
+    func testSLlamaVocabInitWithNilPointer() throws {
+        // Test that vocabulary creation works with nil pointer (non-failable init)
+        let vocab = SLlamaVocab(vocab: nil)
+        #expect(vocab.pointer == nil, "Vocabulary pointer should be nil")
     }
     
-    @Test("Vocabulary properties with nil vocab")
-    func testVocabularyPropertiesWithNilVocab() throws {
-        // Test that vocabulary properties return safe defaults when vocab is nil
-        let vocab = LlamaVocab(vocab: nil)
+    @Test("SLlamaVocab properties with nil pointer")
+    func testSLlamaVocabPropertiesWithNilPointer() throws {
+        let vocab = SLlamaVocab(vocab: nil)
         
-        if let vocab = vocab {
-            // This shouldn't happen with nil pointer, but test properties anyway
-            #expect(vocab.type == .none, "Nil vocab should have .none type")
-            #expect(vocab.tokenCount == 0, "Nil vocab should have 0 token count")
-            #expect(vocab.bosToken == LlamaTokenNull, "Nil vocab should have null BOS token")
-            #expect(vocab.eosToken == LlamaTokenNull, "Nil vocab should have null EOS token")
-            #expect(vocab.eotToken == LlamaTokenNull, "Nil vocab should have null EOT token")
-            #expect(vocab.sepToken == LlamaTokenNull, "Nil vocab should have null SEP token")
-            #expect(vocab.newlineToken == LlamaTokenNull, "Nil vocab should have null newline token")
-            #expect(vocab.padToken == LlamaTokenNull, "Nil vocab should have null pad token")
-            #expect(vocab.maskToken == LlamaTokenNull, "Nil vocab should have null mask token")
-        } else {
-            // Expected behavior
-            #expect(Bool(true), "Vocabulary creation failed as expected")
-        }
+        // Test properties with nil vocab
+        #expect(vocab.tokenCount == 0, "Nil vocab should have 0 token count")
+        #expect(vocab.type == .none, "Nil vocab should have .none type")
+        #expect(vocab.bosToken == SLlamaTokenNull, "Nil vocab should have null BOS token")
+        #expect(vocab.eosToken == SLlamaTokenNull, "Nil vocab should have null EOS token")
+        #expect(vocab.eotToken == SLlamaTokenNull, "Nil vocab should have null EOT token")
+        #expect(vocab.sepToken == SLlamaTokenNull, "Nil vocab should have null SEP token")
+        #expect(vocab.nlToken == SLlamaTokenNull, "Nil vocab should have null newline token")
+        #expect(vocab.padToken == SLlamaTokenNull, "Nil vocab should have null pad token")
+        #expect(vocab.maskToken == SLlamaTokenNull, "Nil vocab should have null mask token")
     }
     
-    @Test("Vocabulary methods with nil vocab")
-    func testVocabularyMethodsWithNilVocab() throws {
-        // Test that vocabulary methods return safe defaults when vocab is nil
-        let vocab = LlamaVocab(vocab: nil)
+    @Test("SLlamaVocab methods with nil pointer")
+    func testSLlamaVocabMethodsWithNilPointer() throws {
+        let vocab = SLlamaVocab(vocab: nil)
         
-        if let vocab = vocab {
-            // Test methods with nil vocab
-            #expect(vocab.getText(for: 0) == nil, "getText should return nil for nil vocab")
-            #expect(vocab.getScore(for: 0) == 0.0, "getScore should return 0.0 for nil vocab")
-            #expect(vocab.getAttribute(for: 0) == .undefined, "getAttribute should return .undefined for nil vocab")
-            #expect(vocab.isEndOfGeneration(token: 0) == false, "isEndOfGeneration should return false for nil vocab")
-            #expect(vocab.isControl(token: 0) == false, "isControl should return false for nil vocab")
-        } else {
-            // Expected behavior
-            #expect(Bool(true), "Vocabulary creation failed as expected")
-        }
+        // Test methods with nil vocab
+        #expect(vocab.getText(for: 0) == nil, "getText should return nil for nil vocab")
+        #expect(vocab.getScore(for: 0) == 0.0, "getScore should return 0.0 for nil vocab")
+        #expect(vocab.getAttribute(for: 0) == .undefined, "getAttribute should return .undefined for nil vocab")
+        #expect(vocab.isEOG(0) == false, "isEOG should return false for nil vocab")
+        #expect(vocab.isControl(0) == false, "isControl should return false for nil vocab")
+    }
+    
+    @Test("SLlamaVocab FIM tokens with nil pointer")
+    func testSLlamaVocabFIMTokensWithNilPointer() throws {
+        let vocab = SLlamaVocab(vocab: nil)
+        
+        // Test FIM tokens with nil vocab
+        #expect(vocab.fimPrefixToken == SLlamaTokenNull, "Nil vocab should have null FIM prefix token")
+        #expect(vocab.fimSuffixToken == SLlamaTokenNull, "Nil vocab should have null FIM suffix token")
+        #expect(vocab.fimMiddleToken == SLlamaTokenNull, "Nil vocab should have null FIM middle token")
+        #expect(vocab.fimPaddingToken == SLlamaTokenNull, "Nil vocab should have null FIM padding token")
+        #expect(vocab.fimReplacementToken == SLlamaTokenNull, "Nil vocab should have null FIM replacement token")
+        #expect(vocab.fimSeparatorToken == SLlamaTokenNull, "Nil vocab should have null FIM separator token")
+    }
+    
+    @Test("SLlamaVocab token addition flags with nil pointer")
+    func testSLlamaVocabTokenAdditionFlagsWithNilPointer() throws {
+        let vocab = SLlamaVocab(vocab: nil)
+        
+        // Test token addition flags with nil vocab
+        #expect(vocab.addsBOS == false, "Nil vocab should not add BOS")
+        #expect(vocab.addsEOS == false, "Nil vocab should not add EOS")
+        #expect(vocab.addsSEP == false, "Nil vocab should not add SEP")
     }
 } 

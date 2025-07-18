@@ -2,19 +2,19 @@ import Foundation
 import llama
 
 /// A wrapper for llama inference operations
-public class LlamaInference {
-    private let context: LlamaContext
+public class SLlamaInference {
+    private let context: SLlamaContext
     
     /// Initialize with a context
     /// - Parameter context: The llama context to use for inference
-    public init(context: LlamaContext) {
+    public init(context: SLlamaContext) {
         self.context = context
     }
     
     /// Encode a batch of tokens (does not use KV cache)
     /// - Parameter batch: The batch to encode
     /// - Returns: 0 on success, negative value on error
-    public func encode(_ batch: LlamaBatch) -> Int32 {
+    public func encode(_ batch: SLlamaBatch) -> Int32 {
         guard let ctx = context.pointer else {
             return -1
         }
@@ -24,7 +24,7 @@ public class LlamaInference {
     /// Decode a batch of tokens (uses KV cache)
     /// - Parameter batch: The batch to decode
     /// - Returns: 0 on success, positive values are warnings, negative values are errors
-    public func decode(_ batch: LlamaBatch) -> Int32 {
+    public func decode(_ batch: SLlamaBatch) -> Int32 {
         guard let ctx = context.pointer else {
             return -1
         }
@@ -79,7 +79,7 @@ public class LlamaInference {
     /// - Parameters:
     ///   - callback: The abort callback function
     ///   - userData: User data passed to the callback
-    public func setAbortCallback(_ callback: @escaping () -> Bool, userData: LlamaRawPointer? = nil) {
+    public func setAbortCallback(_ callback: @escaping () -> Bool, userData: SLlamaRawPointer? = nil) {
         guard let ctx = context.pointer else { return }
         // Note: This is a simplified version that doesn't capture context
         // For a full implementation, you'd need to use a global callback or pass userData
@@ -122,47 +122,47 @@ public class LlamaInference {
     
     /// Get the associated model
     /// - Returns: The model associated with this context
-    public func getModel() -> LlamaModel? {
+    public func getModel() -> SLlamaModel? {
         guard let ctx = context.pointer else { return nil }
         let modelPtr = llama_get_model(ctx)
-        return LlamaModel(modelPointer: modelPtr)
+        return SLlamaModel(modelPointer: modelPtr)
     }
     
     /// Get memory
     /// - Returns: The memory associated with this context
-    public func getMemory() -> LlamaMemory? {
+    public func getMemory() -> SLlamaMemory? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_memory(ctx)
     }
     
     /// Get pooling type
     /// - Returns: The pooling type used by this context
-    public func getPoolingType() -> LlamaPoolingType {
+    public func getPoolingType() -> SLlamaPoolingType {
         guard let ctx = context.pointer else { return .unspecified }
         return llama_pooling_type(ctx)
     }
 }
 
-/// Extension to LlamaContext for inference operations
-public extension LlamaContext {
+/// Extension to SLlamaContext for inference operations
+public extension SLlamaContext {
     
     /// Create an inference wrapper for this context
-    /// - Returns: A LlamaInference instance
-    func inference() -> LlamaInference {
-        return LlamaInference(context: self)
+    /// - Returns: A SLlamaInference instance
+    func inference() -> SLlamaInference {
+        return SLlamaInference(context: self)
     }
     
-    /// Encode a batch of tokens
+    /// Encode a batch of tokens (does not use KV cache)
     /// - Parameter batch: The batch to encode
     /// - Returns: 0 on success, negative value on error
-    func encode(_ batch: LlamaBatch) -> Int32 {
+    func encode(_ batch: SLlamaBatch) -> Int32 {
         return inference().encode(batch)
     }
     
-    /// Decode a batch of tokens
+    /// Decode a batch of tokens (uses KV cache)
     /// - Parameter batch: The batch to decode
     /// - Returns: 0 on success, positive values are warnings, negative values are errors
-    func decode(_ batch: LlamaBatch) -> Int32 {
+    func decode(_ batch: SLlamaBatch) -> Int32 {
         return inference().decode(batch)
     }
     

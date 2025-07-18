@@ -1,31 +1,32 @@
 import Testing
+import SwiftyLlamaCpp
+
 @testable import SwiftyLlamaCpp
 
-@Suite 
 struct SwiftyLlamaCppTests {
     
-    @Test("SwiftyLlamaCpp static functions")
-    func testSwiftyLlamaCppStaticFunctions() throws {
+    @Test("SwiftyLlamaCpp initialization and cleanup")
+    func testSwiftyLlamaCppInitAndCleanup() throws {
         // Test initialization and cleanup
         SwiftyLlamaCpp.initialize()
-        SwiftyLlamaCpp.free()
+        SwiftyLlamaCpp.cleanup()
         
         // Test system info
-        let systemInfo = SwiftyLlamaCpp.getSystemInfo()
-        #expect(!systemInfo.isEmpty, "System info should not be empty")
+        let currentTime = SwiftyLlamaCpp.getCurrentTime()
+        #expect(currentTime >= 0, "Current time should be non-negative")
         
-        // Test capability checks
+        // Test support flags
         let supportsMmap = SwiftyLlamaCpp.supportsMmap()
         let supportsMlock = SwiftyLlamaCpp.supportsMlock()
-        let supportsGpuOffload = SwiftyLlamaCpp.supportsGpuOffload()
+        let supportsGPUOffload = SwiftyLlamaCpp.supportsGPUOffload()
         
         #expect(type(of: supportsMmap) == Bool.self, "supportsMmap should return Bool")
         #expect(type(of: supportsMlock) == Bool.self, "supportsMlock should return Bool")
-        #expect(type(of: supportsGpuOffload) == Bool.self, "supportsGpuOffload should return Bool")
+        #expect(type(of: supportsGPUOffload) == Bool.self, "supportsGPUOffload should return Bool")
         
         // Test device limits
-        let maxDevices = SwiftyLlamaCpp.maxDevices()
-        let maxParallelSequences = SwiftyLlamaCpp.maxParallelSequences()
+        let maxDevices = SwiftyLlamaCpp.getMaxDevices()
+        let maxParallelSequences = SwiftyLlamaCpp.getMaxParallelSequences()
         
         #expect(maxDevices >= 0, "maxDevices should be non-negative")
         #expect(maxParallelSequences >= 0, "maxParallelSequences should be non-negative")

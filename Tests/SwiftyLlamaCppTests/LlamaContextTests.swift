@@ -2,14 +2,14 @@ import Testing
 @testable import SwiftyLlamaCpp
 
 @Suite 
-struct LlamaContextTests {
+struct SLlamaContextTests {
     
     @Test("Context creation with invalid model")
     func testContextCreationWithInvalidModel() throws {
         // Test that context creation fails gracefully with invalid model
-        let invalidModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
+        let invalidModel = SLlamaModel(modelPath: "/nonexistent/path/model.gguf")
         if let model = invalidModel {
-            let context = LlamaContext(model: model)
+            let context = SLlamaContext(model: model)
             #expect(context == nil, "Context creation should fail with invalid model")
         } else {
             // If model creation itself failed, that's also acceptable
@@ -20,8 +20,8 @@ struct LlamaContextTests {
     @Test("Context properties with nil context")
     func testContextPropertiesWithNilContext() throws {
         // Test that context properties return safe defaults when context is nil
-        let invalidModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        let context = invalidModel.flatMap { LlamaContext(model: $0) }
+        let invalidModel = SLlamaModel(modelPath: "/nonexistent/path/model.gguf")
+        let context = invalidModel.flatMap { SLlamaContext(model: $0) }
         
         if let context = context {
             #expect(context.pointer == nil, "Invalid context should have nil pointer")
