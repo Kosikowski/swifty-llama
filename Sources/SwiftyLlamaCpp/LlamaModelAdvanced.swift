@@ -1,0 +1,161 @@
+import Foundation
+
+// MARK: - Advanced Model Features
+
+/// Advanced model features and utilities
+public class LlamaModelAdvanced {
+    
+    private let model: LlamaModel
+    
+    public init(model: LlamaModel) {
+        self.model = model
+    }
+    
+    // MARK: - Model Metadata
+    
+    /// Get model metadata as a dictionary
+    /// - Returns: Dictionary containing model metadata, or nil if unavailable
+    public func getMetadata() -> [String: String]? {
+        guard model.pointer != nil else { return nil }
+        
+        var metadata: [String: String] = [:]
+        
+        // Get model size
+        let modelSize = model.size
+        metadata["size_bytes"] = "\(modelSize)"
+        
+        // Get model parameters
+        let numParams = model.parameters
+        metadata["num_parameters"] = "\(numParams)"
+        
+        // Get model architecture info
+        let nEmbd = model.embeddingDimensions
+        let nLayer = model.layers
+        let nHead = model.attentionHeads
+        
+        metadata["embedding_dimension"] = "\(nEmbd)"
+        metadata["num_layers"] = "\(nLayer)"
+        metadata["num_attention_heads"] = "\(nHead)"
+        
+        return metadata
+    }
+    
+    /// Get model size in bytes
+    /// - Returns: Model size in bytes, or 0 if unavailable
+    public func getSize() -> UInt64 {
+        return model.size
+    }
+    
+    /// Get number of parameters
+    /// - Returns: Number of parameters, or 0 if unavailable
+    public func getParameterCount() -> UInt64 {
+        return model.parameters
+    }
+    
+    /// Get model dimensions
+    /// - Returns: Dictionary containing model dimensions, or nil if unavailable
+    public func getDimensions() -> [String: Int32]? {
+        return [
+            "embedding_dimension": model.embeddingDimensions,
+            "num_layers": model.layers,
+            "num_attention_heads": model.attentionHeads
+        ]
+    }
+    
+    // MARK: - Model Validation
+    
+    /// Validate model integrity
+    /// - Returns: true if model is valid, false otherwise
+    public func validateModel() -> Bool {
+        guard model.pointer != nil else { return false }
+        
+        // Basic validation - check if we can get model properties
+        let size = model.size
+        let params = model.parameters
+        let nEmbd = model.embeddingDimensions
+        
+        return size > 0 && params > 0 && nEmbd > 0
+    }
+    
+    /// Check model compatibility with current llama.cpp version
+    /// - Returns: true if compatible, false otherwise
+    public func isCompatible() -> Bool {
+        guard model.pointer != nil else { return false }
+        
+        // Check if we can access basic model properties
+        let size = model.size
+        let params = model.parameters
+        let nEmbd = model.embeddingDimensions
+        
+        return size > 0 && params > 0 && nEmbd > 0
+    }
+    
+    // MARK: - Model Export/Import
+    
+    /// Save model to file
+    /// - Parameter outputPath: Path for the saved model
+    /// - Returns: true if save was successful, false otherwise
+    public func saveModel(to outputPath: String) -> Bool {
+        guard model.pointer != nil else { return false }
+        
+        // Note: This is a simplified implementation
+        // In a real implementation, you would need to implement proper model serialization
+        return false
+    }
+    
+    // MARK: - Model Optimization
+    
+    /// Get available optimization targets
+    /// - Returns: Array of available optimization targets, or nil if unavailable
+    public func getAvailableOptimizations() -> [String]? {
+        // Note: This is a placeholder implementation
+        // In a real implementation, you would query the actual available optimizations
+        return ["cpu", "gpu", "metal"]
+    }
+    
+    /// Optimize model for specific hardware
+    /// - Parameters:
+    ///   - target: Target hardware (e.g., "cpu", "gpu", "metal")
+    ///   - optimizationLevel: Optimization level (0-3)
+    /// - Returns: true if optimization was successful, false otherwise
+    public func optimizeForHardware(target: String, optimizationLevel: Int32) -> Bool {
+        // Note: This is a placeholder implementation
+        // In a real implementation, you would apply actual optimizations
+        return false
+    }
+}
+
+// MARK: - Extension to LlamaModel
+
+public extension LlamaModel {
+    
+    /// Get advanced features interface
+    /// - Returns: LlamaModelAdvanced instance for this model
+    func advanced() -> LlamaModelAdvanced {
+        return LlamaModelAdvanced(model: self)
+    }
+    
+    /// Get model metadata
+    /// - Returns: Dictionary containing model metadata, or nil if unavailable
+    func getMetadata() -> [String: String]? {
+        return advanced().getMetadata()
+    }
+    
+    /// Get model size in bytes
+    /// - Returns: Model size in bytes, or 0 if unavailable
+    func getSize() -> UInt64 {
+        return advanced().getSize()
+    }
+    
+    /// Get number of parameters
+    /// - Returns: Number of parameters, or 0 if unavailable
+    func getParameterCount() -> UInt64 {
+        return advanced().getParameterCount()
+    }
+    
+    /// Validate model integrity
+    /// - Returns: true if model is valid, false otherwise
+    func validate() -> Bool {
+        return advanced().validateModel()
+    }
+} 
