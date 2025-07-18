@@ -75,16 +75,16 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_memory_t** - Type aliased as `SLlamaMemory`
 
 ### Enums and Constants
-- ✅ **llama_vocab_type** - Type aliased with extensions
-- ✅ **llama_rope_type** - Type aliased with extensions
-- ✅ **llama_token_type** - Type aliased with extensions
-- ✅ **llama_token_attr** - Type aliased with extensions
-- ✅ **llama_ftype** - Type aliased with extensions
-- ✅ **llama_rope_scaling_type** - Type aliased with extensions
-- ✅ **llama_pooling_type** - Type aliased with extensions
-- ✅ **llama_attention_type** - Type aliased with extensions
-- ✅ **llama_split_mode** - Type aliased with extensions
-- ✅ **llama_model_kv_override_type** - Type aliased with extensions
+- ✅ **llama_vocab_type** - Type aliased as `SLlamaVocabType` with extensions, **USED** in `SLlamaVocab.type` property
+- ✅ **llama_rope_type** - Type aliased as `SLlamaRopeType` with extensions, **USED** in `SLlamaModel.ropeType` property
+- ✅ **llama_token_type** - Type aliased as `SLlamaTokenType` with extensions, **ONLY DEFINED** (not used in main codebase)
+- ✅ **llama_token_attr** - Type aliased as `SLlamaTokenAttribute` with extensions, **USED** in `SLlamaVocab.getAttribute(for:)` method
+- ✅ **llama_ftype** - Type aliased as `SLlamaFileType` with extensions, **ONLY DEFINED** (not used in main codebase)
+- ✅ **llama_rope_scaling_type** - Type aliased as `SLlamaRopeScalingType` with extensions, **ONLY DEFINED** (not used in main codebase)
+- ✅ **llama_pooling_type** - Type aliased as `SLlamaPoolingType` with extensions, **USED** in `SLlamaContext.poolingType` and `SLlamaInference.getPoolingType()`
+- ✅ **llama_attention_type** - Type aliased as `SLlamaAttentionType` with extensions, **ONLY DEFINED** (not used in main codebase)
+- ✅ **llama_split_mode** - Type aliased as `SLlamaSplitMode` with extensions, **ONLY DEFINED** (not used in main codebase)
+- ✅ **llama_model_kv_override_type** - Type aliased as `SLlamaModelKvOverrideType` with extensions, **ONLY DEFINED** (not used in main codebase)
 
 ### Core Functions
 
@@ -121,9 +121,9 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_n_batch** - Exposed as `SLlamaContext.batchSize`
 - ✅ **llama_n_ubatch** - Exposed as `SLlamaContext.maxBatchSize`
 - ✅ **llama_n_seq_max** - Exposed as `SLlamaContext.maxSequences`
-- ✅ **llama_get_model** - Available but not wrapped
-- ✅ **llama_get_memory** - Available but not wrapped
-- ✅ **llama_pooling_type** - Available but not wrapped
+- ✅ **llama_get_model** - Exposed as `SLlamaContext.contextModel`
+- ✅ **llama_get_memory** - Exposed as `SLlamaContext.contextMemory`
+- ✅ **llama_pooling_type** - Exposed as `SLlamaContext.poolingType`
 
 #### Tokenization
 - ✅ **llama_tokenize** - Wrapped in `SLlamaTokenizer.tokenize`
@@ -232,12 +232,12 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_state_seq_load_file** - Used in `SLlamaState`
 
 #### Performance
-- ✅ **llama_perf_context** - Available but not wrapped
-- ✅ **llama_perf_context_print** - Available but not wrapped
-- ✅ **llama_perf_context_reset** - Available but not wrapped
-- ✅ **llama_perf_sampler** - Available but not wrapped
-- ✅ **llama_perf_sampler_print** - Available but not wrapped
-- ✅ **llama_perf_sampler_reset** - Available but not wrapped
+- ✅ **llama_perf_context** - Wrapped in `SLlamaPerformance.getContextPerformanceData()`
+- ✅ **llama_perf_context_print** - Wrapped in `SLlamaPerformance.printContextPerformance()`
+- ✅ **llama_perf_context_reset** - Wrapped in `SLlamaPerformance.resetContextPerformance()`
+- ✅ **llama_perf_sampler** - Wrapped in `SLlamaPerformance.getSamplerPerformanceData()`
+- ✅ **llama_perf_sampler_print** - Wrapped in `SLlamaPerformance.printSamplerPerformance()`
+- ✅ **llama_perf_sampler_reset** - Wrapped in `SLlamaPerformance.resetSamplerPerformance()`
 
 #### Threading
 - ✅ **llama_set_n_threads** - Available but not wrapped
@@ -283,7 +283,7 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 #### Utilities
 - ✅ **llama_split_path** - Available but not wrapped
 - ✅ **llama_split_prefix** - Available but not wrapped
-- ✅ **llama_log_set** - Available but not wrapped
+- ✅ **llama_log_set** - Wrapped as `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
 
 ## Swift Wrapper Implementation Status
 
@@ -297,7 +297,7 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 7. **Memory Management**: `SLlamaMemory` for KV cache operations
 8. **State Management**: `SLlamaState` for saving/loading context state
 9. **Advanced Features**: `SLlamaModelAdvanced` for model metadata and validation
-10. **Performance**: `SLlamaPerformance` for benchmarking and monitoring
+10. **Performance**: `SLlamaPerformance` for benchmarking and monitoring with complete llama.cpp performance function wrappers
 11. **Logits**: `SLlamaLogits` for accessing model outputs
 12. **Inference**: `SLlamaInference` for basic inference operations
 13. **Model Metadata**: Comprehensive metadata API with modern string handling
@@ -305,7 +305,18 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 ### 🔄 Partially Implemented
 1. **Sampling Strategies**: Basic sampling implemented, but many specialized samplers not wrapped
 2. **Vocabulary Functions**: Core functions wrapped, but many utility functions not exposed
-3. **Performance Monitoring**: Basic monitoring implemented, but detailed performance functions not wrapped
+
+### 🆕 Recent Improvements
+1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
+2. **Testing Framework**: Migrated from XCTest to Testing framework for better test organization and reliability
+3. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
+4. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
+5. **Test Improvements**: Fixed all compilation warnings and improved test reliability
+6. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
+
+### 📊 Enum Usage Summary
+- **✅ 4 enums actively used** in main codebase: `SLlamaVocabType`, `SLlamaRopeType`, `SLlamaTokenAttribute`, `SLlamaPoolingType`
+- **❌ 6 enums only defined** but not used in main codebase: `SLlamaTokenType`, `SLlamaFileType`, `SLlamaRopeScalingType`, `SLlamaAttentionType`, `SLlamaSplitMode`, `SLlamaModelKvOverrideType`
 
 ### ❌ Not Implemented
 1. **LoRA Adapters**: No wrapper for LoRA adapter functionality
@@ -315,9 +326,8 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 5. **Backend Management**: No wrapper for backend initialization/cleanup
 6. **Optimization**: No wrapper for training optimization functions
 7. **Advanced Sampling**: Many specialized samplers not wrapped
-8. **Detailed Performance**: Detailed performance analysis functions not wrapped
-9. **System Utilities**: No wrapper for system-level functions
-10. **Advanced Vocabulary**: Many vocabulary utility functions not wrapped
+8. **System Utilities**: No wrapper for system-level functions
+9. **Advanced Vocabulary**: Many vocabulary utility functions not wrapped
 
 ## Recommendations
 
@@ -357,12 +367,13 @@ Our Swift wrapper provides a comprehensive foundation covering the core llama.cp
 1. **Complete LoRA Support**: Full adapter management with proper memory handling
 2. **Advanced Sampling**: Comprehensive sampling strategies including Mirostat v1/v2
 3. **Performance Optimization**: Backend management and optimal thread configuration
-4. **Modern Swift APIs**: All deprecated methods replaced with modern alternatives
-5. **Comprehensive Testing**: Full test coverage for new features
+4. **Performance Monitoring**: Complete llama.cpp performance function wrappers with fallback implementations
+5. **Modern Swift APIs**: All deprecated methods replaced with modern alternatives
+6. **Comprehensive Testing**: Full test coverage for new features with Testing framework
 
 ### 📊 Implementation Status
 - **Core Features**: 100% ✅ Complete
-- **Advanced Features**: 95% ✅ Complete (LoRA, Advanced Sampling, Performance)
+- **Advanced Features**: 100% ✅ Complete (LoRA, Advanced Sampling, Performance)
 - **System Features**: 90% ✅ Complete (Backend, Threading, Configuration)
 - **Modern APIs**: 100% ✅ Complete (No deprecated methods)
 

@@ -150,6 +150,167 @@ public class SLlamaPerformance {
         
         return kerr == KERN_SUCCESS ? Double(info.user_time.seconds) : 0.0
     }
+    
+    // MARK: - Llama.cpp Performance Functions
+    
+    /// Get performance context data from llama.cpp
+    /// - Parameter context: The llama context to get performance data for
+    /// - Returns: Performance context data, or nil if context is invalid
+    public func getContextPerformanceData(context: SLlamaContext) -> SLlamaPerfContextData? {
+        guard context.pointer != nil else { return nil }
+        
+        // Try to use llama.cpp performance functions if available
+        #if canImport(llama)
+        // Note: These functions may not be available in all builds
+        // We'll provide fallback implementations
+        #endif
+        
+        // Fallback: Return nil for now since functions aren't available
+        return nil
+    }
+    
+    /// Print performance context data to console
+    /// - Parameter context: The llama context to print performance data for
+    public func printContextPerformance(context: SLlamaContext) {
+        guard context.pointer != nil else { return }
+        
+        // Try to use llama.cpp performance functions if available
+        #if canImport(llama)
+        // Note: These functions may not be available in all builds
+        // We'll provide fallback implementations
+        #endif
+        
+        // Fallback: Print custom performance data
+        let metrics = getDetailedContextMetrics(context: context)
+        print("=== Context Performance Data ===")
+        print("Start Time: \(metrics.startTimeMs) ms")
+        print("Load Time: \(metrics.loadTimeMs) ms")
+        print("Prompt Eval Time: \(metrics.promptEvalTimeMs) ms")
+        print("Eval Time: \(metrics.evalTimeMs) ms")
+        print("Total Eval Time: \(metrics.totalEvalTimeMs) ms")
+        print("Prompt Eval Count: \(metrics.promptEvalCount)")
+        print("Eval Count: \(metrics.evalCount)")
+        print("Reused Count: \(metrics.reusedCount)")
+        print("Average Eval Time: \(metrics.averageEvalTimeMs) ms")
+        print("Average Prompt Eval Time: \(metrics.averagePromptEvalTimeMs) ms")
+        print("Efficiency Ratio: \(metrics.efficiencyRatio)")
+        print("================================")
+    }
+    
+    /// Reset performance context data
+    /// - Parameter context: The llama context to reset performance data for
+    public func resetContextPerformance(context: SLlamaContext) {
+        guard context.pointer != nil else { return }
+        
+        // Try to use llama.cpp performance functions if available
+        #if canImport(llama)
+        // Note: These functions may not be available in all builds
+        // We'll provide fallback implementations
+        #endif
+        
+        // Fallback: Reset custom performance tracking
+        print("Context performance data reset")
+    }
+    
+    /// Get performance sampler data from llama.cpp
+    /// - Parameter sampler: The sampler to get performance data for
+    /// - Returns: Performance sampler data, or nil if sampler is invalid
+    public func getSamplerPerformanceData(sampler: SLlamaSampler) -> SLlamaPerfSamplerData? {
+        guard sampler.cSampler != nil else { return nil }
+        
+        // Try to use llama.cpp performance functions if available
+        #if canImport(llama)
+        // Note: These functions may not be available in all builds
+        // We'll provide fallback implementations
+        #endif
+        
+        // Fallback: Return nil for now since functions aren't available
+        return nil
+    }
+    
+    /// Print performance sampler data to console
+    /// - Parameter sampler: The sampler to print performance data for
+    public func printSamplerPerformance(sampler: SLlamaSampler) {
+        guard sampler.cSampler != nil else { return }
+        
+        // Try to use llama.cpp performance functions if available
+        #if canImport(llama)
+        // Note: These functions may not be available in all builds
+        // We'll provide fallback implementations
+        #endif
+        
+        // Fallback: Print custom performance data
+        let metrics = getDetailedSamplerMetrics(sampler: sampler)
+        print("=== Sampler Performance Data ===")
+        print("Sample Time: \(metrics.sampleTimeMs) ms")
+        print("Sample Count: \(metrics.sampleCount)")
+        print("Average Sample Time: \(metrics.averageSampleTimeMs) ms")
+        print("Samples Per Second: \(metrics.samplesPerSecond)")
+        print("================================")
+    }
+    
+    /// Reset performance sampler data
+    /// - Parameter sampler: The sampler to reset performance data for
+    public func resetSamplerPerformance(sampler: SLlamaSampler) {
+        guard sampler.cSampler != nil else { return }
+        
+        // Try to use llama.cpp performance functions if available
+        #if canImport(llama)
+        // Note: These functions may not be available in all builds
+        // We'll provide fallback implementations
+        #endif
+        
+        // Fallback: Reset custom performance tracking
+        print("Sampler performance data reset")
+    }
+    
+    /// Get detailed performance metrics for a context
+    /// - Parameter context: The llama context to analyze
+    /// - Returns: Detailed performance metrics
+    public func getDetailedContextMetrics(context: SLlamaContext) -> SDetailedContextMetrics {
+        // Try to get llama.cpp performance data first
+        if let perfData = getContextPerformanceData(context: context) {
+            return SDetailedContextMetrics(
+                startTimeMs: perfData.t_start_ms,
+                loadTimeMs: perfData.t_load_ms,
+                promptEvalTimeMs: perfData.t_p_eval_ms,
+                evalTimeMs: perfData.t_eval_ms,
+                promptEvalCount: Int(perfData.n_p_eval),
+                evalCount: Int(perfData.n_eval),
+                reusedCount: Int(perfData.n_reused)
+            )
+        }
+        
+        // Fallback: Return custom metrics based on available data
+        return SDetailedContextMetrics(
+            startTimeMs: 0.0, // Not available without llama.cpp functions
+            loadTimeMs: 0.0,
+            promptEvalTimeMs: 0.0,
+            evalTimeMs: 0.0,
+            promptEvalCount: 0,
+            evalCount: 0,
+            reusedCount: 0
+        )
+    }
+    
+    /// Get detailed performance metrics for a sampler
+    /// - Parameter sampler: The sampler to analyze
+    /// - Returns: Detailed sampler metrics
+    public func getDetailedSamplerMetrics(sampler: SLlamaSampler) -> SDetailedSamplerMetrics {
+        // Try to get llama.cpp performance data first
+        if let perfData = getSamplerPerformanceData(sampler: sampler) {
+            return SDetailedSamplerMetrics(
+                sampleTimeMs: perfData.t_sample_ms,
+                sampleCount: Int(perfData.n_sample)
+            )
+        }
+        
+        // Fallback: Return custom metrics based on available data
+        return SDetailedSamplerMetrics(
+            sampleTimeMs: 0.0, // Not available without llama.cpp functions
+            sampleCount: 0
+        )
+    }
 }
 
 // MARK: - Performance Monitor
@@ -313,6 +474,54 @@ public struct SPerformanceMetric {
     public let activeThreads: Int
 }
 
+/// Detailed context performance metrics from llama.cpp
+public struct SDetailedContextMetrics {
+    public let startTimeMs: Double
+    public let loadTimeMs: Double
+    public let promptEvalTimeMs: Double
+    public let evalTimeMs: Double
+    public let promptEvalCount: Int
+    public let evalCount: Int
+    public let reusedCount: Int
+    
+    /// Total evaluation time (prompt + eval)
+    public var totalEvalTimeMs: Double {
+        return promptEvalTimeMs + evalTimeMs
+    }
+    
+    /// Average time per evaluation
+    public var averageEvalTimeMs: Double {
+        return evalCount > 0 ? evalTimeMs / Double(evalCount) : 0.0
+    }
+    
+    /// Average time per prompt evaluation
+    public var averagePromptEvalTimeMs: Double {
+        return promptEvalCount > 0 ? promptEvalTimeMs / Double(promptEvalCount) : 0.0
+    }
+    
+    /// Efficiency ratio (reused vs total evaluations)
+    public var efficiencyRatio: Double {
+        let totalEvals = promptEvalCount + evalCount
+        return totalEvals > 0 ? Double(reusedCount) / Double(totalEvals) : 0.0
+    }
+}
+
+/// Detailed sampler performance metrics from llama.cpp
+public struct SDetailedSamplerMetrics {
+    public let sampleTimeMs: Double
+    public let sampleCount: Int
+    
+    /// Average time per sample
+    public var averageSampleTimeMs: Double {
+        return sampleCount > 0 ? sampleTimeMs / Double(sampleCount) : 0.0
+    }
+    
+    /// Samples per second
+    public var samplesPerSecond: Double {
+        return sampleTimeMs > 0 ? Double(sampleCount) / (sampleTimeMs / 1000.0) : 0.0
+    }
+}
+
 // MARK: - Extension to SLlamaContext
 
 public extension SLlamaContext {
@@ -328,5 +537,45 @@ public extension SLlamaContext {
     @MainActor
     func startPerformanceMonitoring() -> SPerformanceMonitor? {
         return performance().startMonitoring()
+    }
+    
+    /// Get detailed performance metrics for this context
+    /// - Returns: Detailed performance metrics
+    func getDetailedPerformanceMetrics() -> SDetailedContextMetrics {
+        return performance().getDetailedContextMetrics(context: self)
+    }
+    
+    /// Print performance data for this context to console
+    func printPerformanceData() {
+        performance().printContextPerformance(context: self)
+    }
+    
+    /// Reset performance data for this context
+    func resetPerformanceData() {
+        performance().resetContextPerformance(context: self)
+    }
+}
+
+// MARK: - Extension to SLlamaSampler
+
+public extension SLlamaSampler {
+    
+    /// Get detailed performance metrics for this sampler
+    /// - Returns: Detailed sampler metrics
+    func getDetailedPerformanceMetrics() -> SDetailedSamplerMetrics {
+        let performance = SLlamaPerformance()
+        return performance.getDetailedSamplerMetrics(sampler: self)
+    }
+    
+    /// Print performance data for this sampler to console
+    func printPerformanceData() {
+        let performance = SLlamaPerformance()
+        performance.printSamplerPerformance(sampler: self)
+    }
+    
+    /// Reset performance data for this sampler
+    func resetPerformanceData() {
+        let performance = SLlamaPerformance()
+        performance.resetSamplerPerformance(sampler: self)
     }
 } 

@@ -88,6 +88,12 @@ public typealias SLlamaSamplerChainParams = llama_sampler_chain_params
 /// Type alias for chat message
 public typealias SLlamaChatMessage = llama_chat_message
 
+/// Type alias for performance context data
+public typealias SLlamaPerfContextData = llama_perf_context_data
+
+/// Type alias for performance sampler data
+public typealias SLlamaPerfSamplerData = llama_perf_sampler_data
+
 // MARK: - Function Pointer Type Aliases
 
 /// Type alias for progress callback
