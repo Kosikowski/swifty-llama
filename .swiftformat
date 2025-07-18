@@ -1,0 +1,67 @@
+# file options
+
+--exclude Tests/XCTestManifests.swift,Tests/BadConfig,Snapshots,Build,PluginTests
+
+# Swift version
+
+--swiftversion 5.10
+
+
+# Format options
+
+--allman false
+--binarygrouping 4,8
+--commas always
+--elseposition same-line
+--voidtype void
+--exponentcase lowercase
+--ifdef indent
+--indent 4
+--indentcase true
+--importgrouping testable-bottom
+--linebreaks lf
+--maxwidth none
+--octalgrouping 4,8
+--operatorfunc spaced
+--organizationmode type
+--patternlet hoist
+--ranges spaced
+--self remove
+--semicolons inline
+--stripunusedargs closure-only
+--trimwhitespace always
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapreturntype if-multiline
+--wrapconditions before-first
+--funcattributes prev-line
+--typeattributes prev-line
+--storedvarattrs same-line
+--complexattrs prev-line
+
+# rules
+
+--enable 					\
+	blankLineAfterSwitchCase,		\
+	blankLinesBetweenImports,		\
+	blockComments,				\
+	docComments,				\
+	isEmpty,				\
+	markTypes,				\
+	noExplicitOwnership,			\
+	organizeDeclarations,			\
+	preferKeyPath,				\
+	wrapEnumCases,				\
+	wrapSwitchCases,
+
+--disable 					\
+	acronyms,				\
+	strongOutlets,				\
+	sortSwitchCases,			\
+	sortDeclarations,			\
+	initCoderUnavailable,			\
+	conditionalAssignment,			\
+	wrapMultilineConditionalAssignment
+
+# enable conditionalAssignment and wrapMultilineConditionalAssignment when migrating to Xcode 16

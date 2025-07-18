@@ -341,4 +341,4 @@ public extension LlamaModelKvOverrideType {
     static let bool = LLAMA_KV_OVERRIDE_TYPE_BOOL
     /// String override type
     static let string = LLAMA_KV_OVERRIDE_TYPE_STR
-} 
+}
