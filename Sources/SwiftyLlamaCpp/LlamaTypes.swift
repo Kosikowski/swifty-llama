@@ -58,6 +58,9 @@ public typealias LlamaTokenData = llama_token_data
 /// Type alias for token data array
 public typealias LlamaTokenDataArray = llama_token_data_array
 
+/// Type alias for token data array pointer
+public typealias LlamaTokenDataArrayPointer = UnsafeMutablePointer<LlamaTokenDataArray>
+
 /// Type alias for sequence ID
 public typealias LlamaSeqId = llama_seq_id
 
@@ -105,7 +108,7 @@ public typealias LlamaModelPointer = OpaquePointer
 public typealias LlamaContextPointer = OpaquePointer
 
 /// Type alias for sampler pointer
-public typealias LlamaSamplerPointer = OpaquePointer
+public typealias LlamaSamplerPointer = UnsafeMutablePointer<llama_sampler>
 
 /// Type alias for adapter LoRA pointer
 public typealias LlamaAdapterLoraPointer = OpaquePointer
