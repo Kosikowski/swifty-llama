@@ -60,6 +60,13 @@ public class LlamaModel {
             return nil
         }
     }
+    
+    /// Initialize with an existing model pointer (does not take ownership)
+    /// - Parameter modelPointer: The model pointer
+    public init?(modelPointer: LlamaModelPointer?) {
+        guard let modelPointer = modelPointer else { return nil }
+        self.model = modelPointer
+    }
 
     deinit {
         if let model {

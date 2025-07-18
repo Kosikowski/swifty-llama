@@ -58,8 +58,8 @@ public typealias LlamaTokenData = llama_token_data
 /// Type alias for token data array
 public typealias LlamaTokenDataArray = llama_token_data_array
 
-/// Type alias for batch
-public typealias LlamaBatch = llama_batch
+/// Type alias for sequence ID
+public typealias LlamaSeqId = llama_seq_id
 
 /// Type alias for model KV override
 public typealias LlamaModelKvOverride = llama_model_kv_override
