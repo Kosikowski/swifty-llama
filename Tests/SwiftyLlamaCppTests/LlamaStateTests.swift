@@ -7,19 +7,19 @@ struct LlamaStateTests {
     
     @Test("LlamaState construction and basic API")
     func testLlamaStateConstruction() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let state = LlamaState(context: ctx)
             #expect(state.getStateSize() == 0)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaState data operations")
     func testLlamaStateDataOperations() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let state = LlamaState(context: ctx)
             
             // Test state data operations with dummy buffers
@@ -33,15 +33,16 @@ struct LlamaStateTests {
                 state.setStateData(buffer.baseAddress!, size: buffer.count)
             }
             #expect(bytesRead == 0)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaState file operations")
     func testLlamaStateFileOperations() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let state = LlamaState(context: ctx)
             
             // Test file operations
@@ -63,15 +64,16 @@ struct LlamaStateTests {
                 )
             }
             #expect(saveResult == false)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaState sequence operations")
     func testLlamaStateSequenceOperations() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let state = LlamaState(context: ctx)
             
             // Test sequence state size
@@ -111,26 +113,28 @@ struct LlamaStateTests {
                 nTokenCountOut: &tokenCount
             )
             #expect(loadBytes == 0)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaContext state extension")
     func testLlamaContextStateExtension() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let state = ctx.state()
             #expect(state.getStateSize() == 0)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaContext state convenience methods")
     func testLlamaContextStateConvenienceMethods() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             // Test state size
             #expect(ctx.getStateSize() == 0)
             
@@ -198,15 +202,16 @@ struct LlamaStateTests {
                 nTokenCountOut: &tokenCount
             )
             #expect(seqLoadBytes == 0)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaContext state convenience data methods")
     func testLlamaContextStateConvenienceDataMethods() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             // Test complete state operations
             #expect(ctx.saveCompleteState("/nonexistent/path/complete_state.bin") == false)
             #expect(ctx.loadCompleteState("/nonexistent/path/complete_state.bin") == false)
@@ -218,7 +223,9 @@ struct LlamaStateTests {
             // Test sequence data operations
             #expect(ctx.saveSequenceStateToData(0) == nil)
             #expect(ctx.loadSequenceStateFromData(0, Foundation.Data()) == false)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }

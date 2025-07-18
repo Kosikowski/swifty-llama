@@ -7,21 +7,21 @@ struct LlamaMemoryTests {
     
     @Test("LlamaMemoryManager construction and basic API")
     func testLlamaMemoryManagerConstruction() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let memory = LlamaMemoryManager(context: ctx)
             #expect(memory.cMemory == nil)
             memory.clear(data: false)
             memory.clear(data: true)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaMemoryManager sequence operations")
     func testLlamaMemoryManagerSequenceOperations() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let memory = LlamaMemoryManager(context: ctx)
             
             // Test sequence removal
@@ -56,26 +56,28 @@ struct LlamaMemoryTests {
             
             // Test shift capability
             #expect(memory.canShift() == false)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaContext memory manager extension")
     func testLlamaContextMemoryManagerExtension() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             let memory = ctx.memoryManager()
             #expect(memory.cMemory == nil)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
     
     @Test("LlamaContext memory convenience methods")
     func testLlamaContextMemoryConvenienceMethods() throws {
-        let dummyModel = LlamaModel(modelPath: "/nonexistent/path/model.gguf")
-        if let model = dummyModel, let ctx = DummyContext(model: model) {
+        let executed = TestUtilities.withDummyContext { ctx in
             // Test memory clearing
             ctx.clearMemory(data: false)
             ctx.clearMemory(data: true)
@@ -112,7 +114,9 @@ struct LlamaMemoryTests {
             
             // Test shift capability
             #expect(ctx.canShiftMemory() == false)
-        } else {
+        }
+        
+        if !executed {
             #expect(Bool(true), "Dummy context creation failed as expected")
         }
     }
