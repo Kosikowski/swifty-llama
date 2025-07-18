@@ -3,7 +3,7 @@ import SwiftyLlamaCpp
 
 @testable import SwiftyLlamaCpp
 
-struct LlamaTokenizerTests {
+struct SLlamaTokenizerTests {
     
     @Test("SLlamaTokenizer tokenization with nil vocab")
     func testSLlamaTokenizerWithNilVocab() throws {

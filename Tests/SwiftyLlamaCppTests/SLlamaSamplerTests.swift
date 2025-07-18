@@ -3,7 +3,7 @@ import SwiftyLlamaCpp
 
 @testable import SwiftyLlamaCpp
 
-struct LlamaSamplerTests {
+struct SLlamaSamplerTests {
     
     @Test("SLlamaSampler initialization")
     func testSLlamaSamplerInit() throws {

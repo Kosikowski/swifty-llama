@@ -1,7 +1,8 @@
 import Testing
+import SwiftyLlamaCpp
+
 @testable import SwiftyLlamaCpp
 
-@Suite 
 struct SLlamaContextTests {
     
     @Test("Context creation with invalid model")

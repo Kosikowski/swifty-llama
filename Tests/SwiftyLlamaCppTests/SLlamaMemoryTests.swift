@@ -1,8 +1,9 @@
 import Foundation
 import Testing
+import SwiftyLlamaCpp
+
 @testable import SwiftyLlamaCpp
 
-@Suite 
 struct SLlamaMemoryTests {
     
     @Test("SLlamaMemoryManager construction and basic API")

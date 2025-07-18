@@ -1,7 +1,8 @@
 import Testing
+import SwiftyLlamaCpp
+
 @testable import SwiftyLlamaCpp
 
-@Suite 
 struct SLlamaModelTests {
     
     @Test("Model creation with invalid path")

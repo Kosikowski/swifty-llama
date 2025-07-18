@@ -3,7 +3,7 @@ import SwiftyLlamaCpp
 
 @testable import SwiftyLlamaCpp
 
-struct LlamaVocabTests {
+struct SLlamaVocabTests {
     
     @Test("SLlamaVocab initialization with nil pointer")
     func testSLlamaVocabInitWithNilPointer() throws {
