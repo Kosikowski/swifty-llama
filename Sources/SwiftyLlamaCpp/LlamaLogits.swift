@@ -13,7 +13,7 @@ public class LlamaLogits {
     
     /// Get logits from the last decode call
     /// - Returns: Pointer to logits array, or nil if not available
-    public func getLogits() -> UnsafeMutablePointer<Float>? {
+    public func getLogits() -> LlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_logits(ctx)
     }
@@ -21,14 +21,14 @@ public class LlamaLogits {
     /// Get logits for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to logits for the token, or nil if invalid
-    public func getLogits(for index: Int32) -> UnsafeMutablePointer<Float>? {
+    public func getLogits(for index: Int32) -> LlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_logits_ith(ctx, index)
     }
     
     /// Get embeddings from the last decode call
     /// - Returns: Pointer to embeddings array, or nil if not available
-    public func getEmbeddings() -> UnsafeMutablePointer<Float>? {
+    public func getEmbeddings() -> LlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings(ctx)
     }
@@ -36,7 +36,7 @@ public class LlamaLogits {
     /// Get embeddings for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to embeddings for the token, or nil if invalid
-    public func getEmbeddings(for index: Int32) -> UnsafeMutablePointer<Float>? {
+    public func getEmbeddings(for index: Int32) -> LlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings_ith(ctx, index)
     }
@@ -44,7 +44,7 @@ public class LlamaLogits {
     /// Get embeddings for a specific sequence
     /// - Parameter sequenceId: The sequence ID
     /// - Returns: Pointer to embeddings for the sequence, or nil if not available
-    public func getEmbeddingsForSequence(_ sequenceId: LlamaSeqId) -> UnsafeMutablePointer<Float>? {
+    public func getEmbeddingsForSequence(_ sequenceId: LlamaSeqId) -> LlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings_seq(ctx, sequenceId)
     }
@@ -155,34 +155,34 @@ public extension LlamaContext {
     
     /// Get logits from the last decode call
     /// - Returns: Pointer to logits array, or nil if not available
-    func getLogits() -> UnsafeMutablePointer<Float>? {
+    func getLogits() -> LlamaFloatPointer? {
         return logits().getLogits()
     }
     
     /// Get logits for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to logits for the token, or nil if invalid
-    func getLogits(for index: Int32) -> UnsafeMutablePointer<Float>? {
+    func getLogits(for index: Int32) -> LlamaFloatPointer? {
         return logits().getLogits(for: index)
     }
     
     /// Get embeddings from the last decode call
     /// - Returns: Pointer to embeddings array, or nil if not available
-    func getEmbeddings() -> UnsafeMutablePointer<Float>? {
+    func getEmbeddings() -> LlamaFloatPointer? {
         return logits().getEmbeddings()
     }
     
     /// Get embeddings for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to embeddings for the token, or nil if invalid
-    func getEmbeddings(for index: Int32) -> UnsafeMutablePointer<Float>? {
+    func getEmbeddings(for index: Int32) -> LlamaFloatPointer? {
         return logits().getEmbeddings(for: index)
     }
     
     /// Get embeddings for a specific sequence
     /// - Parameter sequenceId: The sequence ID
     /// - Returns: Pointer to embeddings for the sequence, or nil if not available
-    func getEmbeddingsForSequence(_ sequenceId: LlamaSeqId) -> UnsafeMutablePointer<Float>? {
+    func getEmbeddingsForSequence(_ sequenceId: LlamaSeqId) -> LlamaFloatPointer? {
         return logits().getEmbeddingsForSequence(sequenceId)
     }
     

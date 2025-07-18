@@ -110,6 +110,32 @@ public typealias LlamaSamplerPointer = OpaquePointer
 /// Type alias for adapter LoRA pointer
 public typealias LlamaAdapterLoraPointer = OpaquePointer
 
+// MARK: - Pointer Type Aliases
+
+/// Type alias for token pointer
+public typealias LlamaTokenPointer = UnsafeMutablePointer<LlamaToken>
+
+/// Type alias for float pointer
+public typealias LlamaFloatPointer = UnsafeMutablePointer<Float>
+
+/// Type alias for position pointer
+public typealias LlamaPositionPointer = UnsafeMutablePointer<LlamaPosition>
+
+/// Type alias for int32 pointer
+public typealias LlamaInt32Pointer = UnsafeMutablePointer<Int32>
+
+/// Type alias for int8 pointer
+public typealias LlamaInt8Pointer = UnsafeMutablePointer<Int8>
+
+/// Type alias for sequence ID pointer
+public typealias LlamaSeqIdPointer = UnsafeMutablePointer<LlamaSeqId>
+
+/// Type alias for sequence ID pointer pointer
+public typealias LlamaSeqIdPointerPointer = UnsafeMutablePointer<LlamaSeqIdPointer?>
+
+/// Type alias for raw pointer
+public typealias LlamaRawPointer = UnsafeMutableRawPointer
+
 // MARK: - Constants
 
 /// Null token value

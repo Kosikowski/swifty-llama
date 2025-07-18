@@ -29,32 +29,32 @@ public class LlamaBatch {
     }
     
     /// Token array (allocated if embd == 0 in init)
-    public var tokens: UnsafeMutablePointer<LlamaToken>? {
+    public var tokens: LlamaTokenPointer? {
         return batch.token
     }
     
     /// Embeddings array (allocated if embd != 0 in init)
-    public var embeddings: UnsafeMutablePointer<Float>? {
+    public var embeddings: LlamaFloatPointer? {
         return batch.embd
     }
     
     /// Position array for each token
-    public var positions: UnsafeMutablePointer<LlamaPosition>? {
+    public var positions: LlamaPositionPointer? {
         return batch.pos
     }
     
     /// Number of sequence IDs for each token
-    public var sequenceIdCounts: UnsafeMutablePointer<Int32>? {
+    public var sequenceIdCounts: LlamaInt32Pointer? {
         return batch.n_seq_id
     }
     
     /// Sequence ID arrays for each token
-    public var sequenceIds: UnsafeMutablePointer<UnsafeMutablePointer<LlamaSeqId>?>? {
+    public var sequenceIds: LlamaSeqIdPointerPointer? {
         return batch.seq_id
     }
     
     /// Logits output flags for each token
-    public var logits: UnsafeMutablePointer<Int8>? {
+    public var logits: LlamaInt8Pointer? {
         return batch.logits
     }
     

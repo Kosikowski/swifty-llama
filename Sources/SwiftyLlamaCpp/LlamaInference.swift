@@ -79,7 +79,7 @@ public class LlamaInference {
     /// - Parameters:
     ///   - callback: The abort callback function
     ///   - userData: User data passed to the callback
-    public func setAbortCallback(_ callback: @escaping () -> Bool, userData: UnsafeMutableRawPointer? = nil) {
+    public func setAbortCallback(_ callback: @escaping () -> Bool, userData: LlamaRawPointer? = nil) {
         guard let ctx = context.pointer else { return }
         // Note: This is a simplified version that doesn't capture context
         // For a full implementation, you'd need to use a global callback or pass userData
