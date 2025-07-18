@@ -4,17 +4,36 @@
 
 This document provides a comprehensive review of the llama.cpp C API from the xcframework and compares it with our Swift wrapper implementation to identify what has been ported and what might be missing.
 
+## ⚠️ Deprecated Methods and Parameters
+
+### Swift Deprecation Issues (Fixed)
+- ⚠️ **String(cString:)** - DEPRECATED: Replaced with `String(decoding:as: UTF8.self)`
+  - Used in model metadata functions
+  - Fixed by converting CChar arrays to UInt8 arrays using `UInt8(bitPattern:)`
+  - Modern approach: `String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)`
+
+### C API Deprecated Functions (from llama.h)
+- ⚠️ **llama_n_ctx_train** - DEPRECATED: Use `llama_model_n_ctx_train` instead
+- ⚠️ **llama_n_embd** - DEPRECATED: Use `llama_model_n_embd` instead  
+- ⚠️ **llama_n_layer** - DEPRECATED: Use `llama_model_n_layer` instead
+- ⚠️ **llama_n_head** - DEPRECATED: Use `llama_model_n_head` instead
+
+### Non-Existent Functions (Identified During Implementation)
+- ❌ **llama_model_rope_freq_base_train** - Does not exist in current API
+  - Only `llama_model_rope_freq_scale_train` is available
+- ❌ **llama_model_rope_freq_base** - Does not exist in current API
+
 ## C API Analysis (from llama.h)
 
 ### Core Structures and Types
-- ✅ **llama_model** - Wrapped in `LlamaModel`
-- ✅ **llama_context** - Wrapped in `LlamaContext`
-- ✅ **llama_vocab** - Wrapped in `LlamaVocab`
-- ✅ **llama_sampler** - Wrapped in `LlamaSampler`
-- ✅ **llama_batch** - Wrapped in `LlamaBatch`
-- ✅ **llama_token_data** - Type aliased as `LlamaTokenData`
-- ✅ **llama_token_data_array** - Type aliased as `LlamaTokenDataArray`
-- ✅ **llama_memory_t** - Type aliased as `LlamaMemory`
+- ✅ **llama_model** - Wrapped in `SLlamaModel`
+- ✅ **llama_context** - Wrapped in `SLlamaContext`
+- ✅ **llama_vocab** - Wrapped in `SLlamaVocab`
+- ✅ **llama_sampler** - Wrapped in `SLlamaSampler`
+- ✅ **llama_batch** - Wrapped in `SLlamaBatch`
+- ✅ **llama_token_data** - Type aliased as `SLlamaTokenData`
+- ✅ **llama_token_data_array** - Type aliased as `SLlamaTokenDataArray`
+- ✅ **llama_memory_t** - Type aliased as `SLlamaMemory`
 
 ### Enums and Constants
 - ✅ **llama_vocab_type** - Type aliased with extensions
@@ -31,50 +50,51 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 ### Core Functions
 
 #### Model Management
-- ✅ **llama_model_load_from_file** - Used in `LlamaModel.init`
-- ✅ **llama_model_free** - Used in `LlamaModel.deinit`
-- ✅ **llama_model_get_vocab** - Exposed as `LlamaModel.vocab`
-- ✅ **llama_model_n_embd** - Exposed as `LlamaModel.embeddingDimensions`
-- ✅ **llama_model_n_layer** - Exposed as `LlamaModel.layers`
-- ✅ **llama_model_n_head** - Exposed as `LlamaModel.attentionHeads`
-- ✅ **llama_model_n_params** - Exposed as `LlamaModel.parameters`
-- ✅ **llama_model_size** - Exposed as `LlamaModel.size`
-- ✅ **llama_model_desc** - Used in `LlamaModelAdvanced`
-- ✅ **llama_model_n_ctx_train** - Available but not wrapped
-- ✅ **llama_model_n_head_kv** - Available but not wrapped
-- ✅ **llama_model_rope_type** - Available but not wrapped
-- ✅ **llama_model_rope_freq_base_train** - Available but not wrapped
-- ✅ **llama_model_rope_freq_scale_train** - Available but not wrapped
-- ✅ **llama_model_has_encoder** - Available but not wrapped
-- ✅ **llama_model_has_decoder** - Available but not wrapped
-- ✅ **llama_model_is_recurrent** - Available but not wrapped
-- ✅ **llama_model_meta_val_str** - Available but not wrapped
-- ✅ **llama_model_meta_count** - Available but not wrapped
-- ✅ **llama_model_meta_key_by_index** - Available but not wrapped
-- ✅ **llama_model_meta_val_str_by_index** - Available but not wrapped
-- ✅ **llama_model_chat_template** - Available but not wrapped
-- ✅ **llama_model_decoder_start_token** - Available but not wrapped
+- ✅ **llama_model_load_from_file** - Used in `SLlamaModel.init`
+- ✅ **llama_model_free** - Used in `SLlamaModel.deinit`
+- ✅ **llama_model_get_vocab** - Exposed as `SLlamaModel.vocab`
+- ✅ **llama_model_n_embd** - Exposed as `SLlamaModel.embeddingDimensions`
+- ✅ **llama_model_n_layer** - Exposed as `SLlamaModel.layers`
+- ✅ **llama_model_n_head** - Exposed as `SLlamaModel.attentionHeads`
+- ✅ **llama_model_n_params** - Exposed as `SLlamaModel.parameters`
+- ✅ **llama_model_size** - Exposed as `SLlamaModel.size`
+- ✅ **llama_model_desc** - Used in `SLlamaModel.description()`
+- ✅ **llama_model_n_ctx_train** - Exposed as `SLlamaModel.trainingContextLength`
+- ✅ **llama_model_n_head_kv** - Exposed as `SLlamaModel.kvAttentionHeads`
+- ✅ **llama_model_rope_type** - Exposed as `SLlamaModel.ropeType`
+- ❌ **llama_model_rope_freq_base_train** - Does not exist in current API
+- ✅ **llama_model_rope_freq_scale_train** - Exposed as `SLlamaModel.ropeFreqScaleTrain`
+- ✅ **llama_model_n_swa** - Exposed as `SLlamaModel.slidingWindowAttention`
+- ✅ **llama_model_has_encoder** - Exposed as `SLlamaModel.hasEncoder`
+- ✅ **llama_model_has_decoder** - Exposed as `SLlamaModel.hasDecoder`
+- ✅ **llama_model_is_recurrent** - Exposed as `SLlamaModel.isRecurrent`
+- ✅ **llama_model_meta_val_str** - Exposed as `SLlamaModel.metadataValue(for:)`
+- ✅ **llama_model_meta_count** - Exposed as `SLlamaModel.metadataCount`
+- ✅ **llama_model_meta_key_by_index** - Exposed as `SLlamaModel.metadataKey(at:)`
+- ✅ **llama_model_meta_val_str_by_index** - Exposed as `SLlamaModel.metadataValue(at:)`
+- ✅ **llama_model_chat_template** - Exposed as `SLlamaModel.chatTemplate(named:)`
+- ✅ **llama_model_decoder_start_token** - Exposed as `SLlamaModel.decoderStartToken`
 
 #### Context Management
-- ✅ **llama_init_from_model** - Used in `LlamaContext.init`
-- ✅ **llama_free** - Used in `LlamaContext.deinit`
-- ✅ **llama_n_ctx** - Exposed as `LlamaContext.contextSize`
-- ✅ **llama_n_batch** - Exposed as `LlamaContext.batchSize`
-- ✅ **llama_n_ubatch** - Exposed as `LlamaContext.maxBatchSize`
-- ✅ **llama_n_seq_max** - Exposed as `LlamaContext.maxSequences`
+- ✅ **llama_init_from_model** - Used in `SLlamaContext.init`
+- ✅ **llama_free** - Used in `SLlamaContext.deinit`
+- ✅ **llama_n_ctx** - Exposed as `SLlamaContext.contextSize`
+- ✅ **llama_n_batch** - Exposed as `SLlamaContext.batchSize`
+- ✅ **llama_n_ubatch** - Exposed as `SLlamaContext.maxBatchSize`
+- ✅ **llama_n_seq_max** - Exposed as `SLlamaContext.maxSequences`
 - ✅ **llama_get_model** - Available but not wrapped
 - ✅ **llama_get_memory** - Available but not wrapped
 - ✅ **llama_pooling_type** - Available but not wrapped
 
 #### Tokenization
-- ✅ **llama_tokenize** - Wrapped in `LlamaTokenizer.tokenize`
-- ✅ **llama_token_to_piece** - Wrapped in `LlamaTokenizer.tokenToPiece`
-- ✅ **llama_detokenize** - Wrapped in `LlamaTokenizer.detokenize`
-- ✅ **llama_chat_apply_template** - Wrapped in `LlamaTokenizer.applyChatTemplate`
-- ✅ **llama_chat_builtin_templates** - Wrapped in `LlamaTokenizer.getBuiltinTemplates`
+- ✅ **llama_tokenize** - Wrapped in `SLlamaTokenizer.tokenize`
+- ✅ **llama_token_to_piece** - Wrapped in `SLlamaTokenizer.tokenToPiece`
+- ✅ **llama_detokenize** - Wrapped in `SLlamaTokenizer.detokenize`
+- ✅ **llama_chat_apply_template** - Wrapped in `SLlamaTokenizer.applyChatTemplate`
+- ✅ **llama_chat_builtin_templates** - Wrapped in `SLlamaTokenizer.getBuiltinTemplates`
 
 #### Vocabulary
-- ✅ **llama_vocab_n_tokens** - Used in `LlamaVocab`
+- ✅ **llama_vocab_n_tokens** - Used in `SLlamaVocab`
 - ✅ **llama_vocab_get_text** - Available but not wrapped
 - ✅ **llama_vocab_get_score** - Available but not wrapped
 - ✅ **llama_vocab_get_attr** - Available but not wrapped
@@ -98,9 +118,9 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_vocab_fim_sep** - Available but not wrapped
 
 #### Batch Operations
-- ✅ **llama_batch_init** - Used in `LlamaBatch.init`
-- ✅ **llama_batch_free** - Used in `LlamaBatch.deinit`
-- ✅ **llama_batch_get_one** - Used in `LlamaBatch.single`
+- ✅ **llama_batch_init** - Used in `SLlamaBatch.init`
+- ✅ **llama_batch_free** - Used in `SLlamaBatch.deinit`
+- ✅ **llama_batch_get_one** - Used in `SLlamaBatch.single`
 
 #### Encoding/Decoding
 - ✅ **llama_encode** - Available but not wrapped
@@ -108,24 +128,24 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 
 #### Logits and Embeddings
 - ✅ **llama_get_logits** - Available but not wrapped
-- ✅ **llama_get_logits_ith** - Used in `LlamaSampler`
+- ✅ **llama_get_logits_ith** - Used in `SLlamaSampler`
 - ✅ **llama_get_embeddings** - Available but not wrapped
 - ✅ **llama_get_embeddings_ith** - Available but not wrapped
 - ✅ **llama_get_embeddings_seq** - Available but not wrapped
 
 #### Sampling
 - ✅ **llama_sampler_init** - Available but not wrapped
-- ✅ **llama_sampler_name** - Used in `LlamaSampler.name`
-- ✅ **llama_sampler_accept** - Used in `LlamaSampler.accept`
-- ✅ **llama_sampler_apply** - Used in `LlamaSampler.apply`
-- ✅ **llama_sampler_reset** - Used in `LlamaSampler.reset`
-- ✅ **llama_sampler_clone** - Used in `LlamaSampler.clone`
-- ✅ **llama_sampler_free** - Used in `LlamaSampler.deinit`
-- ✅ **llama_sampler_chain_init** - Used in `LlamaSamplerChain`
-- ✅ **llama_sampler_chain_add** - Used in `LlamaSamplerChain`
-- ✅ **llama_sampler_chain_get** - Used in `LlamaSamplerChain`
-- ✅ **llama_sampler_chain_n** - Used in `LlamaSamplerChain`
-- ✅ **llama_sampler_chain_remove** - Used in `LlamaSamplerChain`
+- ✅ **llama_sampler_name** - Used in `SLlamaSampler.name`
+- ✅ **llama_sampler_accept** - Used in `SLlamaSampler.accept`
+- ✅ **llama_sampler_apply** - Used in `SLlamaSampler.apply`
+- ✅ **llama_sampler_reset** - Used in `SLlamaSampler.reset`
+- ✅ **llama_sampler_clone** - Used in `SLlamaSampler.clone`
+- ✅ **llama_sampler_free** - Used in `SLlamaSampler.deinit`
+- ✅ **llama_sampler_chain_init** - Used in `SLlamaSamplerChain`
+- ✅ **llama_sampler_chain_add** - Used in `SLlamaSamplerChain`
+- ✅ **llama_sampler_chain_get** - Used in `SLlamaSamplerChain`
+- ✅ **llama_sampler_chain_n** - Used in `SLlamaSamplerChain`
+- ✅ **llama_sampler_chain_remove** - Used in `SLlamaSamplerChain`
 - ✅ **llama_sampler_init_dist** - Available but not wrapped
 - ✅ **llama_sampler_init_top_k** - Available but not wrapped
 - ✅ **llama_sampler_init_top_p** - Available but not wrapped
@@ -150,27 +170,27 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_sampler_sample** - Available but not wrapped
 
 #### Memory Management
-- ✅ **llama_memory_clear** - Used in `LlamaMemory`
-- ✅ **llama_memory_seq_rm** - Used in `LlamaMemory`
-- ✅ **llama_memory_seq_cp** - Used in `LlamaMemory`
-- ✅ **llama_memory_seq_keep** - Used in `LlamaMemory`
-- ✅ **llama_memory_seq_add** - Used in `LlamaMemory`
-- ✅ **llama_memory_seq_div** - Used in `LlamaMemory`
-- ✅ **llama_memory_seq_pos_min** - Used in `LlamaMemory`
-- ✅ **llama_memory_seq_pos_max** - Used in `LlamaMemory`
-- ✅ **llama_memory_can_shift** - Used in `LlamaMemory`
+- ✅ **llama_memory_clear** - Used in `SLlamaMemory`
+- ✅ **llama_memory_seq_rm** - Used in `SLlamaMemory`
+- ✅ **llama_memory_seq_cp** - Used in `SLlamaMemory`
+- ✅ **llama_memory_seq_keep** - Used in `SLlamaMemory`
+- ✅ **llama_memory_seq_add** - Used in `SLlamaMemory`
+- ✅ **llama_memory_seq_div** - Used in `SLlamaMemory`
+- ✅ **llama_memory_seq_pos_min** - Used in `SLlamaMemory`
+- ✅ **llama_memory_seq_pos_max** - Used in `SLlamaMemory`
+- ✅ **llama_memory_can_shift** - Used in `SLlamaMemory`
 
 #### State Management
-- ✅ **llama_state_get_size** - Used in `LlamaState`
-- ✅ **llama_state_get_data** - Used in `LlamaState`
-- ✅ **llama_state_set_data** - Used in `LlamaState`
-- ✅ **llama_state_load_file** - Used in `LlamaState`
-- ✅ **llama_state_save_file** - Used in `LlamaState`
-- ✅ **llama_state_seq_get_size** - Used in `LlamaState`
-- ✅ **llama_state_seq_get_data** - Used in `LlamaState`
-- ✅ **llama_state_seq_set_data** - Used in `LlamaState`
-- ✅ **llama_state_seq_save_file** - Used in `LlamaState`
-- ✅ **llama_state_seq_load_file** - Used in `LlamaState`
+- ✅ **llama_state_get_size** - Used in `SLlamaState`
+- ✅ **llama_state_get_data** - Used in `SLlamaState`
+- ✅ **llama_state_set_data** - Used in `SLlamaState`
+- ✅ **llama_state_load_file** - Used in `SLlamaState`
+- ✅ **llama_state_save_file** - Used in `SLlamaState`
+- ✅ **llama_state_seq_get_size** - Used in `SLlamaState`
+- ✅ **llama_state_seq_get_data** - Used in `SLlamaState`
+- ✅ **llama_state_seq_set_data** - Used in `SLlamaState`
+- ✅ **llama_state_seq_save_file** - Used in `SLlamaState`
+- ✅ **llama_state_seq_load_file** - Used in `SLlamaState`
 
 #### Performance
 - ✅ **llama_perf_context** - Available but not wrapped
@@ -229,24 +249,24 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 ## Swift Wrapper Implementation Status
 
 ### ✅ Fully Implemented
-1. **Core Classes**: `LlamaModel`, `LlamaContext`, `LlamaVocab`
-2. **Type System**: Complete type aliases in `LlamaTypes.swift`
-3. **Tokenization**: `LlamaTokenizer` with all major functions
-4. **Sampling**: `LlamaSampler` with basic sampling strategies
-5. **Sampler Composition**: `LlamaSamplerChain` for combining samplers
-6. **Batch Operations**: `LlamaBatch` for managing inference batches
-7. **Memory Management**: `LlamaMemory` for KV cache operations
-8. **State Management**: `LlamaState` for saving/loading context state
-9. **Advanced Features**: `LlamaModelAdvanced` for model metadata and validation
-10. **Performance**: `LlamaPerformance` for benchmarking and monitoring
-11. **Logits**: `LlamaLogits` for accessing model outputs
-12. **Inference**: `LlamaInference` for basic inference operations
+1. **Core Classes**: `SLlamaModel`, `SLlamaContext`, `SLlamaVocab`
+2. **Type System**: Complete type aliases in `SLlamaTypes.swift`
+3. **Tokenization**: `SLlamaTokenizer` with all major functions
+4. **Sampling**: `SLlamaSampler` with basic sampling strategies
+5. **Sampler Composition**: `SLlamaSamplerChain` for combining samplers
+6. **Batch Operations**: `SLlamaBatch` for managing inference batches
+7. **Memory Management**: `SLlamaMemory` for KV cache operations
+8. **State Management**: `SLlamaState` for saving/loading context state
+9. **Advanced Features**: `SLlamaModelAdvanced` for model metadata and validation
+10. **Performance**: `SLlamaPerformance` for benchmarking and monitoring
+11. **Logits**: `SLlamaLogits` for accessing model outputs
+12. **Inference**: `SLlamaInference` for basic inference operations
+13. **Model Metadata**: Comprehensive metadata API with modern string handling
 
 ### 🔄 Partially Implemented
 1. **Sampling Strategies**: Basic sampling implemented, but many specialized samplers not wrapped
 2. **Vocabulary Functions**: Core functions wrapped, but many utility functions not exposed
-3. **Model Metadata**: Basic metadata available, but detailed model info functions not wrapped
-4. **Performance Monitoring**: Basic monitoring implemented, but detailed performance functions not wrapped
+3. **Performance Monitoring**: Basic monitoring implemented, but detailed performance functions not wrapped
 
 ### ❌ Not Implemented
 1. **LoRA Adapters**: No wrapper for LoRA adapter functionality
@@ -287,12 +307,13 @@ Our Swift wrapper provides a solid foundation covering the core llama.cpp functi
 - ✅ Basic sampling and inference
 - ✅ Memory and state management
 - ✅ Type system and constants
+- ✅ Comprehensive model metadata API
+- ✅ Modern Swift APIs (no deprecated methods)
 
 However, there are significant gaps in:
 - ❌ Advanced sampling strategies
 - ❌ LoRA adapter support
 - ❌ Performance optimization features
-- ❌ Detailed model metadata access
 - ❌ System-level configuration
 
 The implementation follows good Swift practices with proper memory management, type safety, and idiomatic APIs. The main areas for improvement are expanding the coverage of specialized functions and adding more advanced features. 
