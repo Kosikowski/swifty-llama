@@ -2,20 +2,20 @@ import Foundation
 import llama
 
 /// A wrapper for llama model
-public class LlamaModel {
+public class SLlamaModel {
     // MARK: Properties
 
-    private var model: LlamaModelPointer?
+    private var model: SLlamaModelPointer?
 
     // MARK: Computed Properties
 
     /// Get the model pointer for direct C API access
-    public var pointer: LlamaModelPointer? {
+    public var pointer: SLlamaModelPointer? {
         model
     }
 
     /// Get model vocabulary
-    public var vocab: LlamaVocabPointer? {
+    public var vocab: SLlamaVocabPointer? {
         guard let model else { return nil }
         return llama_model_get_vocab(model)
     }
@@ -63,7 +63,7 @@ public class LlamaModel {
     
     /// Initialize with an existing model pointer (does not take ownership)
     /// - Parameter modelPointer: The model pointer
-    public init?(modelPointer: LlamaModelPointer?) {
+    public init?(modelPointer: SLlamaModelPointer?) {
         guard let modelPointer = modelPointer else { return nil }
         self.model = modelPointer
     }

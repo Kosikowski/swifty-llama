@@ -2,13 +2,13 @@ import Foundation
 import llama
 
 /// A wrapper for llama sampler chain operations
-public class LlamaSamplerChain {
-    private var chain: LlamaSamplerPointer?
-    private let context: LlamaContext
+public class SLlamaSamplerChain {
+    private var chain: SLlamaSamplerPointer?
+    private let context: SLlamaContext
     
     /// Initialize with a context
     /// - Parameter context: The llama context to use for sampling
-    public init(context: LlamaContext) {
+    public init(context: SLlamaContext) {
         self.context = context
     }
     
@@ -18,38 +18,35 @@ public class LlamaSamplerChain {
         }
     }
     
-    /// Get the underlying C chain pointer for direct API access
-    public var cChain: LlamaSamplerPointer? {
+    /// Get the underlying C sampler chain pointer for direct API access
+    public var cChain: SLlamaSamplerPointer? {
         return chain
     }
     
-    /// Initialize a sampler chain with parameters
-    /// - Parameter params: The sampler chain parameters
-    /// - Returns: A new sampler chain instance, or nil if initialization failed
-    public static func initChain(context: LlamaContext, params: LlamaSamplerChainParams) -> LlamaSamplerChain? {
-        guard let chainPtr = llama_sampler_chain_init(params) else { return nil }
-        
-        let chain = LlamaSamplerChain(context: context)
-        chain.chain = chainPtr
-        return chain
+    /// Initialize the sampler chain with default parameters
+    /// - Returns: true if initialization was successful, false otherwise
+    public func initialize() -> Bool {
+        let params = SLlamaSamplerChainParams()
+        chain = llama_sampler_chain_init(params)
+        return chain != nil
     }
     
     /// Add a sampler to the chain
     /// - Parameter sampler: The sampler to add to the chain
-    public func addSampler(_ sampler: LlamaSampler) {
-        guard let chain = chain, let samplerPtr = sampler.sampler else { return }
+    public func addSampler(_ sampler: SLlamaSampler) {
+        guard let chain = chain, let samplerPtr = sampler.cSampler else { return }
         llama_sampler_chain_add(chain, samplerPtr)
     }
     
     /// Get a sampler from the chain by index
     /// - Parameter index: The index of the sampler to get
-    /// - Returns: The sampler at the specified index, or nil if index is out of bounds
-    public func getSampler(at index: Int32) -> LlamaSampler? {
+    /// - Returns: The sampler at the specified index, or nil if not found
+    public func getSampler(at index: Int32) -> SLlamaSampler? {
         guard let chain = chain else { return nil }
         guard let samplerPtr = llama_sampler_chain_get(chain, index) else { return nil }
         
-        let sampler = LlamaSampler(context: context)
-        sampler.sampler = UnsafeMutablePointer(mutating: samplerPtr)
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
         return sampler
     }
     
@@ -62,51 +59,21 @@ public class LlamaSamplerChain {
     
     /// Remove a sampler from the chain by index
     /// - Parameter index: The index of the sampler to remove
-    /// - Returns: The removed sampler, or nil if index is out of bounds
-    public func removeSampler(at index: Int32) -> LlamaSampler? {
+    /// - Returns: The removed sampler, or nil if not found
+    public func removeSampler(at index: Int32) -> SLlamaSampler? {
         guard let chain = chain else { return nil }
         guard let samplerPtr = llama_sampler_chain_remove(chain, index) else { return nil }
         
-        let sampler = LlamaSampler(context: context)
+        let sampler = SLlamaSampler(context: context)
         sampler.sampler = samplerPtr
         return sampler
     }
     
-    /// Apply the entire chain to token data array
-    /// - Parameter tokenDataArray: The token data array to apply the chain to
-    public func apply(to tokenDataArray: LlamaTokenDataArrayPointer) {
-        guard let chain = chain else { return }
-        llama_sampler_apply(chain, tokenDataArray)
-    }
-    
-    /// Accept a token through the entire chain
-    /// - Parameter token: The token to accept
-    public func accept(_ token: LlamaToken) {
-        guard let chain = chain else { return }
-        llama_sampler_accept(chain, token)
-    }
-    
-    /// Reset the entire chain
-    public func reset() {
-        guard let chain = chain else { return }
-        llama_sampler_reset(chain)
-    }
-    
-    /// Clone the entire chain
-    /// - Returns: A new sampler chain instance, or nil if cloning failed
-    public func clone() -> LlamaSamplerChain? {
-        guard let chain = chain else { return nil }
-        guard let clonedChain = llama_sampler_clone(chain) else { return nil }
-        
-        let newChain = LlamaSamplerChain(context: context)
-        newChain.chain = UnsafeMutablePointer(mutating: clonedChain)
-        return newChain
-    }
-    
     /// Sample a token using the entire chain
-    /// - Parameter lastTokens: Array of last tokens
+    /// - Parameter lastTokens: Array of last tokens (negative indices for reverse order)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sample(lastTokens: [LlamaToken] = []) -> LlamaToken? {
+    public func sample(lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
+        guard let chain = chain else { return nil }
         guard let ctx = context.pointer else { return nil }
         
         // Get logits from the last token
@@ -119,16 +86,16 @@ public class LlamaSamplerChain {
         if vocabSize == 0 { return nil }
         
         // Create token data array
-        var candidates = [LlamaTokenData]()
+        var candidates = [SLlamaTokenData]()
         for i in 0..<vocabSize {
-            candidates.append(LlamaTokenData(
-                id: LlamaToken(i),
+            candidates.append(SLlamaTokenData(
+                id: SLlamaToken(i),
                 logit: logits[Int(i)],
                 p: 0.0
             ))
         }
         
-        var tokenDataArray = LlamaTokenDataArray(
+        var tokenDataArray = SLlamaTokenDataArray(
             data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
             size: candidates.count,
             selected: 0,
@@ -136,209 +103,304 @@ public class LlamaSamplerChain {
         )
         
         // Apply the entire chain
-        apply(to: &tokenDataArray)
+        llama_sampler_apply(chain, &tokenDataArray)
         
         // Find the token with highest probability
         guard let maxIndex = candidates.enumerated().max(by: { $0.element.p < $1.element.p })?.offset else {
             return nil
         }
         
-        return LlamaToken(maxIndex)
+        return SLlamaToken(maxIndex)
+    }
+    
+    /// Accept a token (updates internal state of samplers in the chain)
+    /// - Parameter token: The token to accept
+    public func accept(_ token: SLlamaToken) {
+        guard let chain = chain else { return }
+        llama_sampler_accept(chain, token)
+    }
+    
+    /// Reset the chain state
+    public func reset() {
+        guard let chain = chain else { return }
+        llama_sampler_reset(chain)
+    }
+    
+    /// Clone the sampler chain
+    /// - Returns: A new sampler chain instance, or nil if cloning failed
+    public func clone() -> SLlamaSamplerChain? {
+        guard let chain = chain else { return nil }
+        guard let clonedChain = llama_sampler_clone(chain) else { return nil }
+        
+        let newChain = SLlamaSamplerChain(context: context)
+        newChain.chain = clonedChain
+        return newChain
     }
 }
 
-// MARK: - Convenience Chain Builders
+// MARK: - Built-in Chain Configurations
 
-public extension LlamaSamplerChain {
+public extension SLlamaSamplerChain {
     
-    /// Create a chain with temperature sampling
+    /// Create a temperature-based sampling chain
     /// - Parameters:
     ///   - context: The llama context
-    ///   - temperature: Temperature for sampling
-    /// - Returns: A sampler chain with temperature sampling
-    static func temperatureChain(context: LlamaContext, temperature: Float) -> LlamaSamplerChain? {
-        let params = LlamaSamplerChainParams()
-        guard let chain = initChain(context: context, params: params) else { return nil }
+    ///   - temperature: Temperature for sampling (0.0 = deterministic, higher = more random)
+    /// - Returns: A configured sampler chain, or nil if initialization failed
+    static func temperature(
+        context: SLlamaContext,
+        temperature: Float = 0.7
+    ) -> SLlamaSamplerChain? {
+        let chain = SLlamaSamplerChain(context: context)
+        guard chain.initialize() else { return nil }
         
         // Add temperature sampler
-        let tempSampler = LlamaSampler(context: context)
+        guard let tempSampler = SLlamaSampler.temperature(context: context, temperature: temperature) else {
+            return nil
+        }
         chain.addSampler(tempSampler)
         
         return chain
     }
     
-    /// Create a chain with top-k and top-p sampling
+    /// Create a top-k sampling chain
     /// - Parameters:
     ///   - context: The llama context
     ///   - k: Number of top tokens to consider
-    ///   - p: Cumulative probability threshold
-    /// - Returns: A sampler chain with top-k and top-p sampling
-    static func topKTopPChain(context: LlamaContext, k: Int, p: Float) -> LlamaSamplerChain? {
-        let params = LlamaSamplerChainParams()
-        guard let chain = initChain(context: context, params: params) else { return nil }
+    /// - Returns: A configured sampler chain, or nil if initialization failed
+    static func topK(
+        context: SLlamaContext,
+        k: Int32 = 40
+    ) -> SLlamaSamplerChain? {
+        let chain = SLlamaSamplerChain(context: context)
+        guard chain.initialize() else { return nil }
         
         // Add top-k sampler
-        let topKSampler = LlamaSampler(context: context)
+        guard let topKSampler = SLlamaSampler.topK(context: context, k: k) else {
+            return nil
+        }
         chain.addSampler(topKSampler)
         
+        return chain
+    }
+    
+    /// Create a top-p (nucleus) sampling chain
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - p: Cumulative probability threshold (0.0 to 1.0)
+    /// - Returns: A configured sampler chain, or nil if initialization failed
+    static func topP(
+        context: SLlamaContext,
+        p: Float = 0.9
+    ) -> SLlamaSamplerChain? {
+        let chain = SLlamaSamplerChain(context: context)
+        guard chain.initialize() else { return nil }
+        
         // Add top-p sampler
-        let topPSampler = LlamaSampler(context: context)
+        guard let topPSampler = SLlamaSampler.topP(context: context, p: p) else {
+            return nil
+        }
         chain.addSampler(topPSampler)
         
         return chain
     }
     
-    /// Create a chain with repetition penalty
+    /// Create a repetition penalty sampling chain
     /// - Parameters:
     ///   - context: The llama context
-    ///   - penalty: Repetition penalty factor
-    /// - Returns: A sampler chain with repetition penalty
-    static func repetitionPenaltyChain(context: LlamaContext, penalty: Float) -> LlamaSamplerChain? {
-        let params = LlamaSamplerChainParams()
-        guard let chain = initChain(context: context, params: params) else { return nil }
+    ///   - penalty: Repetition penalty factor (1.0 = no penalty, >1.0 = penalty)
+    /// - Returns: A configured sampler chain, or nil if initialization failed
+    static func repetitionPenalty(
+        context: SLlamaContext,
+        penalty: Float = 1.1
+    ) -> SLlamaSamplerChain? {
+        let chain = SLlamaSamplerChain(context: context)
+        guard chain.initialize() else { return nil }
         
         // Add repetition penalty sampler
-        let penaltySampler = LlamaSampler(context: context)
+        guard let penaltySampler = SLlamaSampler.repetitionPenalty(context: context, penalty: penalty) else {
+            return nil
+        }
         chain.addSampler(penaltySampler)
         
         return chain
     }
     
-    /// Create a comprehensive sampling chain
+    /// Create a custom sampling chain with multiple strategies
     /// - Parameters:
     ///   - context: The llama context
+    ///   - maxTokens: Maximum number of tokens to generate
     ///   - temperature: Temperature for sampling
-    ///   - k: Number of top tokens to consider
-    ///   - p: Cumulative probability threshold
-    ///   - penalty: Repetition penalty factor
-    /// - Returns: A comprehensive sampler chain
-    static func comprehensiveChain(
-        context: LlamaContext,
-        temperature: Float,
-        k: Int,
-        p: Float,
-        penalty: Float
-    ) -> LlamaSamplerChain? {
-        let params = LlamaSamplerChainParams()
-        guard let chain = initChain(context: context, params: params) else { return nil }
-        
-        // Add temperature sampler
-        let tempSampler = LlamaSampler(context: context)
-        chain.addSampler(tempSampler)
-        
-        // Add top-k sampler
-        let topKSampler = LlamaSampler(context: context)
-        chain.addSampler(topKSampler)
-        
-        // Add top-p sampler
-        let topPSampler = LlamaSampler(context: context)
-        chain.addSampler(topPSampler)
-        
-        // Add repetition penalty sampler
-        let penaltySampler = LlamaSampler(context: context)
-        chain.addSampler(penaltySampler)
-        
-        return chain
-    }
-}
-
-// MARK: - Extension to LlamaContext for Sampler Chains
-
-public extension LlamaContext {
-    
-    /// Create a sampler chain for this context
-    /// - Returns: A LlamaSamplerChain instance
-    func samplerChain() -> LlamaSamplerChain {
-        return LlamaSamplerChain(context: self)
-    }
-    
-    /// Create a temperature sampling chain
-    /// - Parameter temperature: Temperature for sampling
-    /// - Returns: A sampler chain with temperature sampling
-    func temperatureChain(_ temperature: Float) -> LlamaSamplerChain? {
-        return LlamaSamplerChain.temperatureChain(context: self, temperature: temperature)
-    }
-    
-    /// Create a top-k and top-p sampling chain
-    /// - Parameters:
-    ///   - k: Number of top tokens to consider
-    ///   - p: Cumulative probability threshold
-    /// - Returns: A sampler chain with top-k and top-p sampling
-    func topKTopPChain(k: Int, p: Float) -> LlamaSamplerChain? {
-        return LlamaSamplerChain.topKTopPChain(context: self, k: k, p: p)
-    }
-    
-    /// Create a repetition penalty chain
-    /// - Parameter penalty: Repetition penalty factor
-    /// - Returns: A sampler chain with repetition penalty
-    func repetitionPenaltyChain(_ penalty: Float) -> LlamaSamplerChain? {
-        return LlamaSamplerChain.repetitionPenaltyChain(context: self, penalty: penalty)
-    }
-    
-    /// Create a comprehensive sampling chain
-    /// - Parameters:
-    ///   - temperature: Temperature for sampling
-    ///   - k: Number of top tokens to consider
-    ///   - p: Cumulative probability threshold
-    ///   - penalty: Repetition penalty factor
-    /// - Returns: A comprehensive sampler chain
-    func comprehensiveChain(
-        temperature: Float,
-        k: Int,
-        p: Float,
-        penalty: Float
-    ) -> LlamaSamplerChain? {
-        return LlamaSamplerChain.comprehensiveChain(
-            context: self,
-            temperature: temperature,
-            k: k,
-            p: p,
-            penalty: penalty
-        )
-    }
-    
-    /// Sample using a comprehensive chain with default parameters
-    /// - Returns: The sampled token ID, or nil if sampling failed
-    func sampleComprehensive() -> LlamaToken? {
-        guard let chain = comprehensiveChain(
-            temperature: 0.7,
-            k: 40,
-            p: 0.9,
-            penalty: 1.1
-        ) else { return nil }
-        
-        return chain.sample()
-    }
-}
-
-// MARK: - Sampler Chain Parameters
-
-public extension LlamaSamplerChainParams {
-    
-    /// Create default sampler chain parameters
-    /// - Returns: Default sampler chain parameters
-    static func `default`() -> LlamaSamplerChainParams {
-        return LlamaSamplerChainParams()
-    }
-    
-    /// Create sampler chain parameters with custom settings
-    /// - Parameters:
-    ///   - maxTokens: Maximum number of tokens in the chain
-    ///   - temperature: Default temperature for sampling
-    ///   - topK: Default top-k value
-    ///   - topP: Default top-p value
-    ///   - repetitionPenalty: Default repetition penalty
-    /// - Returns: Custom sampler chain parameters
+    ///   - topK: Number of top tokens to consider
+    ///   - topP: Cumulative probability threshold
+    ///   - repetitionPenalty: Repetition penalty factor
+    /// - Returns: A configured sampler chain, or nil if initialization failed
     static func custom(
+        context: SLlamaContext,
         maxTokens: Int32 = 1000,
         temperature: Float = 0.7,
         topK: Int32 = 40,
         topP: Float = 0.9,
         repetitionPenalty: Float = 1.1
-    ) -> LlamaSamplerChainParams {
-        let params = LlamaSamplerChainParams()
-        // Note: The actual structure fields would depend on the C API
-        // This is a placeholder for the actual implementation
-        return params
+    ) -> SLlamaSamplerChain? {
+        let chain = SLlamaSamplerChain(context: context)
+        guard chain.initialize() else { return nil }
+        
+        // Add temperature sampler
+        if let tempSampler = SLlamaSampler.temperature(context: context, temperature: temperature) {
+            chain.addSampler(tempSampler)
+        }
+        
+        // Add top-k sampler
+        if let topKSampler = SLlamaSampler.topK(context: context, k: topK) {
+            chain.addSampler(topKSampler)
+        }
+        
+        // Add top-p sampler
+        if let topPSampler = SLlamaSampler.topP(context: context, p: topP) {
+            chain.addSampler(topPSampler)
+        }
+        
+        // Add repetition penalty sampler
+        if let penaltySampler = SLlamaSampler.repetitionPenalty(context: context, penalty: repetitionPenalty) {
+            chain.addSampler(penaltySampler)
+        }
+        
+        return chain
+    }
+}
+
+// MARK: - Extension to SLlamaSampler for Chain Support
+
+public extension SLlamaSampler {
+    
+    /// Create a temperature sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - temperature: Temperature for sampling
+    /// - Returns: A temperature sampler, or nil if initialization failed
+    static func temperature(
+        context: SLlamaContext,
+        temperature: Float
+    ) -> SLlamaSampler? {
+        guard let samplerPtr = llama_sampler_init_temp(temperature) else { return nil }
+        
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+    
+    /// Create a top-k sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - k: Number of top tokens to consider
+    /// - Returns: A top-k sampler, or nil if initialization failed
+    static func topK(
+        context: SLlamaContext,
+        k: Int32
+    ) -> SLlamaSampler? {
+        guard let samplerPtr = llama_sampler_init_top_k(k) else { return nil }
+        
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+    
+    /// Create a top-p (nucleus) sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - p: Cumulative probability threshold
+    /// - Returns: A top-p sampler, or nil if initialization failed
+    static func topP(
+        context: SLlamaContext,
+        p: Float
+    ) -> SLlamaSampler? {
+        guard let samplerPtr = llama_sampler_init_top_p(p, 1) else { return nil }
+        
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+    
+    /// Create a repetition penalty sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - penalty: Repetition penalty factor
+    /// - Returns: A repetition penalty sampler, or nil if initialization failed
+    static func repetitionPenalty(
+        context: SLlamaContext,
+        penalty: Float
+    ) -> SLlamaSampler? {
+        guard let samplerPtr = llama_sampler_init_repeat_penalty(0, penalty, 0.0, 0.0) else { return nil }
+        
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+}
+
+// MARK: - Extension to SLlamaContext for Chain Sampling
+
+public extension SLlamaContext {
+    
+    /// Create a sampler chain for this context
+    /// - Returns: A SLlamaSamplerChain instance
+    func samplerChain() -> SLlamaSamplerChain {
+        return SLlamaSamplerChain(context: self)
+    }
+    
+    /// Sample a token using a temperature-based chain
+    /// - Parameter temperature: Temperature for sampling
+    /// - Returns: The sampled token ID, or nil if sampling failed
+    func sampleWithTemperatureChain(_ temperature: Float = 0.7) -> SLlamaToken? {
+        guard let chain = SLlamaSamplerChain.temperature(context: self, temperature: temperature) else {
+            return nil
+        }
+        return chain.sample()
+    }
+    
+    /// Sample a token using a top-k chain
+    /// - Parameter k: Number of top tokens to consider
+    /// - Returns: The sampled token ID, or nil if sampling failed
+    func sampleWithTopKChain(_ k: Int32 = 40) -> SLlamaToken? {
+        guard let chain = SLlamaSamplerChain.topK(context: self, k: k) else {
+            return nil
+        }
+        return chain.sample()
+    }
+    
+    /// Sample a token using a top-p chain
+    /// - Parameter p: Cumulative probability threshold
+    /// - Returns: The sampled token ID, or nil if sampling failed
+    func sampleWithTopPChain(_ p: Float = 0.9) -> SLlamaToken? {
+        guard let chain = SLlamaSamplerChain.topP(context: self, p: p) else {
+            return nil
+        }
+        return chain.sample()
+    }
+    
+    /// Sample a token using a custom chain
+    /// - Parameters:
+    ///   - temperature: Temperature for sampling
+    ///   - topK: Number of top tokens to consider
+    ///   - topP: Cumulative probability threshold
+    ///   - repetitionPenalty: Repetition penalty factor
+    /// - Returns: The sampled token ID, or nil if sampling failed
+    func sampleWithCustomChain(
+        temperature: Float = 0.7,
+        topK: Int32 = 40,
+        topP: Float = 0.9,
+        repetitionPenalty: Float = 1.1
+    ) -> SLlamaToken? {
+        guard let chain = SLlamaSamplerChain.custom(
+            context: self,
+            temperature: temperature,
+            topK: topK,
+            topP: topP,
+            repetitionPenalty: repetitionPenalty
+        ) else {
+            return nil
+        }
+        return chain.sample()
     }
 } 

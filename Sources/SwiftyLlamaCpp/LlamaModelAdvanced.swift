@@ -3,11 +3,11 @@ import Foundation
 // MARK: - Advanced Model Features
 
 /// Advanced model features and utilities
-public class LlamaModelAdvanced {
+public class SLlamaModelAdvanced {
     
-    private let model: LlamaModel
+    private let model: SLlamaModel
     
-    public init(model: LlamaModel) {
+    public init(model: SLlamaModel) {
         self.model = model
     }
     
@@ -125,14 +125,14 @@ public class LlamaModelAdvanced {
     }
 }
 
-// MARK: - Extension to LlamaModel
+// MARK: - Extension to SLlamaModel
 
-public extension LlamaModel {
+public extension SLlamaModel {
     
     /// Get advanced features interface
-    /// - Returns: LlamaModelAdvanced instance for this model
-    func advanced() -> LlamaModelAdvanced {
-        return LlamaModelAdvanced(model: self)
+    /// - Returns: SLlamaModelAdvanced instance for this model
+    func advanced() -> SLlamaModelAdvanced {
+        return SLlamaModelAdvanced(model: self)
     }
     
     /// Get model metadata

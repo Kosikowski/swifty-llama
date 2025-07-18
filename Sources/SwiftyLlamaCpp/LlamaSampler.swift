@@ -2,13 +2,13 @@ import Foundation
 import llama
 
 /// A wrapper for llama sampling operations
-public class LlamaSampler {
-    internal var sampler: LlamaSamplerPointer?
-    private let context: LlamaContext
+public class SLlamaSampler {
+    internal var sampler: SLlamaSamplerPointer?
+    private let context: SLlamaContext
     
     /// Initialize with a context
     /// - Parameter context: The llama context to use for sampling
-    public init(context: LlamaContext) {
+    public init(context: SLlamaContext) {
         self.context = context
     }
     
@@ -19,7 +19,7 @@ public class LlamaSampler {
     }
     
     /// Get the underlying C sampler pointer for direct API access
-    public var cSampler: LlamaSamplerPointer? {
+    public var cSampler: SLlamaSamplerPointer? {
         return sampler
     }
     
@@ -32,14 +32,14 @@ public class LlamaSampler {
     
     /// Accept a token (updates internal state of certain samplers)
     /// - Parameter token: The token to accept
-    public func accept(_ token: LlamaToken) {
+    public func accept(_ token: SLlamaToken) {
         guard let sampler = sampler else { return }
         llama_sampler_accept(sampler, token)
     }
     
     /// Apply the sampler to token data array
     /// - Parameter tokenDataArray: The token data array to apply sampling to
-    public func apply(to tokenDataArray: LlamaTokenDataArrayPointer) {
+    public func apply(to tokenDataArray: SLlamaTokenDataArrayPointer) {
         guard let sampler = sampler else { return }
         llama_sampler_apply(sampler, tokenDataArray)
     }
@@ -52,11 +52,11 @@ public class LlamaSampler {
     
     /// Clone the sampler
     /// - Returns: A new sampler instance, or nil if cloning failed
-    public func clone() -> LlamaSampler? {
+    public func clone() -> SLlamaSampler? {
         guard let sampler = sampler else { return nil }
         guard let clonedSampler = llama_sampler_clone(sampler) else { return nil }
         
-        let newSampler = LlamaSampler(context: context)
+        let newSampler = SLlamaSampler(context: context)
         newSampler.sampler = clonedSampler
         return newSampler
     }
@@ -64,7 +64,7 @@ public class LlamaSampler {
     /// Sample a token from the context
     /// - Parameter lastTokens: Array of last tokens (negative indices for reverse order)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sample(lastTokens: [LlamaToken] = []) -> LlamaToken? {
+    public func sample(lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
         
         // Get logits from the last token
@@ -77,16 +77,16 @@ public class LlamaSampler {
         if vocabSize == 0 { return nil }
         
         // Create token data array
-        var candidates = [LlamaTokenData]()
+        var candidates = [SLlamaTokenData]()
         for i in 0..<vocabSize {
-            candidates.append(LlamaTokenData(
-                id: LlamaToken(i),
+            candidates.append(SLlamaTokenData(
+                id: SLlamaToken(i),
                 logit: logits[Int(i)],
                 p: 0.0
             ))
         }
         
-        var tokenDataArray = LlamaTokenDataArray(
+        var tokenDataArray = SLlamaTokenDataArray(
             data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
             size: candidates.count,
             selected: 0,
@@ -101,7 +101,7 @@ public class LlamaSampler {
             return nil
         }
         
-        return LlamaToken(maxIndex)
+        return SLlamaToken(maxIndex)
     }
     
     /// Sample with temperature
@@ -109,7 +109,7 @@ public class LlamaSampler {
     ///   - temperature: Temperature for sampling (0.0 = deterministic, higher = more random)
     ///   - lastTokens: Array of last tokens
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleWithTemperature(_ temperature: Float, lastTokens: [LlamaToken] = []) -> LlamaToken? {
+    public func sampleWithTemperature(_ temperature: Float, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
         
         // Get logits from the last token
@@ -122,17 +122,17 @@ public class LlamaSampler {
         if vocabSize == 0 { return nil }
         
         // Create token data array with temperature scaling
-        var candidates = [LlamaTokenData]()
+        var candidates = [SLlamaTokenData]()
         for i in 0..<vocabSize {
             let scaledLogit = temperature > 0 ? logits[Int(i)] / temperature : logits[Int(i)]
-            candidates.append(LlamaTokenData(
-                id: LlamaToken(i),
+            candidates.append(SLlamaTokenData(
+                id: SLlamaToken(i),
                 logit: scaledLogit,
                 p: 0.0
             ))
         }
         
-        var tokenDataArray = LlamaTokenDataArray(
+        var tokenDataArray = SLlamaTokenDataArray(
             data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
             size: candidates.count,
             selected: 0,
@@ -147,7 +147,7 @@ public class LlamaSampler {
             return nil
         }
         
-        return LlamaToken(maxIndex)
+        return SLlamaToken(maxIndex)
     }
     
     /// Sample with top-k filtering
@@ -155,7 +155,7 @@ public class LlamaSampler {
     ///   - k: Number of top tokens to consider
     ///   - lastTokens: Array of last tokens
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleTopK(_ k: Int, lastTokens: [LlamaToken] = []) -> LlamaToken? {
+    public func sampleTopK(_ k: Int, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
         
         // Get logits from the last token
@@ -168,10 +168,10 @@ public class LlamaSampler {
         if vocabSize == 0 { return nil }
         
         // Create token data array
-        var candidates = [LlamaTokenData]()
+        var candidates = [SLlamaTokenData]()
         for i in 0..<vocabSize {
-            candidates.append(LlamaTokenData(
-                id: LlamaToken(i),
+            candidates.append(SLlamaTokenData(
+                id: SLlamaToken(i),
                 logit: logits[Int(i)],
                 p: 0.0
             ))
@@ -181,7 +181,7 @@ public class LlamaSampler {
         candidates.sort { $0.logit > $1.logit }
         candidates = Array(candidates.prefix(k))
         
-        var tokenDataArray = LlamaTokenDataArray(
+        var tokenDataArray = SLlamaTokenDataArray(
             data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
             size: candidates.count,
             selected: 0,
@@ -204,7 +204,7 @@ public class LlamaSampler {
     ///   - p: Cumulative probability threshold (0.0 to 1.0)
     ///   - lastTokens: Array of last tokens
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleTopP(_ p: Float, lastTokens: [LlamaToken] = []) -> LlamaToken? {
+    public func sampleTopP(_ p: Float, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
         
         // Get logits from the last token
@@ -217,10 +217,10 @@ public class LlamaSampler {
         if vocabSize == 0 { return nil }
         
         // Create token data array
-        var candidates = [LlamaTokenData]()
+        var candidates = [SLlamaTokenData]()
         for i in 0..<vocabSize {
-            candidates.append(LlamaTokenData(
-                id: LlamaToken(i),
+            candidates.append(SLlamaTokenData(
+                id: SLlamaToken(i),
                 logit: logits[Int(i)],
                 p: 0.0
             ))
@@ -229,53 +229,44 @@ public class LlamaSampler {
         // Sort by logit value
         candidates.sort { $0.logit > $1.logit }
         
-        // Apply softmax to get probabilities
-        let maxLogit = candidates.first?.logit ?? 0
-        let expLogits = candidates.map { exp($0.logit - maxLogit) }
-        let sumExp = expLogits.reduce(0, +)
-        let probabilities = expLogits.map { $0 / sumExp }
+        // Calculate cumulative probabilities
+        var cumulativeProb = 0.0
+        var selectedCandidates: [SLlamaTokenData] = []
         
-        // Apply top-p filtering
-        var cumulativeProb = Float(0)
-        var filteredCandidates = [LlamaTokenData]()
-        
-        for (index, prob) in probabilities.enumerated() {
+        for candidate in candidates {
+            let prob = exp(candidate.logit)
             cumulativeProb += prob
-            filteredCandidates.append(LlamaTokenData(
-                id: candidates[index].id,
-                logit: candidates[index].logit,
-                p: prob
-            ))
+            selectedCandidates.append(candidate)
             
             if cumulativeProb >= p {
                 break
             }
         }
         
-        var tokenDataArray = LlamaTokenDataArray(
-            data: filteredCandidates.withUnsafeMutableBufferPointer { $0.baseAddress },
-            size: filteredCandidates.count,
+        var tokenDataArray = SLlamaTokenDataArray(
+            data: selectedCandidates.withUnsafeMutableBufferPointer { $0.baseAddress },
+            size: selectedCandidates.count,
             selected: 0,
-            sorted: false
+            sorted: true
         )
         
         // Apply sampling
         apply(to: &tokenDataArray)
         
         // Find the token with highest probability
-        guard let maxIndex = filteredCandidates.enumerated().max(by: { $0.element.p < $1.element.p })?.offset else {
+        guard let maxIndex = selectedCandidates.enumerated().max(by: { $0.element.p < $1.element.p })?.offset else {
             return nil
         }
         
-        return filteredCandidates[maxIndex].id
+        return selectedCandidates[maxIndex].id
     }
     
     /// Sample with repetition penalty
     /// - Parameters:
-    ///   - penalty: Repetition penalty factor (1.0 = no penalty, higher = more penalty)
+    ///   - penalty: Repetition penalty factor (1.0 = no penalty, >1.0 = penalty)
     ///   - lastTokens: Array of last tokens to penalize
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleWithRepetitionPenalty(_ penalty: Float, lastTokens: [LlamaToken] = []) -> LlamaToken? {
+    public func sampleWithRepetitionPenalty(_ penalty: Float, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
         
         // Get logits from the last token
@@ -288,26 +279,26 @@ public class LlamaSampler {
         if vocabSize == 0 { return nil }
         
         // Create token data array with repetition penalty
-        var candidates = [LlamaTokenData]()
+        var candidates = [SLlamaTokenData]()
         for i in 0..<vocabSize {
             var logit = logits[Int(i)]
             
             // Apply repetition penalty
-            for token in lastTokens {
-                if token == LlamaToken(i) {
+            for lastToken in lastTokens {
+                if SLlamaToken(i) == lastToken {
                     logit *= penalty
                     break
                 }
             }
             
-            candidates.append(LlamaTokenData(
-                id: LlamaToken(i),
+            candidates.append(SLlamaTokenData(
+                id: SLlamaToken(i),
                 logit: logit,
                 p: 0.0
             ))
         }
         
-        var tokenDataArray = LlamaTokenDataArray(
+        var tokenDataArray = SLlamaTokenDataArray(
             data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
             size: candidates.count,
             selected: 0,
@@ -322,20 +313,20 @@ public class LlamaSampler {
             return nil
         }
         
-        return LlamaToken(maxIndex)
+        return SLlamaToken(maxIndex)
     }
 }
 
 // MARK: - Built-in Sampler Initializers
 
-public extension LlamaSampler {
+public extension SLlamaSampler {
     
     /// Initialize a greedy sampler (always picks the highest probability token)
     /// - Returns: A new greedy sampler instance
-    static func greedy(context: LlamaContext) -> LlamaSampler? {
+    static func greedy(context: SLlamaContext) -> SLlamaSampler? {
         guard let samplerPtr = llama_sampler_init_greedy() else { return nil }
         
-        let sampler = LlamaSampler(context: context)
+        let sampler = SLlamaSampler(context: context)
         sampler.sampler = samplerPtr
         return sampler
     }
@@ -345,58 +336,58 @@ public extension LlamaSampler {
     ///   - context: The llama context
     ///   - seed: Random seed for the sampler
     /// - Returns: A new distribution sampler instance
-    static func distribution(context: LlamaContext, seed: UInt32) -> LlamaSampler? {
+    static func distribution(context: SLlamaContext, seed: UInt32) -> SLlamaSampler? {
         guard let samplerPtr = llama_sampler_init_dist(seed) else { return nil }
         
-        let sampler = LlamaSampler(context: context)
+        let sampler = SLlamaSampler(context: context)
         sampler.sampler = samplerPtr
         return sampler
     }
 }
 
-// MARK: - Extension to LlamaContext for Sampling
+// MARK: - Extension to SLlamaContext for Sampling
 
-public extension LlamaContext {
+public extension SLlamaContext {
     
     /// Create a sampler for this context
-    /// - Returns: A LlamaSampler instance
-    func sampler() -> LlamaSampler {
-        return LlamaSampler(context: self)
+    /// - Returns: A SLlamaSampler instance
+    func sampler() -> SLlamaSampler {
+        return SLlamaSampler(context: self)
     }
     
     /// Sample a token using greedy sampling
     /// - Returns: The sampled token ID, or nil if sampling failed
-    func sampleGreedy() -> LlamaToken? {
-        guard let sampler = LlamaSampler.greedy(context: self) else { return nil }
+    func sampleGreedy() -> SLlamaToken? {
+        guard let sampler = SLlamaSampler.greedy(context: self) else { return nil }
         return sampler.sample()
     }
     
     /// Sample a token using distribution sampling
     /// - Parameter seed: Random seed for the sampler
     /// - Returns: The sampled token ID, or nil if sampling failed
-    func sampleDistribution(seed: UInt32) -> LlamaToken? {
-        guard let sampler = LlamaSampler.distribution(context: self, seed: seed) else { return nil }
+    func sampleDistribution(seed: UInt32) -> SLlamaToken? {
+        guard let sampler = SLlamaSampler.distribution(context: self, seed: seed) else { return nil }
         return sampler.sample()
     }
     
     /// Sample a token with temperature
     /// - Parameter temperature: Temperature for sampling (0.0 = deterministic, higher = more random)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    func sampleWithTemperature(_ temperature: Float) -> LlamaToken? {
+    func sampleWithTemperature(_ temperature: Float) -> SLlamaToken? {
         return sampler().sampleWithTemperature(temperature)
     }
     
     /// Sample a token with top-k filtering
     /// - Parameter k: Number of top tokens to consider
     /// - Returns: The sampled token ID, or nil if sampling failed
-    func sampleTopK(_ k: Int) -> LlamaToken? {
+    func sampleTopK(_ k: Int) -> SLlamaToken? {
         return sampler().sampleTopK(k)
     }
     
     /// Sample a token with top-p (nucleus) filtering
     /// - Parameter p: Cumulative probability threshold (0.0 to 1.0)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    func sampleTopP(_ p: Float) -> LlamaToken? {
+    func sampleTopP(_ p: Float) -> SLlamaToken? {
         return sampler().sampleTopP(p)
     }
     
@@ -405,7 +396,7 @@ public extension LlamaContext {
     ///   - penalty: Repetition penalty factor (1.0 = no penalty, higher = more penalty)
     ///   - lastTokens: Array of last tokens to penalize
     /// - Returns: The sampled token ID, or nil if sampling failed
-    func sampleWithRepetitionPenalty(_ penalty: Float, lastTokens: [LlamaToken] = []) -> LlamaToken? {
+    func sampleWithRepetitionPenalty(_ penalty: Float, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
         return sampler().sampleWithRepetitionPenalty(penalty, lastTokens: lastTokens)
     }
 } 

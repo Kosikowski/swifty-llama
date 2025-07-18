@@ -3,11 +3,11 @@ import Foundation
 // MARK: - Performance Utilities
 
 /// Performance monitoring and benchmarking utilities
-public class LlamaPerformance {
+public class SLlamaPerformance {
     
-    private let context: LlamaContext?
+    private let context: SLlamaContext?
     
-    public init(context: LlamaContext? = nil) {
+    public init(context: SLlamaContext? = nil) {
         self.context = context
     }
     
@@ -21,15 +21,15 @@ public class LlamaPerformance {
     public func benchmarkModelLoading(
         modelPath: String,
         iterations: Int = 5
-    ) -> LoadingBenchmarkResults? {
+    ) -> SLoadingBenchmarkResults? {
         var totalLoadTime: TimeInterval = 0
         var loadTimes: [TimeInterval] = []
         
         for _ in 0..<iterations {
             let startTime = CFAbsoluteTimeGetCurrent()
             
-            guard let model = LlamaModel(modelPath: modelPath) else { continue }
-            guard let _ = LlamaContext(model: model) else { continue }
+            guard let model = SLlamaModel(modelPath: modelPath) else { continue }
+            guard let _ = SLlamaContext(model: model) else { continue }
             
             let endTime = CFAbsoluteTimeGetCurrent()
             let loadTime = endTime - startTime
@@ -42,7 +42,7 @@ public class LlamaPerformance {
         let minLoadTime = loadTimes.min() ?? 0
         let maxLoadTime = loadTimes.max() ?? 0
         
-        return LoadingBenchmarkResults(
+        return SLoadingBenchmarkResults(
             averageLoadTime: avgLoadTime,
             minimumLoadTime: minLoadTime,
             maximumLoadTime: maxLoadTime,
@@ -61,7 +61,7 @@ public class LlamaPerformance {
     public func profileMemoryUsage(
         operation: () -> Void,
         maxTokens: Int = 100
-    ) -> MemoryProfileResults? {
+    ) -> SMemoryProfileResults? {
         let initialMemory = getCurrentMemoryUsage()
         
         // Run the operation
@@ -69,7 +69,7 @@ public class LlamaPerformance {
         
         let finalMemory = getCurrentMemoryUsage()
         
-        return MemoryProfileResults(
+        return SMemoryProfileResults(
             initialMemory: initialMemory,
             finalMemory: finalMemory,
             memoryIncrease: finalMemory - initialMemory,
@@ -86,7 +86,7 @@ public class LlamaPerformance {
     public func profileCPUUsage(
         operation: () -> Void,
         maxTokens: Int = 100
-    ) -> CPUProfileResults? {
+    ) -> SCPUProfileResults? {
         let startTime = CFAbsoluteTimeGetCurrent()
         let startCPU = getCurrentCPUUsage()
         
@@ -96,7 +96,7 @@ public class LlamaPerformance {
         let endTime = CFAbsoluteTimeGetCurrent()
         let endCPU = getCurrentCPUUsage()
         
-        return CPUProfileResults(
+        return SCPUProfileResults(
             startCPU: startCPU,
             endCPU: endCPU,
             averageCPU: (startCPU + endCPU) / 2.0,
@@ -110,8 +110,8 @@ public class LlamaPerformance {
     
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
-    public func startMonitoring() -> PerformanceMonitor? {
-        return PerformanceMonitor(context: context)
+    public func startMonitoring() -> SPerformanceMonitor? {
+        return SPerformanceMonitor(context: context)
     }
     
     /// Get current memory usage
@@ -122,7 +122,7 @@ public class LlamaPerformance {
         
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
+                task_info(mach_task_self_(),
                          task_flavor_t(MACH_TASK_BASIC_INFO),
                          $0,
                          &count)
@@ -140,7 +140,7 @@ public class LlamaPerformance {
         
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
+                task_info(mach_task_self_(),
                          task_flavor_t(MACH_TASK_BASIC_INFO),
                          $0,
                          &count)
@@ -154,14 +154,14 @@ public class LlamaPerformance {
 // MARK: - Performance Monitor
 
 /// Real-time performance monitoring
-public class PerformanceMonitor {
+public class SPerformanceMonitor {
     
-    private let context: LlamaContext?
+    private let context: SLlamaContext?
     private var isMonitoring = false
     private var monitoringTimer: Timer?
-    private var metrics: [PerformanceMetric] = []
+    private var metrics: [SPerformanceMetric] = []
     
-    public init(context: LlamaContext?) {
+    public init(context: SLlamaContext?) {
         self.context = context
     }
     
@@ -184,7 +184,7 @@ public class PerformanceMonitor {
     
     /// Get monitoring results
     /// - Returns: Array of recorded performance metrics
-    public func getResults() -> [PerformanceMetric] {
+    public func getResults() -> [SPerformanceMetric] {
         return metrics
     }
     
@@ -195,7 +195,7 @@ public class PerformanceMonitor {
     
     /// Record current metrics
     private func recordMetrics() {
-        let metric = PerformanceMetric(
+        let metric = SPerformanceMetric(
             timestamp: Date(),
             memoryUsage: getCurrentMemoryUsage(),
             cpuUsage: getCurrentCPUUsage(),
@@ -211,7 +211,7 @@ public class PerformanceMonitor {
         
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
+                task_info(mach_task_self_(),
                          task_flavor_t(MACH_TASK_BASIC_INFO),
                          $0,
                          &count)
@@ -228,7 +228,7 @@ public class PerformanceMonitor {
         
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
+                task_info(mach_task_self_(),
                          task_flavor_t(MACH_TASK_BASIC_INFO),
                          $0,
                          &count)
@@ -243,10 +243,10 @@ public class PerformanceMonitor {
         var threadList: thread_act_array_t?
         var threadCount: mach_msg_type_number_t = 0
         
-        let result = task_threads(mach_task_self_, &threadList, &threadCount)
+        let result = task_threads(mach_task_self_(), &threadList, &threadCount)
         
         if result == KERN_SUCCESS {
-            vm_deallocate(mach_task_self_, vm_address_t(UInt(bitPattern: threadList)), vm_size_t(threadCount) * vm_size_t(MemoryLayout<thread_t>.size))
+            vm_deallocate(mach_task_self_(), vm_address_t(UInt(bitPattern: threadList)), vm_size_t(threadCount) * vm_size_t(MemoryLayout<thread_t>.size))
             return Int(threadCount)
         }
         
@@ -257,7 +257,7 @@ public class PerformanceMonitor {
 // MARK: - Result Types
 
 /// Benchmark results for model loading performance
-public struct LoadingBenchmarkResults {
+public struct SLoadingBenchmarkResults {
     public let averageLoadTime: TimeInterval
     public let minimumLoadTime: TimeInterval
     public let maximumLoadTime: TimeInterval
@@ -266,59 +266,59 @@ public struct LoadingBenchmarkResults {
 }
 
 /// Memory profile results
-public struct MemoryProfileResults {
+public struct SMemoryProfileResults {
     public let initialMemory: UInt64
     public let finalMemory: UInt64
     public let memoryIncrease: UInt64
     public let tokenCount: Int
-    public let memorySnapshots: [MemorySnapshot]
+    public let memorySnapshots: [SMemorySnapshot]
 }
 
 /// CPU profile results
-public struct CPUProfileResults {
+public struct SCPUProfileResults {
     public let startCPU: Double
     public let endCPU: Double
     public let averageCPU: Double
     public let duration: TimeInterval
     public let tokenCount: Int
-    public let cpuSnapshots: [CPUSnapshot]
+    public let cpuSnapshots: [SCPUSnapshot]
 }
 
 /// Memory snapshot
-public struct MemorySnapshot {
+public struct SMemorySnapshot {
     public let tokenIndex: Int
     public let memoryUsage: UInt64
     public let timestamp: TimeInterval
 }
 
 /// CPU snapshot
-public struct CPUSnapshot {
+public struct SCPUSnapshot {
     public let tokenIndex: Int
     public let cpuUsage: Double
     public let timestamp: TimeInterval
 }
 
 /// Performance metric
-public struct PerformanceMetric {
+public struct SPerformanceMetric {
     public let timestamp: Date
     public let memoryUsage: UInt64
     public let cpuUsage: Double
     public let activeThreads: Int
 }
 
-// MARK: - Extension to LlamaContext
+// MARK: - Extension to SLlamaContext
 
-public extension LlamaContext {
+public extension SLlamaContext {
     
     /// Get performance utilities interface
-    /// - Returns: LlamaPerformance instance for this context
-    func performance() -> LlamaPerformance {
-        return LlamaPerformance(context: self)
+    /// - Returns: SLlamaPerformance instance for this context
+    func performance() -> SLlamaPerformance {
+        return SLlamaPerformance(context: self)
     }
     
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
-    func startPerformanceMonitoring() -> PerformanceMonitor? {
+    func startPerformanceMonitoring() -> SPerformanceMonitor? {
         return performance().startMonitoring()
     }
 } 

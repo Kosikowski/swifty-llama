@@ -4,175 +4,175 @@ import llama
 // MARK: - Core Type Aliases
 
 /// Type alias for llama memory handle
-public typealias LlamaMemory = llama_memory_t
+public typealias SLlamaMemory = llama_memory_t
 
 /// Type alias for llama position (context position)
-public typealias LlamaPosition = llama_pos
+public typealias SLlamaPosition = llama_pos
 
 /// Type alias for llama token (token ID)
-public typealias LlamaToken = llama_token
+public typealias SLlamaToken = llama_token
 
 /// Type alias for llama sequence ID
-public typealias LlamaSequenceId = llama_seq_id
+public typealias SLlamaSequenceId = llama_seq_id
 
 /// Type alias for llama sampler context
-public typealias LlamaSamplerContext = llama_sampler_context_t
+public typealias SLlamaSamplerContext = llama_sampler_context_t
 
 // MARK: - Enum Type Aliases
 
 /// Type alias for vocabulary type
-public typealias LlamaVocabType = llama_vocab_type
+public typealias SLlamaVocabType = llama_vocab_type
 
 /// Type alias for RoPE type
-public typealias LlamaRopeType = llama_rope_type
+public typealias SLlamaRopeType = llama_rope_type
 
 /// Type alias for token type
-public typealias LlamaTokenType = llama_token_type
+public typealias SLlamaTokenType = llama_token_type
 
 /// Type alias for token attribute
-public typealias LlamaTokenAttribute = llama_token_attr
+public typealias SLlamaTokenAttribute = llama_token_attr
 
 /// Type alias for model file type
-public typealias LlamaFileType = llama_ftype
+public typealias SLlamaFileType = llama_ftype
 
 /// Type alias for RoPE scaling type
-public typealias LlamaRopeScalingType = llama_rope_scaling_type
+public typealias SLlamaRopeScalingType = llama_rope_scaling_type
 
 /// Type alias for pooling type
-public typealias LlamaPoolingType = llama_pooling_type
+public typealias SLlamaPoolingType = llama_pooling_type
 
 /// Type alias for attention type
-public typealias LlamaAttentionType = llama_attention_type
+public typealias SLlamaAttentionType = llama_attention_type
 
 /// Type alias for split mode
-public typealias LlamaSplitMode = llama_split_mode
+public typealias SLlamaSplitMode = llama_split_mode
 
 /// Type alias for model KV override type
-public typealias LlamaModelKvOverrideType = llama_model_kv_override_type
+public typealias SLlamaModelKvOverrideType = llama_model_kv_override_type
 
 // MARK: - Struct Type Aliases
 
 /// Type alias for token data
-public typealias LlamaTokenData = llama_token_data
+public typealias SLlamaTokenData = llama_token_data
 
 /// Type alias for token data array
-public typealias LlamaTokenDataArray = llama_token_data_array
+public typealias SLlamaTokenDataArray = llama_token_data_array
 
 /// Type alias for token data array pointer
-public typealias LlamaTokenDataArrayPointer = UnsafeMutablePointer<LlamaTokenDataArray>
+public typealias SLlamaTokenDataArrayPointer = UnsafeMutablePointer<SLlamaTokenDataArray>
 
 /// Type alias for sequence ID
-public typealias LlamaSeqId = llama_seq_id
+public typealias SLlamaSeqId = llama_seq_id
 
 /// Type alias for model KV override
-public typealias LlamaModelKvOverride = llama_model_kv_override
+public typealias SLlamaModelKvOverride = llama_model_kv_override
 
 /// Type alias for model tensor buffer type override
-public typealias LlamaModelTensorBuftOverride = llama_model_tensor_buft_override
+public typealias SLlamaModelTensorBuftOverride = llama_model_tensor_buft_override
 
 /// Type alias for model parameters
-public typealias LlamaModelParams = llama_model_params
+public typealias SLlamaModelParams = llama_model_params
 
 /// Type alias for context parameters
-public typealias LlamaContextParams = llama_context_params
+public typealias SLlamaContextParams = llama_context_params
 
 /// Type alias for model quantize parameters
-public typealias LlamaModelQuantizeParams = llama_model_quantize_params
+public typealias SLlamaModelQuantizeParams = llama_model_quantize_params
 
 /// Type alias for logit bias
-public typealias LlamaLogitBias = llama_logit_bias
+public typealias SLlamaLogitBias = llama_logit_bias
 
 /// Type alias for sampler chain parameters
-public typealias LlamaSamplerChainParams = llama_sampler_chain_params
+public typealias SLlamaSamplerChainParams = llama_sampler_chain_params
 
 /// Type alias for chat message
-public typealias LlamaChatMessage = llama_chat_message
+public typealias SLlamaChatMessage = llama_chat_message
 
 // MARK: - Function Pointer Type Aliases
 
 /// Type alias for progress callback
-public typealias LlamaProgressCallback = llama_progress_callback
+public typealias SLlamaProgressCallback = llama_progress_callback
 
 /// Type alias for optimization parameter filter
-public typealias LlamaOptParamFilter = llama_opt_param_filter
+public typealias SLlamaOptParamFilter = llama_opt_param_filter
 
 // MARK: - Opaque Pointer Type Aliases
 
 /// Type alias for vocabulary pointer
-public typealias LlamaVocabPointer = OpaquePointer
+public typealias SLlamaVocabPointer = OpaquePointer
 
 /// Type alias for model pointer
-public typealias LlamaModelPointer = OpaquePointer
+public typealias SLlamaModelPointer = OpaquePointer
 
 /// Type alias for context pointer
-public typealias LlamaContextPointer = OpaquePointer
+public typealias SLlamaContextPointer = OpaquePointer
 
 /// Type alias for sampler pointer
-public typealias LlamaSamplerPointer = UnsafeMutablePointer<llama_sampler>
+public typealias SLlamaSamplerPointer = UnsafeMutablePointer<llama_sampler>
 
 /// Type alias for adapter LoRA pointer
-public typealias LlamaAdapterLoraPointer = OpaquePointer
+public typealias SLlamaAdapterLoraPointer = OpaquePointer
 
 // MARK: - Pointer Type Aliases
 
 /// Type alias for token pointer
-public typealias LlamaTokenPointer = UnsafeMutablePointer<LlamaToken>
+public typealias SLlamaTokenPointer = UnsafeMutablePointer<SLlamaToken>
 
 /// Type alias for float pointer
-public typealias LlamaFloatPointer = UnsafeMutablePointer<Float>
+public typealias SLlamaFloatPointer = UnsafeMutablePointer<Float>
 
 /// Type alias for position pointer
-public typealias LlamaPositionPointer = UnsafeMutablePointer<LlamaPosition>
+public typealias SLlamaPositionPointer = UnsafeMutablePointer<SLlamaPosition>
 
 /// Type alias for int32 pointer
-public typealias LlamaInt32Pointer = UnsafeMutablePointer<Int32>
+public typealias SLlamaInt32Pointer = UnsafeMutablePointer<Int32>
 
 /// Type alias for int8 pointer
-public typealias LlamaInt8Pointer = UnsafeMutablePointer<Int8>
+public typealias SLlamaInt8Pointer = UnsafeMutablePointer<Int8>
 
 /// Type alias for sequence ID pointer
-public typealias LlamaSeqIdPointer = UnsafeMutablePointer<LlamaSeqId>
+public typealias SLlamaSeqIdPointer = UnsafeMutablePointer<SLlamaSeqId>
 
 /// Type alias for sequence ID pointer pointer
-public typealias LlamaSeqIdPointerPointer = UnsafeMutablePointer<LlamaSeqIdPointer?>
+public typealias SLlamaSeqIdPointerPointer = UnsafeMutablePointer<SLlamaSeqIdPointer?>
 
 /// Type alias for raw pointer
-public typealias LlamaRawPointer = UnsafeMutableRawPointer
+public typealias SLlamaRawPointer = UnsafeMutableRawPointer
 
 // MARK: - Constants
 
 /// Null token value
-public let LlamaTokenNull: LlamaToken = LLAMA_TOKEN_NULL
+public let SLlamaTokenNull: SLlamaToken = LLAMA_TOKEN_NULL
 
 /// Default seed value
-public let LlamaDefaultSeed: UInt32 = LLAMA_DEFAULT_SEED
+public let SLlamaDefaultSeed: UInt32 = LLAMA_DEFAULT_SEED
 
 // MARK: - File Magic Constants
 
 /// GGLA file magic
-public let LlamaFileMagicGGLA: UInt32 = LLAMA_FILE_MAGIC_GGLA
+public let SLlamaFileMagicGGLA: UInt32 = LLAMA_FILE_MAGIC_GGLA
 
 /// GGSN file magic
-public let LlamaFileMagicGGSN: UInt32 = LLAMA_FILE_MAGIC_GGSN
+public let SLlamaFileMagicGGSN: UInt32 = LLAMA_FILE_MAGIC_GGSN
 
 /// GGSQ file magic
-public let LlamaFileMagicGGSQ: UInt32 = LLAMA_FILE_MAGIC_GGSQ
+public let SLlamaFileMagicGGSQ: UInt32 = LLAMA_FILE_MAGIC_GGSQ
 
 /// Session magic
-public let LlamaSessionMagic: UInt32 = LLAMA_SESSION_MAGIC
+public let SLlamaSessionMagic: UInt32 = LLAMA_SESSION_MAGIC
 
 /// Session version
-public let LlamaSessionVersion: Int32 = LLAMA_SESSION_VERSION
+public let SLlamaSessionVersion: Int32 = LLAMA_SESSION_VERSION
 
 /// State sequence magic
-public let LlamaStateSeqMagic: UInt32 = LLAMA_STATE_SEQ_MAGIC
+public let SLlamaStateSeqMagic: UInt32 = LLAMA_STATE_SEQ_MAGIC
 
 /// State sequence version
-public let LlamaStateSeqVersion: Int32 = LLAMA_STATE_SEQ_VERSION
+public let SLlamaStateSeqVersion: Int32 = LLAMA_STATE_SEQ_VERSION
 
 // MARK: - Extension for Common Constants
 
-public extension LlamaVocabType {
+public extension SLlamaVocabType {
     /// None vocabulary type
     static let none = LLAMA_VOCAB_TYPE_NONE
     /// SPM vocabulary type
@@ -189,7 +189,7 @@ public extension LlamaVocabType {
     static let plamo2 = LLAMA_VOCAB_TYPE_PLAMO2
 }
 
-public extension LlamaRopeType {
+public extension SLlamaRopeType {
     /// No RoPE
     static let none = LLAMA_ROPE_TYPE_NONE
     /// Normal RoPE
@@ -202,7 +202,7 @@ public extension LlamaRopeType {
     static let vision = LLAMA_ROPE_TYPE_VISION
 }
 
-public extension LlamaTokenType {
+public extension SLlamaTokenType {
     /// Undefined token type
     static let undefined = LLAMA_TOKEN_TYPE_UNDEFINED
     /// Normal token type
@@ -219,7 +219,7 @@ public extension LlamaTokenType {
     static let byte = LLAMA_TOKEN_TYPE_BYTE
 }
 
-public extension LlamaTokenAttribute {
+public extension SLlamaTokenAttribute {
     /// Undefined token attribute
     static let undefined = LLAMA_TOKEN_ATTR_UNDEFINED
     /// Unknown token attribute
@@ -244,7 +244,7 @@ public extension LlamaTokenAttribute {
     static let singleWord = LLAMA_TOKEN_ATTR_SINGLE_WORD
 }
 
-public extension LlamaFileType {
+public extension SLlamaFileType {
     /// All F32 file type
     static let allF32 = LLAMA_FTYPE_ALL_F32
     /// Mostly F16 file type
@@ -313,7 +313,7 @@ public extension LlamaFileType {
     static let guessed = LLAMA_FTYPE_GUESSED
 }
 
-public extension LlamaRopeScalingType {
+public extension SLlamaRopeScalingType {
     /// Unspecified RoPE scaling
     static let unspecified = LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED
     /// No RoPE scaling
@@ -328,7 +328,7 @@ public extension LlamaRopeScalingType {
     static let maxValue = LLAMA_ROPE_SCALING_TYPE_MAX_VALUE
 }
 
-public extension LlamaPoolingType {
+public extension SLlamaPoolingType {
     /// Unspecified pooling
     static let unspecified = LLAMA_POOLING_TYPE_UNSPECIFIED
     /// No pooling
@@ -343,7 +343,7 @@ public extension LlamaPoolingType {
     static let rank = LLAMA_POOLING_TYPE_RANK
 }
 
-public extension LlamaAttentionType {
+public extension SLlamaAttentionType {
     /// Unspecified attention
     static let unspecified = LLAMA_ATTENTION_TYPE_UNSPECIFIED
     /// Causal attention
@@ -352,7 +352,7 @@ public extension LlamaAttentionType {
     static let nonCausal = LLAMA_ATTENTION_TYPE_NON_CAUSAL
 }
 
-public extension LlamaSplitMode {
+public extension SLlamaSplitMode {
     /// No split mode
     static let none = LLAMA_SPLIT_MODE_NONE
     /// Layer split mode
@@ -361,7 +361,7 @@ public extension LlamaSplitMode {
     static let row = LLAMA_SPLIT_MODE_ROW
 }
 
-public extension LlamaModelKvOverrideType {
+public extension SLlamaModelKvOverrideType {
     /// Integer override type
     static let int = LLAMA_KV_OVERRIDE_TYPE_INT
     /// Float override type

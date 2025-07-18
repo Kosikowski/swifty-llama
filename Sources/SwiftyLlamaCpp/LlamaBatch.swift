@@ -2,7 +2,7 @@ import Foundation
 import llama
 
 /// A wrapper for llama batch operations
-public class LlamaBatch {
+public class SLlamaBatch {
     private var batch: llama_batch
     
     /// Initialize a batch with the specified parameters
@@ -29,38 +29,38 @@ public class LlamaBatch {
     }
     
     /// Token array (allocated if embd == 0 in init)
-    public var tokens: LlamaTokenPointer? {
+    public var tokens: SLlamaTokenPointer? {
         return batch.token
     }
     
     /// Embeddings array (allocated if embd != 0 in init)
-    public var embeddings: LlamaFloatPointer? {
+    public var embeddings: SLlamaFloatPointer? {
         return batch.embd
     }
     
     /// Position array for each token
-    public var positions: LlamaPositionPointer? {
+    public var positions: SLlamaPositionPointer? {
         return batch.pos
     }
     
     /// Number of sequence IDs for each token
-    public var sequenceIdCounts: LlamaInt32Pointer? {
+    public var sequenceIdCounts: SLlamaInt32Pointer? {
         return batch.n_seq_id
     }
     
     /// Sequence ID arrays for each token
-    public var sequenceIds: LlamaSeqIdPointerPointer? {
+    public var sequenceIds: SLlamaSeqIdPointerPointer? {
         return batch.seq_id
     }
     
     /// Logits output flags for each token
-    public var logits: LlamaInt8Pointer? {
+    public var logits: SLlamaInt8Pointer? {
         return batch.logits
     }
     
     /// Set tokens for the batch
     /// - Parameter tokens: Array of token IDs
-    public func setTokens(_ tokens: [LlamaToken]) {
+    public func setTokens(_ tokens: [SLlamaToken]) {
         guard tokens.count <= tokenCount else {
             fatalError("Too many tokens for batch capacity")
         }
@@ -85,7 +85,7 @@ public class LlamaBatch {
     
     /// Set positions for the batch
     /// - Parameter positions: Array of position values
-    public func setPositions(_ positions: [LlamaPosition]) {
+    public func setPositions(_ positions: [SLlamaPosition]) {
         guard positions.count <= tokenCount else {
             fatalError("Too many positions for batch capacity")
         }
@@ -111,7 +111,7 @@ public class LlamaBatch {
     /// - Parameters:
     ///   - tokenIndex: Index of the token
     ///   - sequenceIds: Array of sequence IDs for this token
-    public func setSequenceIds(for tokenIndex: Int, sequenceIds: [LlamaSeqId]) {
+    public func setSequenceIds(for tokenIndex: Int, sequenceIds: [SLlamaSeqId]) {
         guard tokenIndex < tokenCount else {
             fatalError("Token index out of bounds")
         }
@@ -123,17 +123,17 @@ public class LlamaBatch {
     /// Create a batch with a single token
     /// - Parameter token: The token ID
     /// - Returns: A batch containing the single token
-    public static func single(token: LlamaToken) -> LlamaBatch {
+    public static func single(token: SLlamaToken) -> SLlamaBatch {
         var tokenCopy = token
         let batch = llama_batch_get_one(&tokenCopy, 1)
-        return LlamaBatch(batch: batch)
+        return SLlamaBatch(batch: batch)
     }
     
     /// Create a batch with multiple tokens
     /// - Parameter tokens: Array of token IDs
     /// - Returns: A batch containing the tokens
-    public static func fromTokens(_ tokens: [LlamaToken]) -> LlamaBatch {
-        let batch = LlamaBatch(nTokens: Int32(tokens.count), nSeqMax: 1)
+    public static func fromTokens(_ tokens: [SLlamaToken]) -> SLlamaBatch {
+        let batch = SLlamaBatch(nTokens: Int32(tokens.count), nSeqMax: 1)
         batch.setTokens(tokens)
         return batch
     }
@@ -143,8 +143,8 @@ public class LlamaBatch {
     ///   - embeddings: Array of embedding values
     ///   - embeddingSize: Size of each embedding vector
     /// - Returns: A batch containing the embeddings
-    public static func fromEmbeddings(_ embeddings: [Float], embeddingSize: Int32) -> LlamaBatch {
-        let batch = LlamaBatch(nTokens: Int32(embeddings.count / Int(embeddingSize)), embd: embeddingSize, nSeqMax: 1)
+    public static func fromEmbeddings(_ embeddings: [Float], embeddingSize: Int32) -> SLlamaBatch {
+        let batch = SLlamaBatch(nTokens: Int32(embeddings.count / Int(embeddingSize)), embd: embeddingSize, nSeqMax: 1)
         batch.setEmbeddings(embeddings)
         return batch
     }

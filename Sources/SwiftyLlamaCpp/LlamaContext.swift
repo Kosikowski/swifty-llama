@@ -2,21 +2,21 @@ import Foundation
 import llama
 
 /// A wrapper for llama context
-public class LlamaContext {
+public class SLlamaContext {
     // MARK: Properties
 
-    private var context: LlamaContextPointer?
-    private var model: LlamaModel?
+    private var context: SLlamaContextPointer?
+    private var model: SLlamaModel?
 
     // MARK: Computed Properties
 
     /// Get the context pointer for direct C API access
-    public var pointer: LlamaContextPointer? {
+    public var pointer: SLlamaContextPointer? {
         context
     }
 
     /// Get the associated model
-    public var associatedModel: LlamaModel? {
+    public var associatedModel: SLlamaModel? {
         model
     }
 
@@ -46,7 +46,7 @@ public class LlamaContext {
 
     // MARK: Lifecycle
 
-    public init?(model: LlamaModel, contextParams: LlamaContextParams? = nil) {
+    public init?(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) {
         self.model = model
 
         let params = contextParams ?? llama_context_default_params()

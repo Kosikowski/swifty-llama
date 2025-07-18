@@ -1,10 +1,10 @@
 import Foundation
 import llama
 
-// MARK: - LlamaTokenizer
+// MARK: - SLlamaTokenizer
 
 /// A wrapper for llama tokenization functions
-public class LlamaTokenizer {
+public class SLlamaTokenizer {
     /// Tokenize text into tokens
     /// - Parameters:
     ///   - text: The text to tokenize
@@ -13,11 +13,11 @@ public class LlamaTokenizer {
     /// - Returns: Array of tokens, or nil if tokenization failed
     public static func tokenize(
         text: String,
-        vocab: LlamaVocabPointer?,
+        vocab: SLlamaVocabPointer?,
         addSpecial: Bool = true,
         parseSpecial: Bool = true
     )
-        -> [LlamaToken]?
+        -> [SLlamaToken]?
     {
         guard let vocab else { return nil }
 
@@ -26,7 +26,7 @@ public class LlamaTokenizer {
 
         // Allocate buffer for tokens (worst case: each character could be a token)
         let maxTokens = textLength + 10 // Add some buffer for special tokens
-        var tokens = [LlamaToken](repeating: 0, count: Int(maxTokens))
+        var tokens = [SLlamaToken](repeating: 0, count: Int(maxTokens))
 
         let result = llama_tokenize(
             vocab,
@@ -53,8 +53,8 @@ public class LlamaTokenizer {
     ///   - special: Whether to render special tokens
     /// - Returns: The text representation of the token, or nil if conversion failed
     public static func tokenToPiece(
-        token: LlamaToken,
-        vocab: LlamaVocabPointer?,
+        token: SLlamaToken,
+        vocab: SLlamaVocabPointer?,
         lstrip: Int32 = 0,
         special: Bool = false
     )
@@ -92,8 +92,8 @@ public class LlamaTokenizer {
     ///   - unparseSpecial: Whether to render special tokens in output
     /// - Returns: The text representation, or nil if conversion failed
     public static func detokenize(
-        tokens: [LlamaToken],
-        vocab: LlamaVocabPointer?,
+        tokens: [SLlamaToken],
+        vocab: SLlamaVocabPointer?,
         removeSpecial: Bool = true,
         unparseSpecial: Bool = true
     )
@@ -132,7 +132,7 @@ public class LlamaTokenizer {
     /// - Returns: The formatted prompt, or nil if template application failed
     public static func applyChatTemplate(
         template: String?,
-        messages: [LlamaChatMessage],
+        messages: [SLlamaChatMessage],
         addAssistant: Bool = true
     )
         -> String?
@@ -182,8 +182,8 @@ public class LlamaTokenizer {
     }
 }
 
-/// Extension to LlamaVocab for tokenization convenience
-public extension LlamaVocab {
+/// Extension to SLlamaVocab for tokenization convenience
+public extension SLlamaVocab {
     /// Tokenize text using this vocabulary
     /// - Parameters:
     ///   - text: The text to tokenize
@@ -195,11 +195,11 @@ public extension LlamaVocab {
         addSpecial: Bool = true,
         parseSpecial: Bool = true
     )
-        -> [LlamaToken]?
+        -> [SLlamaToken]?
     {
-        LlamaTokenizer.tokenize(
+        SLlamaTokenizer.tokenize(
             text: text,
-            vocab: vocab,
+            vocab: pointer,
             addSpecial: addSpecial,
             parseSpecial: parseSpecial
         )
@@ -212,15 +212,15 @@ public extension LlamaVocab {
     ///   - special: Whether to render special tokens
     /// - Returns: The text representation, or nil if conversion failed
     func tokenToPiece(
-        token: LlamaToken,
+        token: SLlamaToken,
         lstrip: Int32 = 0,
         special: Bool = false
     )
         -> String?
     {
-        LlamaTokenizer.tokenToPiece(
+        SLlamaTokenizer.tokenToPiece(
             token: token,
-            vocab: vocab,
+            vocab: pointer,
             lstrip: lstrip,
             special: special
         )
@@ -230,18 +230,18 @@ public extension LlamaVocab {
     /// - Parameters:
     ///   - tokens: Array of tokens to convert
     ///   - removeSpecial: Whether to remove special tokens
-    ///   - unparseSpecial: Whether to render special tokens
+    ///   - unparseSpecial: Whether to render special tokens in output
     /// - Returns: The text representation, or nil if conversion failed
     func detokenize(
-        tokens: [LlamaToken],
+        tokens: [SLlamaToken],
         removeSpecial: Bool = true,
         unparseSpecial: Bool = true
     )
         -> String?
     {
-        LlamaTokenizer.detokenize(
+        SLlamaTokenizer.detokenize(
             tokens: tokens,
-            vocab: vocab,
+            vocab: pointer,
             removeSpecial: removeSpecial,
             unparseSpecial: unparseSpecial
         )
