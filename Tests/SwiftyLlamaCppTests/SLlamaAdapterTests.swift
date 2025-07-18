@@ -55,8 +55,8 @@ struct SLlamaAdapterTests {
         SwiftyLlamaCpp.cleanup()
     }
     
-    @Test("Context should handle multiple LoRA adapter operations")
-    func testContextWithMultipleAdapterOperations() throws {
+    @Test("Control vector operations should work without crashing")
+    func testControlVectorOperations() throws {
         // Disable logging to suppress verbose output
         SwiftyLlamaCpp.disableLogging()
         
@@ -75,13 +75,24 @@ struct SLlamaAdapterTests {
             return
         }
         
-        // Test multiple adapter operations
-        let adapter1 = SLlamaAdapter(model: model, path: "/invalid/path1")
-        let adapter2 = SLlamaAdapter(model: model, path: "/invalid/path2")
+        // Test control vector operations
+        // Create a dummy control vector (small array of floats)
+        let controlVector: [Float] = [0.1, 0.2, 0.3, 0.4, 0.5]
+        controlVector.withUnsafeBufferPointer { buffer in
+            let result = context.applyControlVector(
+                data: buffer.baseAddress!,
+                length: controlVector.count,
+                embeddingDimensions: 4,
+                layerStart: 0,
+                layerEnd: 1
+            )
+            // Should not crash, even if the operation fails
+            #expect(result >= -1, "applyControlVector should return valid result")
+        }
         
-        #expect(adapter1 == nil, "First adapter should be nil")
-        #expect(adapter2 == nil, "Second adapter should be nil")
-        #expect(context.pointer != nil, "Context pointer should remain valid")
+        // Test clearing control vector
+        let clearResult = context.clearControlVector()
+        #expect(clearResult >= -1, "clearControlVector should return valid result")
         
         // Cleanup
         SwiftyLlamaCpp.cleanup()

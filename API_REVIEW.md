@@ -255,12 +255,12 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_model_quantize** - Available but not wrapped
 
 #### LoRA Adapters
-- ✅ **llama_adapter_lora_init** - Available but not wrapped
-- ✅ **llama_adapter_lora_free** - Available but not wrapped
-- ✅ **llama_set_adapter_lora** - Available but not wrapped
-- ✅ **llama_rm_adapter_lora** - Available but not wrapped
-- ✅ **llama_clear_adapter_lora** - Available but not wrapped
-- ✅ **llama_apply_adapter_cvec** - Available but not wrapped
+- ✅ **llama_adapter_lora_init** - Wrapped in `SLlamaAdapter.init(model:path:)`
+- ✅ **llama_adapter_lora_free** - Wrapped in `SLlamaAdapter.deinit`
+- ✅ **llama_set_adapter_lora** - Wrapped in `SLlamaContext.addLoRAAdapter()`
+- ✅ **llama_rm_adapter_lora** - Wrapped in `SLlamaContext.removeLoRAAdapter()`
+- ✅ **llama_clear_adapter_lora** - Wrapped in `SLlamaContext.clearLoRAAdapters()`
+- ✅ **llama_apply_adapter_cvec** - Wrapped in `SLlamaContext.applyControlVector()` and `clearControlVector()`
 
 #### Backend and System
 - ✅ **llama_backend_init** - Available but not wrapped
@@ -302,6 +302,7 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 12. **Inference**: `SLlamaInference` for basic inference operations
 13. **Context Settings**: Complete context configuration functions (embeddings, causal attention, warmup, abort callback, synchronization)
 14. **Model Metadata**: Comprehensive metadata API with modern string handling
+15. **LoRA Adapters**: Complete LoRA adapter functionality with control vector support
 
 ### 🔄 Partially Implemented
 1. **Sampling Strategies**: Basic sampling implemented, but many specialized samplers not wrapped
@@ -311,19 +312,19 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
 2. **Testing Framework**: Migrated from XCTest to Testing framework for better test organization and reliability
 3. **Context Settings Discovery**: Identified that all context configuration functions are already implemented in `SLlamaInference` and `SLlamaContext`
-4. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
-5. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
-6. **Test Improvements**: Fixed all compilation warnings and improved test reliability
-7. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
+4. **LoRA Adapters**: Complete implementation of all LoRA adapter functions including control vector support
+5. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
+6. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
+7. **Test Improvements**: Fixed all compilation warnings and improved test reliability
+8. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
 
 ### 📊 Enum Usage Summary
 - **✅ 4 enums actively used** in main codebase: `SLlamaVocabType`, `SLlamaRopeType`, `SLlamaTokenAttribute`, `SLlamaPoolingType`
 - **❌ 6 enums only defined** but not used in main codebase: `SLlamaTokenType`, `SLlamaFileType`, `SLlamaRopeScalingType`, `SLlamaAttentionType`, `SLlamaSplitMode`, `SLlamaModelKvOverrideType`
 
 ### ❌ Not Implemented
-1. **LoRA Adapters**: No wrapper for LoRA adapter functionality
-2. **Model Quantization**: No wrapper for quantization functions
-3. **Threading Control**: No wrapper for thread management
+1. **Model Quantization**: No wrapper for quantization functions
+2. **Threading Control**: No wrapper for thread management
 4. **Backend Management**: No wrapper for backend initialization/cleanup
 5. **Optimization**: No wrapper for training optimization functions
 6. **Advanced Sampling**: Many specialized samplers not wrapped
@@ -333,10 +334,9 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 ## Recommendations
 
 ### High Priority
-1. **LoRA Adapters**: Important for fine-tuning and model adaptation
-2. **Threading Control**: Important for performance optimization
-3. **Context Settings**: Important for controlling inference behavior
-4. **Advanced Sampling**: Complete the sampling strategy implementations
+1. **Threading Control**: Important for performance optimization
+2. **Advanced Sampling**: Complete the sampling strategy implementations
+3. **Model Quantization**: Important for model optimization
 
 ### Medium Priority
 1. **Model Quantization**: Useful for model optimization
@@ -365,7 +365,7 @@ Our Swift wrapper provides a comprehensive foundation covering the core llama.cp
 - ✅ **System-level configuration** - Context optimization and settings
 
 ### 🎉 Major Achievements
-1. **Complete LoRA Support**: Full adapter management with proper memory handling
+1. **Complete LoRA Support**: Full adapter management with proper memory handling and control vector support
 2. **Advanced Sampling**: Comprehensive sampling strategies including Mirostat v1/v2
 3. **Performance Optimization**: Backend management and optimal thread configuration
 4. **Performance Monitoring**: Complete llama.cpp performance function wrappers with fallback implementations

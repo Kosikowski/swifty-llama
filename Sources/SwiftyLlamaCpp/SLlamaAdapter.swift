@@ -74,4 +74,44 @@ public extension SLlamaContext {
             return nil
         }
     }
+    
+    /// Apply a control vector to the context
+    /// - Parameters:
+    ///   - data: Pointer to the control vector data (float array)
+    ///   - length: Length of the control vector data
+    ///   - embeddingDimensions: Number of embedding dimensions
+    ///   - layerStart: Starting layer index (inclusive)
+    ///   - layerEnd: Ending layer index (inclusive)
+    /// - Returns: 0 on success, negative value on error
+    func applyControlVector(
+        data: UnsafePointer<Float>,
+        length: Int,
+        embeddingDimensions: Int32,
+        layerStart: Int32,
+        layerEnd: Int32
+    ) -> Int32 {
+        guard let context = pointer else { return -1 }
+        return llama_apply_adapter_cvec(
+            context,
+            data,
+            size_t(length),
+            embeddingDimensions,
+            layerStart,
+            layerEnd
+        )
+    }
+    
+    /// Clear the currently loaded control vector
+    /// - Returns: 0 on success, negative value on error
+    func clearControlVector() -> Int32 {
+        guard let context = pointer else { return -1 }
+        return llama_apply_adapter_cvec(
+            context,
+            nil,
+            0,
+            0,
+            0,
+            0
+        )
+    }
 } 
