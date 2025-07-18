@@ -110,6 +110,7 @@ public class SLlamaPerformance {
     
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
+    @MainActor
     public func startMonitoring() -> SPerformanceMonitor? {
         return SPerformanceMonitor(context: context)
     }
@@ -154,7 +155,7 @@ public class SLlamaPerformance {
 // MARK: - Performance Monitor
 
 /// Real-time performance monitoring
-public class SPerformanceMonitor {
+public final class SPerformanceMonitor: @unchecked Sendable {
     
     private let context: SLlamaContext?
     private var isMonitoring = false
@@ -166,16 +167,20 @@ public class SPerformanceMonitor {
     }
     
     /// Start monitoring
+    @MainActor
     public func start() {
         guard !isMonitoring else { return }
         
         isMonitoring = true
-        monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.recordMetrics()
+        monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                self.recordMetrics()
+            }
         }
     }
     
     /// Stop monitoring
+    @MainActor
     public func stop() {
         isMonitoring = false
         monitoringTimer?.invalidate()
@@ -184,11 +189,13 @@ public class SPerformanceMonitor {
     
     /// Get monitoring results
     /// - Returns: Array of recorded performance metrics
+    @MainActor
     public func getResults() -> [SPerformanceMetric] {
         return metrics
     }
     
     /// Clear monitoring results
+    @MainActor
     public func clearResults() {
         metrics.removeAll()
     }
@@ -318,6 +325,7 @@ public extension SLlamaContext {
     
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
+    @MainActor
     func startPerformanceMonitoring() -> SPerformanceMonitor? {
         return performance().startMonitoring()
     }
