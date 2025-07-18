@@ -134,27 +134,27 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 
 #### Vocabulary
 - ✅ **llama_vocab_n_tokens** - Used in `SLlamaVocab`
-- ✅ **llama_vocab_get_text** - Available but not wrapped
-- ✅ **llama_vocab_get_score** - Available but not wrapped
-- ✅ **llama_vocab_get_attr** - Available but not wrapped
-- ✅ **llama_vocab_is_eog** - Available but not wrapped
-- ✅ **llama_vocab_is_control** - Available but not wrapped
-- ✅ **llama_vocab_bos** - Available but not wrapped
-- ✅ **llama_vocab_eos** - Available but not wrapped
-- ✅ **llama_vocab_eot** - Available but not wrapped
-- ✅ **llama_vocab_sep** - Available but not wrapped
-- ✅ **llama_vocab_nl** - Available but not wrapped
-- ✅ **llama_vocab_pad** - Available but not wrapped
-- ✅ **llama_vocab_mask** - Available but not wrapped
-- ✅ **llama_vocab_get_add_bos** - Available but not wrapped
-- ✅ **llama_vocab_get_add_eos** - Available but not wrapped
-- ✅ **llama_vocab_get_add_sep** - Available but not wrapped
-- ✅ **llama_vocab_fim_pre** - Available but not wrapped
-- ✅ **llama_vocab_fim_suf** - Available but not wrapped
-- ✅ **llama_vocab_fim_mid** - Available but not wrapped
-- ✅ **llama_vocab_fim_pad** - Available but not wrapped
-- ✅ **llama_vocab_fim_rep** - Available but not wrapped
-- ✅ **llama_vocab_fim_sep** - Available but not wrapped
+- ✅ **llama_vocab_get_text** - Wrapped in `SLlamaVocab.getText(for:)`
+- ✅ **llama_vocab_get_score** - Wrapped in `SLlamaVocab.getScore(for:)`
+- ✅ **llama_vocab_get_attr** - Wrapped in `SLlamaVocab.getAttribute(for:)`
+- ✅ **llama_vocab_is_eog** - Wrapped in `SLlamaVocab.isEOG(_:)`
+- ✅ **llama_vocab_is_control** - Wrapped in `SLlamaVocab.isControl(_:)`
+- ✅ **llama_vocab_bos** - Wrapped in `SLlamaVocab.bosToken`
+- ✅ **llama_vocab_eos** - Wrapped in `SLlamaVocab.eosToken`
+- ✅ **llama_vocab_eot** - Wrapped in `SLlamaVocab.eotToken`
+- ✅ **llama_vocab_sep** - Wrapped in `SLlamaVocab.sepToken`
+- ✅ **llama_vocab_nl** - Wrapped in `SLlamaVocab.nlToken`
+- ✅ **llama_vocab_pad** - Wrapped in `SLlamaVocab.padToken`
+- ✅ **llama_vocab_mask** - Wrapped in `SLlamaVocab.maskToken`
+- ✅ **llama_vocab_get_add_bos** - Wrapped in `SLlamaVocab.addsBOS`
+- ✅ **llama_vocab_get_add_eos** - Wrapped in `SLlamaVocab.addsEOS`
+- ✅ **llama_vocab_get_add_sep** - Wrapped in `SLlamaVocab.addsSEP`
+- ✅ **llama_vocab_fim_pre** - Wrapped in `SLlamaVocab.fimPrefixToken`
+- ✅ **llama_vocab_fim_suf** - Wrapped in `SLlamaVocab.fimSuffixToken`
+- ✅ **llama_vocab_fim_mid** - Wrapped in `SLlamaVocab.fimMiddleToken`
+- ✅ **llama_vocab_fim_pad** - Wrapped in `SLlamaVocab.fimPaddingToken`
+- ✅ **llama_vocab_fim_rep** - Wrapped in `SLlamaVocab.fimReplacementToken`
+- ✅ **llama_vocab_fim_sep** - Wrapped in `SLlamaVocab.fimSeparatorToken`
 
 #### Batch Operations
 - ✅ **llama_batch_init** - Used in `SLlamaBatch.init`
@@ -303,20 +303,21 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 13. **Context Settings**: Complete context configuration functions (embeddings, causal attention, warmup, abort callback, synchronization)
 14. **Model Metadata**: Comprehensive metadata API with modern string handling
 15. **LoRA Adapters**: Complete LoRA adapter functionality with control vector support
+16. **Vocabulary Functions**: Complete vocabulary API with all utility functions
 
 ### 🔄 Partially Implemented
 1. **Sampling Strategies**: Basic sampling implemented, but many specialized samplers not wrapped
-2. **Vocabulary Functions**: Core functions wrapped, but many utility functions not exposed
 
 ### 🆕 Recent Improvements
 1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
 2. **Testing Framework**: Migrated from XCTest to Testing framework for better test organization and reliability
 3. **Context Settings Discovery**: Identified that all context configuration functions are already implemented in `SLlamaInference` and `SLlamaContext`
 4. **LoRA Adapters**: Complete implementation of all LoRA adapter functions including control vector support
-5. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
-6. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
-7. **Test Improvements**: Fixed all compilation warnings and improved test reliability
-8. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
+5. **Vocabulary Functions Discovery**: Identified that all vocabulary utility functions are already implemented in `SLlamaVocab`
+6. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
+7. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
+8. **Test Improvements**: Fixed all compilation warnings and improved test reliability
+9. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
 
 ### 📊 Enum Usage Summary
 - **✅ 4 enums actively used** in main codebase: `SLlamaVocabType`, `SLlamaRopeType`, `SLlamaTokenAttribute`, `SLlamaPoolingType`
