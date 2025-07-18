@@ -245,11 +245,11 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_n_threads_batch** - Available but not wrapped
 
 #### Context Settings
-- ✅ **llama_set_embeddings** - Available but not wrapped
-- ✅ **llama_set_causal_attn** - Available but not wrapped
-- ✅ **llama_set_warmup** - Available but not wrapped
-- ✅ **llama_set_abort_callback** - Available but not wrapped
-- ✅ **llama_synchronize** - Available but not wrapped
+- ✅ **llama_set_embeddings** - Wrapped in `SLlamaInference.setEmbeddings()` and `SLlamaContext.setEmbeddings()`
+- ✅ **llama_set_causal_attn** - Wrapped in `SLlamaInference.setCausalAttention()` and `SLlamaContext.setCausalAttention()`
+- ✅ **llama_set_warmup** - Wrapped in `SLlamaInference.setWarmup()` and `SLlamaContext.setWarmup()`
+- ✅ **llama_set_abort_callback** - Wrapped in `SLlamaInference.setAbortCallback()`
+- ✅ **llama_synchronize** - Wrapped in `SLlamaInference.synchronize()` and `SLlamaContext.synchronize()`
 
 #### Model Quantization
 - ✅ **llama_model_quantize** - Available but not wrapped
@@ -300,7 +300,8 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 10. **Performance**: `SLlamaPerformance` for benchmarking and monitoring with complete llama.cpp performance function wrappers
 11. **Logits**: `SLlamaLogits` for accessing model outputs
 12. **Inference**: `SLlamaInference` for basic inference operations
-13. **Model Metadata**: Comprehensive metadata API with modern string handling
+13. **Context Settings**: Complete context configuration functions (embeddings, causal attention, warmup, abort callback, synchronization)
+14. **Model Metadata**: Comprehensive metadata API with modern string handling
 
 ### 🔄 Partially Implemented
 1. **Sampling Strategies**: Basic sampling implemented, but many specialized samplers not wrapped
@@ -309,10 +310,11 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 ### 🆕 Recent Improvements
 1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
 2. **Testing Framework**: Migrated from XCTest to Testing framework for better test organization and reliability
-3. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
-4. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
-5. **Test Improvements**: Fixed all compilation warnings and improved test reliability
-6. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
+3. **Context Settings Discovery**: Identified that all context configuration functions are already implemented in `SLlamaInference` and `SLlamaContext`
+4. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
+5. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
+6. **Test Improvements**: Fixed all compilation warnings and improved test reliability
+7. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
 
 ### 📊 Enum Usage Summary
 - **✅ 4 enums actively used** in main codebase: `SLlamaVocabType`, `SLlamaRopeType`, `SLlamaTokenAttribute`, `SLlamaPoolingType`
@@ -322,12 +324,11 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 1. **LoRA Adapters**: No wrapper for LoRA adapter functionality
 2. **Model Quantization**: No wrapper for quantization functions
 3. **Threading Control**: No wrapper for thread management
-4. **Context Settings**: No wrapper for context configuration functions
-5. **Backend Management**: No wrapper for backend initialization/cleanup
-6. **Optimization**: No wrapper for training optimization functions
-7. **Advanced Sampling**: Many specialized samplers not wrapped
-8. **System Utilities**: No wrapper for system-level functions
-9. **Advanced Vocabulary**: Many vocabulary utility functions not wrapped
+4. **Backend Management**: No wrapper for backend initialization/cleanup
+5. **Optimization**: No wrapper for training optimization functions
+6. **Advanced Sampling**: Many specialized samplers not wrapped
+7. **System Utilities**: No wrapper for system-level functions
+8. **Advanced Vocabulary**: Many vocabulary utility functions not wrapped
 
 ## Recommendations
 
