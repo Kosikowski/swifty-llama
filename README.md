@@ -58,8 +58,8 @@ let model = try SLlamaModel(modelPath: "/path/to/your/model.gguf")
 // Create a context
 let context = try SLlamaContext(model: model)
 
-// Create an inference wrapper
-let inference = context.inference()
+// Create a core operations wrapper
+let core = context.core()
 ```
 
 ### Simple Text Generation
@@ -80,8 +80,8 @@ for (index, token) in tokens.enumerated() {
     batch.addToken(token, position: Int32(index), sequenceIds: [0], logits: index == tokens.count - 1)
 }
 
-// Run inference
-try inference.decode(batch)
+// Run core operations
+try core.decode(batch)
 
 // Get logits and sample next token
 let logits = SLlamaLogits(context: context)
@@ -145,7 +145,7 @@ class SLlamaContext: PLlamaContext {
     var maxSequences: UInt32                  // Max sequences
     
     // Methods
-    func inference() -> PLlamaInference       // Create inference wrapper
+    func core() -> PLlamaCore                 // Create core operations wrapper
     func encode(_ batch: PLlamaBatch) throws  // Encode batch (no KV cache)
     func decode(_ batch: PLlamaBatch) throws  // Decode batch (uses KV cache)
     func setThreads(nThreads: Int32, nThreadsBatch: Int32)
@@ -154,15 +154,15 @@ class SLlamaContext: PLlamaContext {
 }
 ```
 
-### ⚡ SLlamaInference - Inference Operations
+### ⚡ SLlamaCore - Core Operations
 
 ```swift
-class SLlamaInference: PLlamaInference {
+class SLlamaCore: PLlamaCore {
     // Initialization
     init(context: SLlamaContext)
     
     // Properties
-    var inferenceModel: PLlamaModel?          // Get model from context
+    var coreModel: PLlamaModel?               // Get model from context
     
     // Methods
     func encode(_ batch: PLlamaBatch) throws  // Encode tokens
@@ -360,9 +360,9 @@ SLlama uses protocols for dependency injection and testing:
 ```swift
 // Use protocols for testable code
 func performInference(with model: PLlamaModel, context: PLlamaContext) {
-    let inference = context.inference()
+    let core = context.core()
     let batch = SLlamaBatch.getSingleTokenBatch(123)
-    try inference.decode(batch)
+    try core.decode(batch)
 }
 
 // Easy to mock for testing
@@ -435,9 +435,9 @@ let context = try SLlamaContext(model: model)
 // Set thread counts for optimal performance
 context.setThreads(nThreads: 8, nThreadsBatch: 8)
 
-// Or through inference
-let inference = context.inference()
-inference.setThreads(nThreads: 8, nThreadsBatch: 8)
+// Or through core operations
+let core = context.core()
+core.setThreads(nThreads: 8, nThreadsBatch: 8)
 ```
 
 ### Batch Processing
@@ -454,7 +454,7 @@ for (index, token) in tokens.enumerated() {
 }
 
 // Process the batch
-try inference.decode(batch)
+try core.decode(batch)
 ```
 
 ## Architecture

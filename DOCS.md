@@ -164,7 +164,7 @@ public class SLlamaContext: PLlamaContext {
     public var poolingType: SLlamaPoolingType { get }     // Pooling type
     
     // Core Methods
-    public func inference() -> PLlamaInference            // Create inference wrapper
+    public func core() -> PLlamaCore            // Create inference wrapper
     public func encode(_ batch: PLlamaBatch) throws       // Encode batch (no KV cache)
     public func decode(_ batch: PLlamaBatch) throws       // Decode batch (uses KV cache)
     
@@ -193,21 +193,21 @@ let context = try SLlamaContext(model: model, contextParams: contextParams)
 context.setThreads(nThreads: 8, nThreadsBatch: 8)
 context.setEmbeddings(true)  // Enable embeddings output
 
-// Create inference wrapper
-let inference = context.inference()
+// Create core operations wrapper
+let core = context.core()
 ```
 
-### SLlamaInference - Inference Operations
+### SLlamaCore - Core Operations
 
-Handles the actual inference operations.
+Handles the core operations (encoding, decoding, and configuration).
 
 ```swift
-public class SLlamaInference: PLlamaInference {
+public class SLlamaCore: PLlamaCore {
     // Initialization
     public init(context: SLlamaContext)
     
     // Properties
-    public var inferenceModel: PLlamaModel? { get }       // Get model from context
+    public var coreModel: PLlamaModel? { get }            // Get model from context
     
     // Core Operations
     public func encode(_ batch: PLlamaBatch) throws       // Encode tokens
@@ -232,18 +232,18 @@ public class SLlamaInference: PLlamaInference {
 
 **Usage:**
 ```swift
-let inference = context.inference()
+let core = context.core()
 
-// Configure inference
-inference.setThreads(nThreads: 8, nThreadsBatch: 8)
-inference.setEmbeddings(false)  // Disable embeddings for faster inference
-inference.setCausalAttention(true)  // Enable causal attention
+// Configure core operations
+core.setThreads(nThreads: 8, nThreadsBatch: 8)
+core.setEmbeddings(false)  // Disable embeddings for faster inference
+core.setCausalAttention(true)  // Enable causal attention
 
-// Run inference
-try inference.decode(batch)
+// Run core operations
+try core.decode(batch)
 
 // Wait for completion
-inference.synchronize()
+core.synchronize()
 ```
 
 ### SLlamaBatch - Token Batching
@@ -291,7 +291,7 @@ for (index, token) in tokens.enumerated() {
 }
 
 // Process the batch
-try inference.decode(batch)
+try core.decode(batch)
 
 // Clear for reuse
 batch.clear()
@@ -533,7 +533,7 @@ SLlama uses protocols for dependency injection and testing:
 ```swift
 public protocol PLlamaModel: AnyObject { /* ... */ }
 public protocol PLlamaContext: AnyObject { /* ... */ }
-public protocol PLlamaInference: AnyObject { /* ... */ }
+public protocol PLlamaCore: AnyObject { /* ... */ }
 public protocol PLlamaBatch: AnyObject { /* ... */ }
 public protocol PLlamaSampler: AnyObject { /* ... */ }
 public protocol PLlamaTokenizer { /* ... */ }
@@ -545,7 +545,7 @@ public protocol PLlamaVocab: AnyObject { /* ... */ }
 ```swift
 // Use protocols for dependency injection
 func generateText(model: PLlamaModel, context: PLlamaContext, input: String) -> String {
-    let inference = context.inference()
+    let core = context.core()
     let vocab = SLlamaVocab(vocab: model.vocab)
     
     // Tokenize input
@@ -559,7 +559,7 @@ func generateText(model: PLlamaModel, context: PLlamaContext, input: String) -> 
     }
     
     // Run inference
-    try! inference.decode(batch)
+    try! core.decode(batch)
     
     // Return generated text (simplified)
     return "Generated text"
@@ -593,7 +593,7 @@ let result = generateText(model: mockModel, context: mockContext, input: "test")
 func generateText(model: PLlamaModel, prompt: String, maxTokens: Int = 100) throws -> String {
     // Create context
     let context = try SLlamaContext(model: model)
-    let inference = context.inference()
+    let core = context.core()
     let vocab = SLlamaVocab(vocab: model.vocab)
     
     // Configure for text generation
@@ -619,7 +619,7 @@ func generateText(model: PLlamaModel, prompt: String, maxTokens: Int = 100) thro
         )
     }
     
-    try inference.decode(batch)
+    try core.decode(batch)
     
     // Generate tokens
     var generatedTokens: [SLlamaToken] = []
@@ -650,7 +650,7 @@ func generateText(model: PLlamaModel, prompt: String, maxTokens: Int = 100) thro
         batch.clear()
         batch.addToken(nextToken, position: Int32(position), sequenceIds: [0], logits: true)
         
-        try inference.decode(batch)
+        try core.decode(batch)
     }
     
     // Detokenize result
@@ -845,7 +845,7 @@ if SLlama.supportsMetal() {
 class ChatSession {
     private let model: PLlamaModel
     private let context: PLlamaContext
-    private let inference: PLlamaInference
+    private let inference: PLlamaCore
     private let vocab: SLlamaVocab
     private var conversationTokens: [SLlamaToken] = []
     
@@ -893,7 +893,7 @@ class ChatSession {
             )
         }
         
-        try inference.decode(batch)
+        try core.decode(batch)
         
         // Generate response
         for position in conversationTokens.count..<(conversationTokens.count + 200) {
@@ -922,7 +922,7 @@ class ChatSession {
             // Continue generation
             batch.clear()
             batch.addToken(nextToken, position: Int32(position), sequenceIds: [0], logits: true)
-            try inference.decode(batch)
+            try core.decode(batch)
         }
         
         // Add response to conversation
@@ -949,7 +949,7 @@ let response2 = try chat.addMessage(role: "user", content: "Tell me a joke.")
 ```swift
 func generateEmbeddings(model: PLlamaModel, texts: [String]) throws -> [[Float]] {
     let context = try SLlamaContext(model: model)
-    let inference = context.inference()
+    let core = context.core()
     
     // Enable embeddings
     context.setEmbeddings(true)
@@ -977,7 +977,7 @@ func generateEmbeddings(model: PLlamaModel, texts: [String]) throws -> [[Float]]
         }
         
         // Run inference
-        try inference.encode(batch)  // Use encode for embeddings
+        try core.encode(batch)  // Use encode for embeddings
         
         // Get embeddings
         let logits = SLlamaLogits(context: context)

@@ -91,8 +91,8 @@ public protocol PLlamaContext: AnyObject {
 
     // MARK: - Methods
 
-    /// Create an inference wrapper for this context
-    func inference() -> PLlamaInference
+    /// Create a core operations wrapper for this context
+    func core() -> PLlamaCore
 
     /// Encode a batch of tokens
     func encode(_ batch: PLlamaBatch) throws
@@ -116,12 +116,12 @@ public protocol PLlamaContext: AnyObject {
     func synchronize()
 }
 
-/// Protocol for SLlama inference operations
-public protocol PLlamaInference: AnyObject {
+/// Protocol for SLlama core operations (encoding, decoding, and configuration)
+public protocol PLlamaCore: AnyObject {
     // MARK: - Properties
 
-    /// Get the model from inference context
-    var inferenceModel: PLlamaModel? { get }
+    /// Get the model from core context
+    var coreModel: PLlamaModel? { get }
 
     // MARK: - Methods
 

@@ -1,18 +1,18 @@
 import Foundation
 import llama
 
-// MARK: - SLlamaInference
+// MARK: - SLlamaCore
 
-/// A wrapper for llama inference operations
-public class SLlamaInference: @unchecked Sendable, PLlamaInference {
+/// A wrapper for llama core operations (encoding, decoding, and configuration)
+public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     // MARK: Properties
 
     private let context: SLlamaContext
 
     // MARK: Computed Properties
 
-    /// Get the model from inference context
-    public var inferenceModel: PLlamaModel? {
+    /// Get the model from core context
+    public var coreModel: PLlamaModel? {
         guard let ctx = context.pointer else { return nil }
         let modelPtr = llama_get_model(ctx)
         return try? SLlamaModel(modelPointer: modelPtr)
@@ -232,26 +232,33 @@ public class SLlamaInference: @unchecked Sendable, PLlamaInference {
     }
 }
 
-/// Extension to SLlamaContext for inference operations
+/// Extension to SLlamaContext for core operations
 public extension SLlamaContext {
-    /// Create an inference wrapper for this context
-    /// - Returns: A PLlamaInference instance
-    func inference() -> PLlamaInference {
-        SLlamaInference(context: self)
+    /// Create a core operations wrapper for this context
+    /// - Returns: A PLlamaCore instance
+    func core() -> PLlamaCore {
+        SLlamaCore(context: self)
+    }
+
+    /// Create a core operations wrapper for this context (backwards compatibility)
+    /// - Returns: A PLlamaCore instance
+    @available(*, deprecated, renamed: "core", message: "Use core() instead of inference() for clarity")
+    func inference() -> PLlamaCore {
+        core()
     }
 
     /// Encode a batch of tokens (does not use KV cache)
     /// - Parameter batch: The batch to encode
     /// - Throws: SLlamaError if encoding fails
     func encode(_ batch: PLlamaBatch) throws {
-        try inference().encode(batch)
+        try core().encode(batch)
     }
 
     /// Decode a batch of tokens (uses KV cache)
     /// - Parameter batch: The batch to decode
     /// - Throws: SLlamaError if decoding fails
     func decode(_ batch: PLlamaBatch) throws {
-        try inference().decode(batch)
+        try core().decode(batch)
     }
 
     /// Set the number of threads
@@ -259,30 +266,30 @@ public extension SLlamaContext {
     ///   - nThreads: Number of threads for generation
     ///   - nThreadsBatch: Number of threads for batch processing
     func setThreads(nThreads: Int32, nThreadsBatch: Int32) {
-        inference().setThreads(nThreads: nThreads, nThreadsBatch: nThreadsBatch)
+        core().setThreads(nThreads: nThreads, nThreadsBatch: nThreadsBatch)
     }
 
     /// Set embeddings output
     /// - Parameter embeddings: Whether to output embeddings
     func setEmbeddings(_ embeddings: Bool) {
-        inference().setEmbeddings(embeddings)
+        core().setEmbeddings(embeddings)
     }
 
     /// Set causal attention
     /// - Parameter causalAttn: Whether to use causal attention
     func setCausalAttention(_ causalAttn: Bool) {
-        inference().setCausalAttention(causalAttn)
+        core().setCausalAttention(causalAttn)
     }
 
     /// Set warmup mode
     /// - Parameter warmup: Whether to enable warmup mode
     func setWarmup(_ warmup: Bool) {
-        inference().setWarmup(warmup)
+        core().setWarmup(warmup)
     }
 
     /// Synchronize computations
     func synchronize() {
-        inference().synchronize()
+        core().synchronize()
     }
 
     // MARK: - Legacy Methods (Deprecated)
@@ -292,7 +299,7 @@ public extension SLlamaContext {
     /// - Returns: 0 on success, negative value on error
     @available(*, deprecated, message: "Use encode(_:) throws instead")
     func _encode(_ batch: SLlamaBatch) -> Int32 {
-        (inference() as! SLlamaInference)._encode(batch)
+        (core() as! SLlamaCore)._encode(batch)
     }
 
     /// Legacy decode method that returns error code (deprecated)
@@ -300,6 +307,6 @@ public extension SLlamaContext {
     /// - Returns: 0 on success, positive values are warnings, negative values are errors
     @available(*, deprecated, message: "Use decode(_:) throws instead")
     func _decode(_ batch: SLlamaBatch) -> Int32 {
-        (inference() as! SLlamaInference)._decode(batch)
+        (core() as! SLlamaCore)._decode(batch)
     }
 }

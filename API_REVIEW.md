@@ -117,7 +117,7 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 - ✅ **llama_token_attr** - Type aliased as `SLlamaTokenAttribute` with extensions, **USED** in `SLlamaVocab.getAttribute(for:)` method
 - ✅ **llama_ftype** - Type aliased as `SLlamaFileType` with extensions, **ONLY DEFINED** (not used in main codebase)
 - ✅ **llama_rope_scaling_type** - Type aliased as `SLlamaRopeScalingType` with extensions, **ONLY DEFINED** (not used in main codebase)
-- ✅ **llama_pooling_type** - Type aliased as `SLlamaPoolingType` with extensions, **USED** in `SLlamaContext.poolingType` and `SLlamaInference.getPoolingType()`
+- ✅ **llama_pooling_type** - Type aliased as `SLlamaPoolingType` with extensions, **USED** in `SLlamaContext.poolingType` and `SLlamaCore.getPoolingType()`
 - ✅ **llama_attention_type** - Type aliased as `SLlamaAttentionType` with extensions, **ONLY DEFINED** (not used in main codebase)
 - ✅ **llama_split_mode** - Type aliased as `SLlamaSplitMode` with extensions, **ONLY DEFINED** (not used in main codebase)
 - ✅ **llama_model_kv_override_type** - Type aliased as `SLlamaModelKvOverrideType` with extensions, **ONLY DEFINED** (not used in main codebase)
@@ -274,16 +274,16 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 - ✅ **llama_perf_sampler_reset** - Wrapped in `SLlamaPerformance.resetSamplerPerformance()`
 
 #### Threading
-- ✅ **llama_set_n_threads** - Wrapped in `SLlamaInference.setThreads()` and `SLlamaBackend.setThreadCount()`
-- ✅ **llama_n_threads** - Wrapped in `SLlamaInference.getThreadCount()`
-- ✅ **llama_n_threads_batch** - Wrapped in `SLlamaInference.getBatchThreadCount()`
+- ✅ **llama_set_n_threads** - Wrapped in `SLlamaCore.setThreads()` and `SLlamaBackend.setThreadCount()`
+- ✅ **llama_n_threads** - Wrapped in `SLlamaCore.getThreadCount()`
+- ✅ **llama_n_threads_batch** - Wrapped in `SLlamaCore.getBatchThreadCount()`
 
 #### Context Settings
-- ✅ **llama_set_embeddings** - Wrapped in `SLlamaInference.setEmbeddings()` and `SLlamaContext.setEmbeddings()`
-- ✅ **llama_set_causal_attn** - Wrapped in `SLlamaInference.setCausalAttention()` and `SLlamaContext.setCausalAttention()`
-- ✅ **llama_set_warmup** - Wrapped in `SLlamaInference.setWarmup()` and `SLlamaContext.setWarmup()`
-- ✅ **llama_set_abort_callback** - Wrapped in `SLlamaInference.setAbortCallback()`
-- ✅ **llama_synchronize** - Wrapped in `SLlamaInference.synchronize()` and `SLlamaContext.synchronize()`
+- ✅ **llama_set_embeddings** - Wrapped in `SLlamaCore.setEmbeddings()` and `SLlamaContext.setEmbeddings()`
+- ✅ **llama_set_causal_attn** - Wrapped in `SLlamaCore.setCausalAttention()` and `SLlamaContext.setCausalAttention()`
+- ✅ **llama_set_warmup** - Wrapped in `SLlamaCore.setWarmup()` and `SLlamaContext.setWarmup()`
+- ✅ **llama_set_abort_callback** - Wrapped in `SLlamaCore.setAbortCallback()`
+- ✅ **llama_synchronize** - Wrapped in `SLlamaCore.synchronize()` and `SLlamaContext.synchronize()`
 
 #### Model Quantization
 - ✅ **llama_model_quantize** - Wrapped in `SLlamaQuantization.quantizeModel()`
@@ -336,12 +336,12 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 9. **Advanced Features**: `SLlamaModelAdvanced` for model metadata and validation
 10. **Performance**: `SLlamaPerformance` for benchmarking and monitoring with complete llama.cpp performance function wrappers
 11. **Logits**: `SLlamaLogits` for accessing model outputs
-12. **Inference**: `SLlamaInference` for basic inference operations
+12. **Inference**: `SLlamaCore` for basic inference operations
 13. **Context Settings**: Complete context configuration functions (embeddings, causal attention, warmup, abort callback, synchronization)
 14. **Model Metadata**: Complete metadata API with modern string handling
 15. **LoRA Adapters**: Complete LoRA adapter functionality with control vector support
 16. **Vocabulary Functions**: Complete vocabulary API with all utility functions
-17. **Threading Control**: Complete thread management through `SLlamaInference` and `SLlamaBackend`
+17. **Threading Control**: Complete thread management through `SLlamaCore` and `SLlamaBackend`
 18. **Backend Management**: Complete backend initialization and cleanup through `SLlamaBackend` and `SLlama`
 19. **Model Quantization**: `SLlamaQuantization` for model quantization with complete parameter support
 20. **System Information**: `SLlamaSystemInfo` for system capabilities and information
@@ -354,10 +354,10 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 ### 🆕 Recent Improvements
 1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
 2. **Testing Framework**: Migrated from XCTest to Testing framework for better test organization and reliability
-3. **Context Settings Discovery**: Identified that all context configuration functions are already implemented in `SLlamaInference` and `SLlamaContext`
+3. **Context Settings Discovery**: Identified that all context configuration functions are already implemented in `SLlamaCore` and `SLlamaContext`
 4. **LoRA Adapters**: Complete implementation of all LoRA adapter functions including control vector support
 5. **Vocabulary Functions Discovery**: Identified that all vocabulary utility functions are already implemented in `SLlamaVocab`
-6. **Threading Control Discovery**: Identified that all threading functions are already implemented in `SLlamaInference` and `SLlamaBackend`
+6. **Threading Control Discovery**: Identified that all threading functions are already implemented in `SLlamaCore` and `SLlamaBackend`
 7. **Backend Management Discovery**: Identified that backend functions are already implemented in `SLlamaBackend` and `SLlama`
 8. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
 9. **Logging Control**: Added `SLlama.disableLogging()` to suppress verbose Metal initialization logs
