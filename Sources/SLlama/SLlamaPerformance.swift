@@ -14,6 +14,8 @@ public class SLlamaPerformance {
         self.context = context
     }
 
+    // MARK: Functions
+
     // MARK: - Benchmarking Functions
 
     /// Benchmark model loading performance
