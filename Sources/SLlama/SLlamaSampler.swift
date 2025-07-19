@@ -73,9 +73,35 @@ public class SLlamaSampler {
     }
 
     /// Sample a token from the context
-    /// - Parameter lastTokens: Array of last tokens (negative indices for reverse order)
+    ///
+    /// **ARCHITECTURAL DECISION**: This method doesn't accept lastTokens parameter because
+    /// modern llama.cpp uses stateful samplers for repetition control.
+    ///
+    /// **Why lastTokens was removed**:
+    /// - Modern llama.cpp samplers maintain internal state via `llama_sampler_accept(token)`
+    /// - Repetition penalties are handled by dedicated penalty samplers, not manual token tracking
+    /// - Stateful approach provides better performance and accuracy than manual implementations
+    /// - Reduces API confusion by having a single clear responsibility per function
+    ///
+    /// **For repetition control, use**:
+    /// ```swift
+    /// // ✅ Modern approach - stateful penalty sampler
+    /// let penaltySampler = SLlamaSampler.penalties(
+    ///     context: context,
+    ///     penaltyLastN: 64,      // Automatically tracks last 64 tokens
+    ///     penaltyRepeat: 1.1,    // Repetition penalty
+    ///     penaltyFreq: 0.0,      // Frequency penalty
+    ///     penaltyPresent: 0.0    // Presence penalty
+    /// )
+    /// let token = penaltySampler.sampleFromIndex(-1)
+    /// penaltySampler.accept(token)  // Updates internal state
+    ///
+    /// // ❌ Or use the manual method if you need custom logic
+    /// sampler.sampleWithRepetitionPenalty(1.1, lastTokens: previousTokens)
+    /// ```
+    ///
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sample(lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sample() -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -104,7 +130,7 @@ public class SLlamaSampler {
             sorted: false
         )
 
-        // Apply sampling
+        // Apply sampling (uses any configured samplers attached to this instance)
         apply(to: &tokenDataArray)
 
         // Find the token with highest probability
@@ -115,12 +141,20 @@ public class SLlamaSampler {
         return SLlamaToken(maxIndex)
     }
 
-    /// Sample with temperature
-    /// - Parameters:
-    ///   - temperature: Temperature for sampling (0.0 = deterministic, higher = more random)
-    ///   - lastTokens: Array of last tokens
+    /// Sample with temperature scaling
+    ///
+    /// **ARCHITECTURAL NOTE**: Temperature scaling is applied to logits before sampling,
+    /// making them more (higher temp) or less (lower temp) random. This is a preprocessing
+    /// step that doesn't require token history, unlike repetition penalties.
+    ///
+    /// **Why no lastTokens parameter**:
+    /// - Temperature only affects the current sampling decision, not historical context
+    /// - For repetition control, use dedicated penalty samplers (see sample() method docs)
+    /// - Keeps the API focused on single responsibility (temperature scaling only)
+    ///
+    /// - Parameter temperature: Temperature for sampling (0.0 = deterministic, higher = more random)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleWithTemperature(_ temperature: Float, lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sampleWithTemperature(_ temperature: Float) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -162,11 +196,19 @@ public class SLlamaSampler {
     }
 
     /// Sample with top-k filtering
-    /// - Parameters:
-    ///   - k: Number of top tokens to consider
-    ///   - lastTokens: Array of last tokens
+    ///
+    /// **ARCHITECTURAL NOTE**: Top-k filtering selects only the k most likely tokens
+    /// before sampling. This is a vocabulary filtering operation that doesn't depend
+    /// on token history, unlike repetition penalties.
+    ///
+    /// **Why no lastTokens parameter**:
+    /// - Top-k only considers current logits, not historical token patterns
+    /// - For repetition control, use penalty samplers in a sampler chain
+    /// - Maintains single responsibility principle (vocabulary filtering only)
+    ///
+    /// - Parameter k: Number of top tokens to consider
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleTopK(_ k: Int, lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sampleTopK(_ k: Int) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -211,11 +253,19 @@ public class SLlamaSampler {
     }
 
     /// Sample with top-p (nucleus) filtering
-    /// - Parameters:
-    ///   - p: Cumulative probability threshold (0.0 to 1.0)
-    ///   - lastTokens: Array of last tokens
+    ///
+    /// **ARCHITECTURAL NOTE**: Top-p filtering selects tokens whose cumulative probability
+    /// reaches the threshold p. This is a dynamic vocabulary filtering based on probability
+    /// distribution, not token history.
+    ///
+    /// **Why no lastTokens parameter**:
+    /// - Top-p only considers current probability distribution, not historical patterns
+    /// - For repetition control, use penalty samplers in a sampler chain
+    /// - Keeps the method focused on nucleus sampling logic only
+    ///
+    /// - Parameter p: Cumulative probability threshold (0.0 to 1.0)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleTopP(_ p: Float, lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sampleTopP(_ p: Float) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -272,7 +322,28 @@ public class SLlamaSampler {
         return selectedCandidates[maxIndex].id
     }
 
-    /// Sample with repetition penalty
+    /// Sample with repetition penalty (manual implementation)
+    ///
+    /// **ARCHITECTURAL NOTE**: This method provides a manual implementation of repetition
+    /// penalty for cases where you need custom logic or can't use stateful samplers.
+    ///
+    /// **When to use this vs. penalty samplers**:
+    /// ✅ Use this when:
+    /// - You need custom penalty logic beyond what penalty samplers provide
+    /// - You're implementing experimental penalty algorithms
+    /// - You need precise control over which tokens get penalized
+    ///
+    /// ✅ Use penalty samplers when:
+    /// - You want standard repetition/frequency/presence penalties
+    /// - You want better performance (C implementation vs Swift loops)
+    /// - You want automatic token history management
+    /// - You're building sampler chains
+    ///
+    /// **Implementation details**:
+    /// - Manually multiplies logits by penalty factor for tokens in lastTokens
+    /// - penalty > 1.0 reduces probability of repeated tokens
+    /// - penalty < 1.0 increases probability of repeated tokens (unusual)
+    ///
     /// - Parameters:
     ///   - penalty: Repetition penalty factor (1.0 = no penalty, >1.0 = penalty)
     ///   - lastTokens: Array of last tokens to penalize
@@ -294,7 +365,9 @@ public class SLlamaSampler {
         for i in 0 ..< vocabSize {
             var logit = logits[Int(i)]
 
-            // Apply repetition penalty
+            // Apply repetition penalty to tokens that appear in lastTokens
+            // **PERFORMANCE NOTE**: This is O(n*m) where n=vocab_size, m=lastTokens.count
+            // For better performance with large token histories, use penalty samplers
             for lastToken in lastTokens {
                 if SLlamaToken(i) == lastToken {
                     logit *= penalty

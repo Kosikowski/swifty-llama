@@ -80,9 +80,33 @@ public class SLlamaSamplerChain {
     }
 
     /// Sample a token using the entire chain
-    /// - Parameter lastTokens: Array of last tokens (negative indices for reverse order)
+    ///
+    /// **ARCHITECTURAL DECISION**: This method doesn't accept lastTokens parameter because
+    /// sampler chains use stateful samplers that maintain their own internal state.
+    ///
+    /// **How sampler chains work**:
+    /// - Each sampler in the chain processes the token data array sequentially
+    /// - Penalty samplers in the chain automatically track token history via `accept(token)`
+    /// - No manual token tracking needed at the chain level
+    /// - Chain.accept(token) propagates to all samplers in the chain
+    ///
+    /// **Example usage**:
+    /// ```swift
+    /// let chain = SLlamaSamplerChain.custom(
+    ///     context: context,
+    ///     temperature: 0.8,
+    ///     topK: 40,
+    ///     topP: 0.9,
+    ///     repetitionPenalty: 1.1
+    /// )
+    ///
+    /// // The chain automatically handles repetition penalties
+    /// let token = chain.sample()
+    /// chain.accept(token)  // Updates internal state of all penalty samplers
+    /// ```
+    ///
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sample(lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sample() -> SLlamaToken? {
         guard let chain else { return nil }
         guard let ctx = context.pointer else { return nil }
 
@@ -112,7 +136,11 @@ public class SLlamaSamplerChain {
             sorted: false
         )
 
-        // Apply the entire chain
+        // Apply the entire chain - each sampler processes the array in sequence
+        // **IMPLEMENTATION NOTE**: This calls each sampler's apply() method in order:
+        // 1. Penalty samplers modify logits based on their internal token history
+        // 2. Temperature/top-k/top-p samplers filter/scale the candidates
+        // 3. Final sampler (e.g., greedy, dist) makes the selection
         llama_sampler_apply(chain, &tokenDataArray)
 
         // Find the token with highest probability
@@ -244,9 +272,49 @@ public extension SLlamaSamplerChain {
     }
 
     /// Create a custom sampling chain with multiple strategies
+    ///
+    /// **ARCHITECTURAL DECISION**: The maxTokens parameter was removed because sampler chains
+    /// define HOW to sample (temperature, penalties, filtering), not HOW MANY tokens to generate.
+    ///
+    /// **Why maxTokens doesn't belong here**:
+    /// - Sampler chains are reusable sampling strategies, not generation loops
+    /// - Token count limits belong in the generation loop, not the sampler configuration
+    /// - Separation of concerns: samplers handle probability, generators handle quantity
+    /// - A single chain can be used for different generation lengths
+    ///
+    /// **Where to control token count**:
+    /// ```swift
+    /// let chain = SLlamaSamplerChain.custom(
+    ///     context: context,
+    ///     temperature: 0.8,
+    ///     topK: 40,
+    ///     topP: 0.9,
+    ///     repetitionPenalty: 1.1
+    /// )
+    ///
+    /// // ✅ Control token count in the generation loop
+    /// var tokens: [SLlamaToken] = []
+    /// let maxTokens = 1000
+    ///
+    /// for _ in 0..<maxTokens {
+    ///     guard let token = chain.sample() else { break }
+    ///     tokens.append(token)
+    ///     chain.accept(token)
+    ///
+    ///     // Add your stopping conditions here
+    ///     if token == eosToken { break }
+    /// }
+    /// ```
+    ///
+    /// **Chain composition strategy**:
+    /// This method creates a chain with the most commonly used sampling techniques:
+    /// 1. **Repetition penalty** - Reduces repetition by penalizing recently used tokens
+    /// 2. **Top-k filtering** - Limits vocabulary to k most likely tokens
+    /// 3. **Top-p filtering** - Further filters by cumulative probability
+    /// 4. **Temperature scaling** - Controls randomness of final selection
+    ///
     /// - Parameters:
     ///   - context: The llama context
-    ///   - maxTokens: Maximum number of tokens to generate
     ///   - temperature: Temperature for sampling
     ///   - topK: Number of top tokens to consider
     ///   - topP: Cumulative probability threshold
@@ -254,7 +322,6 @@ public extension SLlamaSamplerChain {
     /// - Returns: A configured sampler chain, or nil if initialization failed
     static func custom(
         context: SLlamaContext,
-        maxTokens _: Int32 = 1000,
         temperature: Float = 0.7,
         topK: Int32 = 40,
         topP: Float = 0.9,
@@ -265,24 +332,26 @@ public extension SLlamaSamplerChain {
         let chain = SLlamaSamplerChain(context: context)
         guard chain.initialize() else { return nil }
 
-        // Add temperature sampler
-        if let tempSampler = SLlamaSampler.temperature(context: context, temperature: temperature) {
-            chain.addSampler(tempSampler)
+        // **ORDER MATTERS**: Samplers are applied in the order they're added
+
+        // 1. Add repetition penalty first - modifies logits based on token history
+        if let penaltySampler = SLlamaSampler.repetitionPenalty(context: context, penalty: repetitionPenalty) {
+            chain.addSampler(penaltySampler)
         }
 
-        // Add top-k sampler
+        // 2. Add top-k sampler - reduces vocabulary to k most likely tokens
         if let topKSampler = SLlamaSampler.topK(context: context, k: topK) {
             chain.addSampler(topKSampler)
         }
 
-        // Add top-p sampler
+        // 3. Add top-p sampler - further filters by cumulative probability
         if let topPSampler = SLlamaSampler.topP(context: context, p: topP) {
             chain.addSampler(topPSampler)
         }
 
-        // Add repetition penalty sampler
-        if let penaltySampler = SLlamaSampler.repetitionPenalty(context: context, penalty: repetitionPenalty) {
-            chain.addSampler(penaltySampler)
+        // 4. Add temperature sampler - controls randomness of final selection
+        if let tempSampler = SLlamaSampler.temperature(context: context, temperature: temperature) {
+            chain.addSampler(tempSampler)
         }
 
         return chain
