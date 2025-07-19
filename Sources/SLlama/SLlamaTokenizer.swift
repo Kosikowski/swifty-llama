@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaTokenizer
 
 /// A wrapper for llama tokenization functions
-public class SLlamaTokenizer {
+public class SLlamaTokenizer: PLlamaTokenizer {
     /// Tokenize text into tokens
     /// - Parameters:
     ///   - text: The text to tokenize
@@ -188,6 +188,113 @@ public class SLlamaTokenizer {
         }
 
         return string
+    }
+
+    // MARK: - PLlamaTokenizer Protocol Methods
+
+    /// Detokenize tokens into text (PLlamaTokenizer protocol method)
+    /// - Parameters:
+    ///   - tokens: Array of tokens to convert
+    ///   - vocab: The vocabulary to use
+    ///   - renderSpecialTokens: Whether to render special tokens in output
+    /// - Returns: The text representation
+    /// - Throws: SLlamaError if conversion fails
+    public static func detokenize(
+        tokens: [SLlamaToken],
+        vocab: SLlamaVocabPointer?,
+        renderSpecialTokens: Bool
+    ) throws
+        -> String
+    {
+        // Delegate to the existing implementation
+        try detokenize(
+            tokens: tokens,
+            vocab: vocab,
+            removeSpecial: !renderSpecialTokens,
+            unparseSpecial: renderSpecialTokens
+        )
+    }
+
+    /// Get token text representation
+    /// - Parameters:
+    ///   - token: The token to get text for
+    ///   - vocab: The vocabulary to use
+    /// - Returns: The text representation of the token, or nil if invalid
+    public static func getTokenText(
+        token: SLlamaToken,
+        vocab: SLlamaVocabPointer?
+    )
+        -> String?
+    {
+        guard let vocab else { return nil }
+
+        // Allocate buffer for token text
+        let maxLength: Int32 = 256 // Maximum token length
+        var buffer = [CChar](repeating: 0, count: Int(maxLength))
+
+        let result = llama_token_to_piece(vocab, token, &buffer, maxLength, 0, false)
+
+        guard result > 0 else { return nil }
+
+        // Convert C string to Swift string
+        let bytes = Array(buffer.prefix(Int(result))).map { UInt8(bitPattern: $0) }
+        return String(bytes: bytes, encoding: .utf8)
+    }
+
+    /// Get token type
+    /// - Parameters:
+    ///   - token: The token to get type for
+    ///   - vocab: The vocabulary to use
+    /// - Returns: The type of the token
+    public static func getTokenType(
+        token: SLlamaToken,
+        vocab: SLlamaVocabPointer?
+    )
+        -> SLlamaTokenType
+    {
+        guard let vocab else { return LLAMA_TOKEN_TYPE_UNDEFINED }
+
+        // For now, determine type based on token attributes
+        let attr = llama_vocab_get_attr(vocab, token)
+
+        // Map attributes to types (this is a simplified mapping)
+        if (attr.rawValue & LLAMA_TOKEN_ATTR_CONTROL.rawValue) != 0 {
+            return LLAMA_TOKEN_TYPE_CONTROL
+        } else if (attr.rawValue & LLAMA_TOKEN_ATTR_UNKNOWN.rawValue) != 0 {
+            return LLAMA_TOKEN_TYPE_UNDEFINED
+        } else {
+            return LLAMA_TOKEN_TYPE_NORMAL
+        }
+    }
+
+    /// Get token attributes
+    /// - Parameters:
+    ///   - token: The token to get attributes for
+    ///   - vocab: The vocabulary to use
+    /// - Returns: The attributes of the token
+    public static func getTokenAttributes(
+        token: SLlamaToken,
+        vocab: SLlamaVocabPointer?
+    )
+        -> SLlamaTokenAttribute
+    {
+        guard let vocab else { return LLAMA_TOKEN_ATTR_UNDEFINED }
+        return llama_vocab_get_attr(vocab, token)
+    }
+
+    /// Check if token is a control token
+    /// - Parameters:
+    ///   - token: The token to check
+    ///   - vocab: The vocabulary to use
+    /// - Returns: True if the token is a control token
+    public static func isControlToken(
+        token: SLlamaToken,
+        vocab: SLlamaVocabPointer?
+    )
+        -> Bool
+    {
+        guard let vocab else { return false }
+        return llama_vocab_is_control(vocab, token)
     }
 
     /// Apply chat template to messages
