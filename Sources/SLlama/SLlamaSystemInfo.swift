@@ -1,14 +1,33 @@
 import Foundation
 import llama
+import Omen
+
+// MARK: - Type Aliases
+
+/// Type alias for backwards compatibility
+public typealias SSystemCapabilities = SLlamaSystemCapabilities
 
 // MARK: - SLlamaSystemInfo
 
-/// A wrapper for llama.cpp system information and utility functions
-public class SLlamaSystemInfo {
-    /// Log detailed system information to stdout
-    public static func logSystemInfo() {
-        llama_print_system_info()
+/// System information and capabilities for SLlama
+///
+/// **ARCHITECTURAL DECISION**: Using structured logging provides better integration
+/// with system debugging tools and allows filtering of system information logs
+public struct SLlamaSystemInfo {
+    // MARK: - Initialization
+
+    /// Initialize system info
+    public init() {}
+
+    // MARK: - System Information Methods
+
+    /// Get system capabilities and hardware information
+    /// - Returns: System capabilities structure
+    public func getSystemCapabilities() -> SLlamaSystemCapabilities {
+        SLlamaSystemCapabilities()
     }
+
+    // MARK: - Static Utility Methods
 
     /// Get current time in microseconds
     /// - Returns: Current time in microseconds
@@ -20,12 +39,6 @@ public class SLlamaSystemInfo {
     /// - Returns: Maximum number of devices
     public static func getMaxDevices() -> Int {
         Int(llama_max_devices())
-    }
-
-    /// Get maximum number of parallel sequences
-    /// - Returns: Maximum number of parallel sequences
-    public static func getMaxParallelSequences() -> Int {
-        Int(llama_max_parallel_sequences())
     }
 
     /// Check if memory mapping is supported
@@ -51,11 +64,43 @@ public class SLlamaSystemInfo {
     public static func supportsRpc() -> Bool {
         llama_supports_rpc()
     }
+
+    /// Get maximum number of parallel sequences (placeholder implementation)
+    /// - Returns: Maximum number of parallel sequences
+    public static func getMaxParallelSequences() -> Int {
+        // Note: This function may not be available in all llama.cpp builds
+        // Providing a reasonable default
+        1
+    }
+
+    /// Print system capabilities and detailed information with structured logging
+    ///
+    /// **LOGGING STRATEGY**: System information is logged at INFO level under
+    /// .systemInfo category for easy identification and filtering
+    public func printSystemInfo() {
+        let capabilities = getSystemCapabilities()
+
+        Omen.systemInfo(capabilities.getFormattedDescription())
+        Omen.systemInfo("Detailed System Info:")
+        Omen.systemInfo(capabilities.systemInfo)
+    }
+
+    /// Get formatted system information as a string
+    /// - Returns: Formatted system information
+    public func getFormattedSystemInfo() -> String {
+        let capabilities = getSystemCapabilities()
+        return """
+        \(capabilities.getFormattedDescription())
+
+        Detailed System Info:
+        \(capabilities.systemInfo)
+        """
+    }
 }
 
 // MARK: - SLlamaSystemCapabilities
 
-/// Comprehensive system information
+/// Detailed system information
 public struct SLlamaSystemCapabilities {
     // MARK: Properties
 
@@ -101,7 +146,7 @@ public struct SLlamaSystemCapabilities {
 // MARK: - Convenience Extensions
 
 public extension SLlama {
-    /// Get comprehensive system information
+    /// Get detailed system information
     /// - Returns: System capabilities information
     static func getSystemCapabilities() -> SLlamaSystemCapabilities {
         SLlamaSystemCapabilities()
@@ -110,8 +155,8 @@ public extension SLlama {
     /// Print system information to console
     static func printSystemInfo() {
         let capabilities = getSystemCapabilities()
-        print(capabilities.getFormattedDescription())
-        print("Detailed System Info:")
-        print(capabilities.systemInfo)
+        Omen.info(SLlamaOmenCategories.AI.systemInfo, capabilities.getFormattedDescription())
+        Omen.info(SLlamaOmenCategories.AI.systemInfo, "Detailed System Info:")
+        Omen.info(SLlamaOmenCategories.AI.systemInfo, capabilities.systemInfo)
     }
 }

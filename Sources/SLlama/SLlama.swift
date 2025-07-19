@@ -1,8 +1,33 @@
 import Foundation
 import llama
+import Omen
 
-/// Main entry point for SLlama
-public enum SLlama {
+// MARK: - SLlama Initialization
+
+/// Initialize SLlama with Omen categories
+private let _initializeOmenCategories: Void = {
+    // Register SLlama-specific categories with Omen
+    SLlamaOmenCategories.registerAll()
+}()
+
+// MARK: - SLlama
+
+/// Swift wrapper for the llama.cpp library
+///
+/// **OMEN INTEGRATION**: SLlama uses Omen for structured logging with mystical theming.
+/// Categories are automatically registered during module initialization.
+public final class SLlama: @unchecked Sendable {
+    /// Ensure Omen categories are registered when SLlama is first accessed
+    public static let shared = SLlama()
+
+    private init() {
+        // Trigger category registration
+        _ = _initializeOmenCategories
+
+        // Log initialization with mystical flair
+        Omen.model("🔮 SLlama initialized - the oracle awakens")
+    }
+
     /// Initialize the llama backend
     public static func initialize() {
         llama_backend_init()

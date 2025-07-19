@@ -6,7 +6,7 @@ This project uses pre-commit hooks to ensure code quality and consistency. The s
 
 ### 🎨 **Code Formatting**
 - **SwiftFormat**: Automatically formats Swift code according to project standards
-- **Configuration**: `.swiftformat` file with comprehensive formatting rules
+- **Configuration**: `.swiftformat` file with detailed formatting rules
 
 ### 🔍 **Code Quality Checks**
 - **SwiftLint**: Optional Swift linting (if installed)
@@ -81,7 +81,7 @@ Main pre-commit configuration with all hooks and settings.
 SwiftFormat configuration with project-specific formatting rules:
 - 4-space indentation
 - 120 character line width
-- Comprehensive formatting rules
+- Detailed formatting rules
 - Excludes test utilities and C code
 
 ## Troubleshooting

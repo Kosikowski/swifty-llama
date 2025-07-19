@@ -62,6 +62,19 @@ repos:
         files: ^Sources/.*\.swift$
         pass_filenames: false
 
+      # Check for banned word "comprehensive"
+      - id: check-comprehensive-word
+        name: Check Comprehensive Word
+        entry: |
+          bash -c 'if grep -rni "comprehensive" Sources/ Tests/ README.md API_REVIEW.md --include="*.swift" --include="*.md" 2>/dev/null; then
+            echo "❌ Found banned word comprehensive in project files."
+            echo "Use alternatives: detailed, thorough, complete, extensive, full, or in-depth."
+            exit 1
+          fi'
+        language: system
+        files: \.(swift|md)$
+        pass_filenames: false
+
       # Check that import llama is only used in Sources/SLlama
       - id: check-llama-imports
         name: Check LLAMA Imports

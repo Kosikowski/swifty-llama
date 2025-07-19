@@ -380,7 +380,7 @@ public extension SLlamaModelKvOverrideType {
 
 // MARK: - Error Types
 
-/// Comprehensive error types for SLlama operations
+/// Error types for SLlama operations
 public enum SLlamaError: Error {
     // MARK: - File Operations
 

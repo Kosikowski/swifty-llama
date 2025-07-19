@@ -4,8 +4,9 @@ import Testing
 struct SLlamaSystemInfoTests {
     @Test("System info logging works")
     func systemInfoLogging() throws {
-        // Test system info logging
-        SLlamaSystemInfo.logSystemInfo()
+        // Test system info logging with new Omen-based approach
+        let systemInfo = SLlamaSystemInfo()
+        systemInfo.printSystemInfo()
 
         // Test time retrieval
         let time = SLlamaSystemInfo.getCurrentTimeMicroseconds()

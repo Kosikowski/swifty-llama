@@ -17,14 +17,24 @@ let package = Package(
             name: "SLlama",
             targets: ["SLlama"]
         ),
+        .library(
+            name: "Omen",
+            targets: ["Omen"]
+        ),
     ],
     dependencies: [
         // Add any dependencies here if needed
     ],
     targets: [
         .target(
+            name: "Omen",
+            dependencies: [],
+            path: "Sources/Omen",
+            exclude: ["README.md"]
+        ),
+        .target(
             name: "SLlama",
-            dependencies: ["llama"],
+            dependencies: ["llama", "Omen"],
             path: "Sources/SLlama"
         ),
         .binaryTarget(

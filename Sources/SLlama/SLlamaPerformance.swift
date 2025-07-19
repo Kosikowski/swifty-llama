@@ -1,8 +1,21 @@
 import Foundation
+import llama
+import Omen
+
+// MARK: - Type Aliases
+
+/// Type alias for backwards compatibility
+public typealias SContextPerformanceMetrics = SDetailedContextMetrics
+
+/// Type alias for backwards compatibility
+public typealias SSamplerPerformanceMetrics = SDetailedSamplerMetrics
 
 // MARK: - SLlamaPerformance
 
-/// Performance monitoring and benchmarking utilities
+/// A wrapper for performance measurement and monitoring in SLlama
+///
+/// **ARCHITECTURAL DECISION**: Using structured logging instead of print statements
+/// for performance metrics provides better observability and integration with system tools.
 public class SLlamaPerformance {
     // MARK: Properties
 
@@ -158,47 +171,45 @@ public class SLlamaPerformance {
         )
     }
 
-    /// Print performance context data to console
-    /// - Parameter context: The llama context to print performance data for
-    public func printContextPerformance(context: SLlamaContext) {
-        guard context.pointer != nil else { return }
-
-        // Try to use llama.cpp performance functions if available
-        #if canImport(llama)
-            // Note: These functions may not be available in all builds
-            // We'll provide fallback implementations
-        #endif
-
-        // Fallback: Print custom performance data
-        let metrics = getDetailedContextMetrics(context: context)
-        print("=== Context Performance Data ===")
-        print("Start Time: \(metrics.startTimeMs) ms")
-        print("Load Time: \(metrics.loadTimeMs) ms")
-        print("Prompt Eval Time: \(metrics.promptEvalTimeMs) ms")
-        print("Eval Time: \(metrics.evalTimeMs) ms")
-        print("Total Eval Time: \(metrics.totalEvalTimeMs) ms")
-        print("Prompt Eval Count: \(metrics.promptEvalCount)")
-        print("Eval Count: \(metrics.evalCount)")
-        print("Reused Count: \(metrics.reusedCount)")
-        print("Average Eval Time: \(metrics.averageEvalTimeMs) ms")
-        print("Average Prompt Eval Time: \(metrics.averagePromptEvalTimeMs) ms")
-        print("Efficiency Ratio: \(metrics.efficiencyRatio)")
-        print("================================")
+    /// Print context performance data with structured logging
+    ///
+    /// **LOGGING STRATEGY**: Performance metrics are logged at INFO level under the
+    /// .performance category for easy filtering and analysis in Console.app
+    ///
+    /// - Parameter metrics: The performance metrics to display
+    public func printContextPerformanceData(_ metrics: SContextPerformanceMetrics) {
+        Omen.performance("=== Context Performance Data ===")
+        Omen.performance("Start Time: \(metrics.startTimeMs) ms")
+        Omen.performance("Load Time: \(metrics.loadTimeMs) ms")
+        Omen.performance("Prompt Eval Time: \(metrics.promptEvalTimeMs) ms")
+        Omen.performance("Eval Time: \(metrics.evalTimeMs) ms")
+        Omen.performance("Total Eval Time: \(metrics.totalEvalTimeMs) ms")
+        Omen.performance("Prompt Eval Count: \(metrics.promptEvalCount)")
+        Omen.performance("Eval Count: \(metrics.evalCount)")
+        Omen.performance("Reused Count: \(metrics.reusedCount)")
+        Omen.performance("Average Eval Time: \(metrics.averageEvalTimeMs) ms")
+        Omen.performance("Average Prompt Eval Time: \(metrics.averagePromptEvalTimeMs) ms")
+        Omen.performance("Efficiency Ratio: \(metrics.efficiencyRatio)")
+        Omen.performance("================================")
     }
 
-    /// Reset performance context data
-    /// - Parameter context: The llama context to reset performance data for
-    public func resetContextPerformance(context: SLlamaContext) {
-        guard context.pointer != nil else { return }
+    /// Reset context performance data with logging
+    ///
+    /// **LOGGING STRATEGY**: Reset operations are logged at INFO level to track
+    /// when performance monitoring cycles begin/end
+    ///
+    /// - Parameter context: The context to reset performance data for
+    public func resetContextPerformanceData(_ context: SLlamaContext) {
+        guard let ctx = context.pointer else {
+            Omen.error(
+                OmenCategories.Core.performance,
+                "Failed to reset context performance data: context pointer is nil"
+            )
+            return
+        }
 
-        // Try to use llama.cpp performance functions if available
-        #if canImport(llama)
-            // Note: These functions may not be available in all builds
-            // We'll provide fallback implementations
-        #endif
-
-        // Fallback: Reset custom performance tracking
-        print("Context performance data reset")
+        llama_perf_context_reset(ctx)
+        Omen.performance("Context performance data reset")
     }
 
     /// Get performance sampler data from llama.cpp
@@ -221,40 +232,38 @@ public class SLlamaPerformance {
         )
     }
 
-    /// Print performance sampler data to console
-    /// - Parameter sampler: The sampler to print performance data for
-    public func printSamplerPerformance(sampler: SLlamaSampler) {
-        guard sampler.cSampler != nil else { return }
-
-        // Try to use llama.cpp performance functions if available
-        #if canImport(llama)
-            // Note: These functions may not be available in all builds
-            // We'll provide fallback implementations
-        #endif
-
-        // Fallback: Print custom performance data
-        let metrics = getDetailedSamplerMetrics(sampler: sampler)
-        print("=== Sampler Performance Data ===")
-        print("Sample Time: \(metrics.sampleTimeMs) ms")
-        print("Sample Count: \(metrics.sampleCount)")
-        print("Average Sample Time: \(metrics.averageSampleTimeMs) ms")
-        print("Samples Per Second: \(metrics.samplesPerSecond)")
-        print("================================")
+    /// Print sampler performance data with structured logging
+    ///
+    /// **LOGGING STRATEGY**: Sampler metrics are logged under .performance category
+    /// to maintain consistency with other performance measurements
+    ///
+    /// - Parameter metrics: The sampler performance metrics to display
+    public func printSamplerPerformanceData(_ metrics: SSamplerPerformanceMetrics) {
+        Omen.performance("=== Sampler Performance Data ===")
+        Omen.performance("Sample Time: \(metrics.sampleTimeMs) ms")
+        Omen.performance("Sample Count: \(metrics.sampleCount)")
+        Omen.performance("Average Sample Time: \(metrics.averageSampleTimeMs) ms")
+        Omen.performance("Samples Per Second: \(metrics.samplesPerSecond)")
+        Omen.performance("================================")
     }
 
-    /// Reset performance sampler data
+    /// Reset sampler performance data with logging
+    ///
+    /// **LOGGING STRATEGY**: Sampler reset operations are logged to provide
+    /// visibility into performance monitoring lifecycle
+    ///
     /// - Parameter sampler: The sampler to reset performance data for
-    public func resetSamplerPerformance(sampler: SLlamaSampler) {
-        guard sampler.cSampler != nil else { return }
+    public func resetSamplerPerformanceData(_ sampler: SLlamaSampler) {
+        guard let samplerPtr = sampler.cSampler else {
+            Omen.error(
+                OmenCategories.Core.performance,
+                "Failed to reset sampler performance data: sampler pointer is nil"
+            )
+            return
+        }
 
-        // Try to use llama.cpp performance functions if available
-        #if canImport(llama)
-            // Note: These functions may not be available in all builds
-            // We'll provide fallback implementations
-        #endif
-
-        // Fallback: Reset custom performance tracking
-        print("Sampler performance data reset")
+        llama_perf_sampler_reset(samplerPtr)
+        Omen.performance("Sampler performance data reset")
     }
 
     /// Get detailed performance metrics for a context
@@ -614,12 +623,12 @@ public extension SLlamaContext {
 
     /// Print performance data for this context to console
     func printPerformanceData() {
-        performance().printContextPerformance(context: self)
+        performance().printContextPerformanceData(getDetailedPerformanceMetrics())
     }
 
     /// Reset performance data for this context
     func resetPerformanceData() {
-        performance().resetContextPerformance(context: self)
+        performance().resetContextPerformanceData(self)
     }
 }
 
@@ -636,12 +645,12 @@ public extension SLlamaSampler {
     /// Print performance data for this sampler to console
     func printPerformanceData() {
         let performance = SLlamaPerformance()
-        performance.printSamplerPerformance(sampler: self)
+        performance.printSamplerPerformanceData(getDetailedPerformanceMetrics())
     }
 
     /// Reset performance data for this sampler
     func resetPerformanceData() {
         let performance = SLlamaPerformance()
-        performance.resetSamplerPerformance(sampler: self)
+        performance.resetSamplerPerformanceData(self)
     }
 }
