@@ -12,14 +12,14 @@ repos:
         files: \.swift$
         args: [--config, .swiftformat]
 
-  # SwiftLint - Swift code linting (if available)
-  - repo: local
-    hooks:
-      - id: swiftlint
-        name: SwiftLint
-        entry: bash -c 'if command -v swiftlint >/dev/null 2>&1; then swiftlint --fix --quiet; else echo "SwiftLint not installed, skipping..."; fi'
-        language: system
-        files: \.swift$
+  # SwiftLint - Swift code linting (disabled to avoid conflicts with SwiftFormat)
+  # - repo: local
+  #   hooks:
+  #     - id: swiftlint
+  #       name: SwiftLint
+  #       entry: bash -c 'if command -v swiftlint >/dev/null 2>&1; then swiftlint --quiet; else echo "SwiftLint not installed, skipping..."; fi'
+  #       language: system
+  #       files: \.swift$
 
   # Built-in pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
