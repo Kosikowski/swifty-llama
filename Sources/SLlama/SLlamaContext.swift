@@ -6,7 +6,7 @@ public class SLlamaContext {
     // MARK: Properties
 
     private var context: SLlamaContextPointer?
-    private var model: SLlamaModel?
+    private var model: PLlamaModel?
 
     // MARK: Computed Properties
 
@@ -16,7 +16,7 @@ public class SLlamaContext {
     }
 
     /// Get the associated model
-    public var associatedModel: SLlamaModel? {
+    public var associatedModel: PLlamaModel? {
         model
     }
 
@@ -65,12 +65,12 @@ public class SLlamaContext {
 
     // MARK: Lifecycle
 
-    /// Initialize context with a model and optional parameters
+    /// Initialize a new llama context from a model
     /// - Parameters:
     ///   - model: The model to create context from
     ///   - contextParams: Optional context parameters (uses defaults if nil)
     /// - Throws: SLlamaError if context creation fails
-    public init(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) throws {
+    public init(model: PLlamaModel, contextParams: SLlamaContextParams? = nil) throws {
         // Validate model
         guard let modelPtr = model.pointer else {
             throw SLlamaError.invalidModel("Model pointer is null")
@@ -120,13 +120,13 @@ public class SLlamaContext {
 
     // MARK: Static Functions
 
-    /// Legacy initializer that returns nil on failure (deprecated)
+    /// Legacy method that returns nil on failure (deprecated)
     /// - Parameters:
     ///   - model: The model to create context from
     ///   - contextParams: Optional context parameters
     /// - Returns: SLlamaContext instance or nil if creation fails
     @available(*, deprecated, message: "Use init(model:contextParams:) throws instead")
-    public static func _createContext(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) -> SLlamaContext? {
+    public static func _createContext(model: PLlamaModel, contextParams: SLlamaContextParams? = nil) -> SLlamaContext? {
         do {
             return try SLlamaContext(model: model, contextParams: contextParams)
         } catch {

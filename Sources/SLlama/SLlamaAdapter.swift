@@ -28,7 +28,7 @@ public class SLlamaAdapter {
     ///   - model: The model to attach the adapter to
     ///   - path: Path to the LoRA adapter file
     /// - Throws: SLlamaError if adapter loading fails
-    public init(model: SLlamaModel, path: String) throws {
+    public init(model: PLlamaModel, path: String) throws {
         guard let modelPtr = model.pointer else {
             throw SLlamaError.invalidModel("Model pointer is null")
         }
@@ -84,7 +84,7 @@ public class SLlamaAdapter {
     ///   - path: Path to the LoRA adapter file
     /// - Returns: SLlamaAdapter instance or nil if loading fails
     @available(*, deprecated, message: "Use init(model:path:) throws instead")
-    public static func _createAdapter(model: SLlamaModel, path: String) -> SLlamaAdapter? {
+    public static func _createAdapter(model: PLlamaModel, path: String) -> SLlamaAdapter? {
         do {
             return try SLlamaAdapter(model: model, path: path)
         } catch {

@@ -182,14 +182,16 @@ public final class Omen: OmenLogger, @unchecked Sendable {
 
     /// Get logger for category
     private func logger(for category: some OmenCategory) -> OSLog {
-        let key = category.rawValue
-        if let existingLogger = loggers[key] {
-            return existingLogger
-        }
+        queue.sync {
+            let key = category.rawValue
+            if let existingLogger = loggers[key] {
+                return existingLogger
+            }
 
-        let newLogger = OSLog(subsystem: Self.subsystem, category: key)
-        loggers[key] = newLogger
-        return newLogger
+            let newLogger = OSLog(subsystem: Self.subsystem, category: key)
+            loggers[key] = newLogger
+            return newLogger
+        }
     }
 
     // MARK: - Configuration

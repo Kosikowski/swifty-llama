@@ -2,7 +2,7 @@ import Foundation
 import llama
 
 /// A wrapper for llama model
-public class SLlamaModel {
+public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     // MARK: Properties
 
     private var model: SLlamaModelPointer?
@@ -368,5 +368,20 @@ public class SLlamaModel {
     @available(*, deprecated, message: "Use chatTemplate(named:) throws instead")
     public func _chatTemplate(named name: String) -> String? {
         try? chatTemplate(named: name)
+    }
+
+    /// Check if model has embeddings
+    public func hasEmbeddings() -> Bool {
+        embeddingDimensions > 0
+    }
+
+    /// Get model description
+    public func getDescription(bufferSize: Int) -> String? {
+        try? description(bufferSize: bufferSize)
+    }
+
+    /// Get metadata value by key (protocol requirement)
+    public func getMetadata(key: String, bufferSize: Int) throws -> String {
+        try metadataValue(for: key, bufferSize: bufferSize)
     }
 }

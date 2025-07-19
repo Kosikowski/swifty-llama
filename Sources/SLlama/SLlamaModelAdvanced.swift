@@ -6,11 +6,11 @@ import Foundation
 public class SLlamaModelAdvanced {
     // MARK: Properties
 
-    private let model: SLlamaModel
+    private let model: PLlamaModel
 
     // MARK: Lifecycle
 
-    public init(model: SLlamaModel) {
+    public init(model: PLlamaModel) {
         self.model = model
     }
 
@@ -185,7 +185,7 @@ public class SLlamaModelAdvanced {
 
 // MARK: - Extension to SLlamaModel
 
-public extension SLlamaModel {
+public extension PLlamaModel {
     /// Get advanced features interface
     /// - Returns: SLlamaModelAdvanced instance for this model
     func advanced() -> SLlamaModelAdvanced {
