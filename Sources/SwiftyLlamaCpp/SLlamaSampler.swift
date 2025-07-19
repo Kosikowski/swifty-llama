@@ -574,6 +574,88 @@ public extension SLlamaSampler {
         sampler.sampler = samplerPtr
         return sampler
     }
+    
+    /// Create a grammar sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - vocab: The vocabulary to use
+    ///   - grammarString: The grammar rules as a string
+    ///   - grammarRoot: The root symbol name
+    /// - Returns: A grammar sampler, or nil if initialization failed
+    static func grammar(
+        context: SLlamaContext,
+        vocab: SLlamaVocabPointer,
+        grammarString: String,
+        grammarRoot: String
+    ) -> SLlamaSampler? {
+        guard let samplerPtr = llama_sampler_init_grammar(vocab, grammarString, grammarRoot) else { return nil }
+        
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+    
+
+    
+    /// Create a penalties sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - penaltyLastN: Number of last tokens to penalize (0 = disable, -1 = context size)
+    ///   - penaltyRepeat: Repetition penalty (1.0 = disabled)
+    ///   - penaltyFreq: Frequency penalty (0.0 = disabled)
+    ///   - penaltyPresent: Presence penalty (0.0 = disabled)
+    /// - Returns: A penalties sampler, or nil if initialization failed
+    static func penalties(
+        context: SLlamaContext,
+        penaltyLastN: Int32,
+        penaltyRepeat: Float,
+        penaltyFreq: Float,
+        penaltyPresent: Float
+    ) -> SLlamaSampler? {
+        guard let samplerPtr = llama_sampler_init_penalties(penaltyLastN, penaltyRepeat, penaltyFreq, penaltyPresent) else { return nil }
+        
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+    
+
+    
+    /// Create an infill sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - vocab: The vocabulary to use
+    /// - Returns: An infill sampler, or nil if initialization failed
+    static func infill(
+        context: SLlamaContext,
+        vocab: SLlamaVocabPointer
+    ) -> SLlamaSampler? {
+        guard let samplerPtr = llama_sampler_init_infill(vocab) else { return nil }
+        
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+    
+    /// Get the seed used by the sampler
+    /// - Returns: The seed value, or LLAMA_DEFAULT_SEED if not applicable
+    func getSeed() -> UInt32 {
+        guard let sampler = sampler else { return LLAMA_DEFAULT_SEED }
+        return llama_sampler_get_seed(sampler)
+    }
+    
+    /// Sample and accept a token from the specified output index
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - index: The output index to sample from
+    /// - Returns: The sampled token, or nil if sampling failed
+    func sampleFromIndex(_ index: Int32) -> SLlamaToken? {
+        guard let sampler = sampler,
+              let ctx = context.pointer else { return nil }
+        
+        let token = llama_sampler_sample(sampler, ctx, index)
+        return token
+    }
 }
 
 // MARK: - Extension to SLlamaContext for Sampling

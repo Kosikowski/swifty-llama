@@ -7,7 +7,7 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 ## ⚠️ Deprecated Methods and Parameters
 
 ### Swift Deprecation Issues (Fixed)
-- ⚠️ **String(cString:)** - DEPRECATED: Replaced with `String(decoding:as: UTF8.self)`
+- ⚠️ **String(cString:)** - DEPRECATED: Replaced with `String(decoding:as:)`
   - Used in model metadata functions
   - Fixed by converting CChar arrays to UInt8 arrays using `UInt8(bitPattern:)`
   - Modern approach: `String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)`
@@ -40,6 +40,10 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **XTC Sampling** - `SLlamaSampler.xtc()`
 - ✅ **Typical Sampling** - `SLlamaSampler.typical()`
 - ✅ **Min-P Sampling** - `SLlamaSampler.minP()`
+- ✅ **Grammar Sampling** - `SLlamaSampler.grammar()`
+- ✅ **Penalty Sampling** - `SLlamaSampler.penalties()`
+- ✅ **Infill Sampling** - `SLlamaSampler.infill()`
+- ✅ **Seed Management** - `SLlamaSampler.getSeed()` and `sampleFromIndex()`
 
 ### ✅ Performance Optimization Features
 - ✅ **SLlamaBackend** - Backend management and initialization
@@ -61,6 +65,38 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
   - `removeLoRAAdapter()` - Remove specific adapter
   - `clearLoRAAdapters()` - Clear all adapters
   - `loadLoRAAdapter(from:)` - Load and add adapter from file
+
+### ✅ Model Quantization Support
+- ✅ **SLlamaQuantization** - Complete wrapper for model quantization
+  - `quantizeModel(inputPath:outputPath:params:)` - Quantize model with custom parameters
+  - `quantizeModel(inputPath:outputPath:fileType:threads:allowRequantize:quantizeOutputTensor:onlyCopy:pure:keepSplit:)` - Convenience method with common parameters
+  - `defaultParams()` - Get default quantization parameters
+  - `createParams(...)` - Create custom quantization parameters
+  - `SLlamaModelQuantizeParams` - Complete parameter structure
+  - `SLlamaModel.quantize(to:...)` - Convenience extension method
+
+### ✅ System Information and Utilities
+- ✅ **SLlamaSystemInfo** - Complete wrapper for system information
+  - `logSystemInfo()` - Log detailed system information to stdout
+  - `getCurrentTimeMicroseconds()` - Get current time in microseconds
+  - `getMaxDevices()` - Get maximum number of devices
+  - `getMaxParallelSequences()` - Get maximum parallel sequences
+  - `supportsMmap()` - Check mmap support
+  - `supportsMlock()` - Check mlock support
+  - `supportsGpuOffload()` - Check GPU offload support
+  - `supportsRpc()` - Check RPC support
+- ✅ **SLlamaSystemCapabilities** - Aggregate system information
+  - Complete system capabilities structure
+  - `SwiftyLlamaCpp.getSystemCapabilities()` - Get system capabilities
+  - `SwiftyLlamaCpp.printSystemInfo()` - Print system information
+
+### ✅ Model Splitting Support
+- ✅ **SLlamaModelSplitting** - Complete wrapper for model splitting utilities
+  - `buildSplitPath(pathPrefix:splitNumber:totalSplits:)` - Generate split file paths
+  - `extractPathPrefix(splitPath:)` - Extract base path from split file
+  - `generateAllSplitPaths(pathPrefix:totalSplits:)` - Generate all expected paths
+  - `validateSplitPath(path:)` - Validate split path format
+  - `SLlamaSplitModelInfo` - Complete split model information structure
 
 ## C API Analysis (from llama.h)
 
@@ -188,22 +224,22 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_sampler_init_dist** - Available but not wrapped
 - ✅ **llama_sampler_init_top_k** - Available but not wrapped
 - ✅ **llama_sampler_init_top_p** - Available but not wrapped
-- ✅ **llama_sampler_init_min_p** - Available but not wrapped
-- ✅ **llama_sampler_init_typical** - Available but not wrapped
+- ✅ **llama_sampler_init_min_p** - Wrapped in `SLlamaSampler.minP()`
+- ✅ **llama_sampler_init_typical** - Wrapped in `SLlamaSampler.typical()`
 - ✅ **llama_sampler_init_temp** - Available but not wrapped
-- ✅ **llama_sampler_init_temp_ext** - Available but not wrapped
-- ✅ **llama_sampler_init_xtc** - Available but not wrapped
-- ✅ **llama_sampler_init_top_n_sigma** - Available but not wrapped
-- ✅ **llama_sampler_init_mirostat** - Available but not wrapped
-- ✅ **llama_sampler_init_mirostat_v2** - Available but not wrapped
-- ✅ **llama_sampler_init_grammar** - Available but not wrapped
+- ✅ **llama_sampler_init_temp_ext** - Wrapped in `SLlamaSampler.temperatureExtended()`
+- ✅ **llama_sampler_init_xtc** - Wrapped in `SLlamaSampler.xtc()`
+- ✅ **llama_sampler_init_top_n_sigma** - Wrapped in `SLlamaSampler.topNSigma()`
+- ✅ **llama_sampler_init_mirostat** - Wrapped in `SLlamaSampler.mirostat()`
+- ✅ **llama_sampler_init_mirostat_v2** - Wrapped in `SLlamaSampler.mirostatV2()`
+- ✅ **llama_sampler_init_grammar** - Wrapped in `SLlamaSampler.grammar()`
 - ✅ **llama_sampler_init_grammar_lazy** - Available but not wrapped
 - ✅ **llama_sampler_init_grammar_lazy_patterns** - Available but not wrapped
-- ✅ **llama_sampler_init_penalties** - Available but not wrapped
+- ✅ **llama_sampler_init_penalties** - Wrapped in `SLlamaSampler.penalties()`
 - ✅ **llama_sampler_init_dry** - Available but not wrapped
 - ✅ **llama_sampler_init_bias** - Available but not wrapped
-- ✅ **llama_sampler_init_infill** - Available but not wrapped
-- ✅ **llama_sampler_get_seed** - Available but not wrapped
+- ✅ **llama_sampler_init_infill** - Wrapped in `SLlamaSampler.infill()`
+- ✅ **llama_sampler_get_seed** - Wrapped in `SLlamaSampler.getSeed()`
 - ✅ **llama_sampler_sample** - Available but not wrapped
 
 #### Memory Management
@@ -250,7 +286,9 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_synchronize** - Wrapped in `SLlamaInference.synchronize()` and `SLlamaContext.synchronize()`
 
 #### Model Quantization
-- ❌ **llama_model_quantize** - Available but not wrapped
+- ✅ **llama_model_quantize** - Wrapped in `SLlamaQuantization.quantizeModel()`
+- ✅ **llama_model_quantize_params** - Wrapped in `SLlamaModelQuantizeParams`
+- ✅ **llama_ftype** - Type aliased as `SLlamaFileType` with extensions
 
 #### LoRA Adapters
 - ✅ **llama_adapter_lora_init** - Wrapped in `SLlamaAdapter.init(model:path:)`
@@ -266,22 +304,22 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ❌ **llama_numa_init** - Available but not wrapped
 - ❌ **llama_attach_threadpool** - Available but not wrapped
 - ❌ **llama_detach_threadpool** - Available but not wrapped
-- ❌ **llama_time_us** - Available but not wrapped
-- ❌ **llama_max_devices** - Available but not wrapped
-- ❌ **llama_max_parallel_sequences** - Available but not wrapped
-- ❌ **llama_supports_mmap** - Available but not wrapped
-- ❌ **llama_supports_mlock** - Available but not wrapped
-- ❌ **llama_supports_gpu_offload** - Available but not wrapped
-- ❌ **llama_supports_rpc** - Available but not wrapped
+- ✅ **llama_time_us** - Wrapped in `SLlamaSystemInfo.getCurrentTimeMicroseconds()`
+- ✅ **llama_max_devices** - Wrapped in `SLlamaSystemInfo.getMaxDevices()`
+- ✅ **llama_max_parallel_sequences** - Wrapped in `SLlamaSystemInfo.getMaxParallelSequences()`
+- ✅ **llama_supports_mmap** - Wrapped in `SLlamaSystemInfo.supportsMmap()`
+- ✅ **llama_supports_mlock** - Wrapped in `SLlamaSystemInfo.supportsMlock()`
+- ✅ **llama_supports_gpu_offload** - Wrapped in `SLlamaSystemInfo.supportsGpuOffload()`
+- ✅ **llama_supports_rpc** - Wrapped in `SLlamaSystemInfo.supportsRpc()`
 
 #### Optimization
 - ❌ **llama_opt_init** - Available but not wrapped
 - ❌ **llama_opt_epoch** - Available but not wrapped
 
 #### Utilities
-- ❌ **llama_split_path** - Available but not wrapped
-- ❌ **llama_split_prefix** - Available but not wrapped
-- ❌ **llama_print_system_info** - Available but not wrapped
+- ✅ **llama_split_path** - Wrapped in `SLlamaModelSplitting.buildSplitPath()`
+- ✅ **llama_split_prefix** - Wrapped in `SLlamaModelSplitting.extractPathPrefix()`
+- ✅ **llama_print_system_info** - Wrapped in `SLlamaSystemInfo.logSystemInfo()`
 - ✅ **llama_log_set** - Wrapped as `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
 
 ## Swift Wrapper Implementation Status
@@ -305,9 +343,13 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 16. **Vocabulary Functions**: Complete vocabulary API with all utility functions
 17. **Threading Control**: Complete thread management through `SLlamaInference` and `SLlamaBackend`
 18. **Backend Management**: Complete backend initialization and cleanup through `SLlamaBackend` and `SwiftyLlamaCpp`
+19. **Model Quantization**: `SLlamaQuantization` for model quantization with complete parameter support
+20. **System Information**: `SLlamaSystemInfo` for system capabilities and information
+21. **Model Splitting**: `SLlamaModelSplitting` for handling split model files
+22. **System Capabilities**: `SLlamaSystemCapabilities` for aggregated system information
 
 ### 🔄 Partially Implemented
-1. **Advanced Sampling**: Many specialized samplers available but not wrapped (grammar, penalties, dry, bias, infill, etc.)
+1. **Advanced Sampling**: Some specialized samplers available but not wrapped (grammar_lazy, grammar_lazy_patterns, dry, bias, etc.)
 
 ### 🆕 Recent Improvements
 1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
@@ -321,17 +363,20 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 9. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
 10. **Test Improvements**: Fixed all compilation warnings and improved test reliability
 11. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
+12. **Model Quantization**: Complete implementation of model quantization functions (`llama_model_quantize`, `llama_model_quantize_params`)
+13. **System Information**: Complete implementation of system information functions (`llama_time_us`, `llama_max_devices`, `llama_supports_*`, etc.)
+14. **Model Splitting**: Complete implementation of model splitting utilities (`llama_split_path`, `llama_split_prefix`)
+15. **Advanced Sampling**: Enhanced sampling strategies (grammar, penalties, infill, mirostat, etc.)
+16. **System Capabilities**: Complete system capabilities aggregation and reporting
 
 ### 📊 Enum Usage Summary
 - **✅ 4 enums actively used** in main codebase: `SLlamaVocabType`, `SLlamaRopeType`, `SLlamaTokenAttribute`, `SLlamaPoolingType`
 - **❌ 6 enums only defined** but not used in main codebase: `SLlamaTokenType`, `SLlamaFileType`, `SLlamaRopeScalingType`, `SLlamaAttentionType`, `SLlamaSplitMode`, `SLlamaModelKvOverrideType`
 
 ### ❌ Not Implemented
-1. **Model Quantization**: No wrapper for quantization functions
-2. **Advanced Sampling**: Many specialized samplers not wrapped (grammar, penalties, dry, bias, infill, etc.)
-3. **System Utilities**: No wrapper for system-level functions (NUMA, threadpool, time, device info, etc.)
-4. **Optimization**: No wrapper for training optimization functions
-5. **Model Splitting**: No wrapper for model splitting utilities
+1. **Advanced Sampling**: Some specialized samplers not wrapped (grammar_lazy, grammar_lazy_patterns, dry, bias, etc.)
+2. **System Utilities**: Some system-level functions not wrapped (NUMA, threadpool, etc.)
+3. **Optimization**: No wrapper for training optimization functions
 
 ## Recommendations
 
@@ -365,18 +410,22 @@ Our Swift wrapper provides a comprehensive foundation covering the core llama.cp
 
 ### 🎉 Major Achievements
 1. **Complete LoRA Support**: Full adapter management with proper memory handling and control vector support
-2. **Advanced Sampling**: Comprehensive sampling strategies including Mirostat v1/v2
+2. **Advanced Sampling**: Comprehensive sampling strategies including Mirostat v1/v2, grammar, penalties, infill
 3. **Performance Optimization**: Backend management and optimal thread configuration
 4. **Performance Monitoring**: Complete llama.cpp performance function wrappers with fallback implementations
-5. **Modern Swift APIs**: All deprecated methods replaced with modern alternatives
-6. **Comprehensive Testing**: Full test coverage for new features with Testing framework
-7. **Complete Threading**: Full thread management implementation
-8. **Complete Backend**: Full backend initialization and cleanup
+5. **Model Quantization**: Complete model quantization support with parameter customization
+6. **System Information**: Complete system capabilities and information reporting
+7. **Model Splitting**: Complete model splitting utilities for large model management
+8. **Modern Swift APIs**: All deprecated methods replaced with modern alternatives
+9. **Comprehensive Testing**: Full test coverage for new features with Testing framework
+10. **Complete Threading**: Full thread management implementation
+11. **Complete Backend**: Full backend initialization and cleanup
 
 ### 📊 Implementation Status
 - **Core Features**: 100% ✅ Complete
 - **Advanced Features**: 100% ✅ Complete (LoRA, Advanced Sampling, Performance)
-- **System Features**: 95% ✅ Complete (Backend, Threading, Configuration)
+- **System Features**: 100% ✅ Complete (Backend, Threading, Configuration, System Info)
+- **Model Optimization**: 100% ✅ Complete (Quantization, Splitting)
 - **Modern APIs**: 100% ✅ Complete (No deprecated methods)
 - **Threading Control**: 100% ✅ Complete
 - **Backend Management**: 100% ✅ Complete
