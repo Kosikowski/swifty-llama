@@ -2,10 +2,11 @@ import Foundation
 import llama
 
 /// A wrapper for llama batch operations
-public class SLlamaBatch {
+public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     // MARK: Properties
 
     private var batch: llama_batch
+    private let maxTokens: Int32
 
     // MARK: Computed Properties
 
@@ -57,6 +58,7 @@ public class SLlamaBatch {
     ///   - embd: If non-zero, allocates embeddings array of size nTokens * embd * sizeof(float)
     ///   - nSeqMax: Maximum number of sequence IDs per token
     public init(nTokens: Int32, embd: Int32 = 0, nSeqMax: Int32) {
+        maxTokens = nTokens
         batch = llama_batch_init(nTokens, embd, nSeqMax)
     }
 
@@ -65,8 +67,9 @@ public class SLlamaBatch {
     }
 
     /// Private initializer for creating from C batch
-    private init(batch: llama_batch) {
+    private init(batch: llama_batch, maxTokens: Int32) {
         self.batch = batch
+        self.maxTokens = maxTokens
     }
 
     // MARK: Static Functions
@@ -77,7 +80,7 @@ public class SLlamaBatch {
     public static func single(token: SLlamaToken) -> SLlamaBatch {
         var tokenCopy = token
         let batch = llama_batch_get_one(&tokenCopy, 1)
-        return SLlamaBatch(batch: batch)
+        return SLlamaBatch(batch: batch, maxTokens: 1)
     }
 
     /// Create a batch with multiple tokens
@@ -162,5 +165,57 @@ public class SLlamaBatch {
 
         batch.n_seq_id?[tokenIndex] = Int32(sequenceIds.count)
         batch.seq_id?[tokenIndex]?.update(from: sequenceIds, count: sequenceIds.count)
+    }
+
+    // MARK: - PLlamaBatch Protocol Methods
+
+    /// Add a token to the batch
+    /// - Parameters:
+    ///   - token: The token to add
+    ///   - position: Position of the token in the sequence
+    ///   - sequenceIds: Array of sequence IDs for this token
+    ///   - logits: Whether to output logits for this token
+    public func addToken(
+        _ token: SLlamaToken,
+        position: SLlamaPosition,
+        sequenceIds: [SLlamaSequenceId],
+        logits: Bool
+    ) {
+        let currentIndex = Int(batch.n_tokens)
+
+        // Ensure we don't exceed capacity
+        guard currentIndex < maxTokens else {
+            fatalError("Batch capacity exceeded")
+        }
+
+        // Add token
+        batch.token?[currentIndex] = token
+
+        // Add position
+        batch.pos?[currentIndex] = position
+
+        // Add sequence IDs
+        batch.n_seq_id?[currentIndex] = Int32(sequenceIds.count)
+        for (i, seqId) in sequenceIds.enumerated() {
+            batch.seq_id?[currentIndex]?[i] = seqId
+        }
+
+        // Add logits flag
+        batch.logits?[currentIndex] = logits ? 1 : 0
+
+        // Increment token count
+        batch.n_tokens += 1
+    }
+
+    /// Clear the batch (reset token count to 0)
+    public func clear() {
+        batch.n_tokens = 0
+    }
+
+    /// Get batch with single token
+    /// - Parameter token: The token to create batch for
+    /// - Returns: A batch containing the single token
+    public static func getSingleTokenBatch(_ token: SLlamaToken) -> PLlamaBatch {
+        single(token: token)
     }
 }
