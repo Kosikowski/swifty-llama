@@ -13,6 +13,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - parseSpecial: Whether to parse special and control tokens
     /// - Returns: Array of tokens
     /// - Throws: SLlamaError if tokenization fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func tokenize(
         text: String,
         vocab: SLlamaVocabPointer?,
@@ -81,6 +84,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - special: Whether to render special tokens
     /// - Returns: The text representation of the token
     /// - Throws: SLlamaError if conversion fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func tokenToPiece(
         token: SLlamaToken,
         vocab: SLlamaVocabPointer?,
@@ -135,6 +141,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - unparseSpecial: Whether to render special tokens in output
     /// - Returns: The text representation
     /// - Throws: SLlamaError if conversion fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func detokenize(
         tokens: [SLlamaToken],
         vocab: SLlamaVocabPointer?,
@@ -199,6 +208,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - renderSpecialTokens: Whether to render special tokens in output
     /// - Returns: The text representation
     /// - Throws: SLlamaError if conversion fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func detokenize(
         tokens: [SLlamaToken],
         vocab: SLlamaVocabPointer?,
@@ -220,6 +232,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - token: The token to get text for
     ///   - vocab: The vocabulary to use
     /// - Returns: The text representation of the token, or nil if invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getTokenText(
         token: SLlamaToken,
         vocab: SLlamaVocabPointer?
@@ -246,6 +261,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - token: The token to get type for
     ///   - vocab: The vocabulary to use
     /// - Returns: The type of the token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getTokenType(
         token: SLlamaToken,
         vocab: SLlamaVocabPointer?
@@ -272,6 +290,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - token: The token to get attributes for
     ///   - vocab: The vocabulary to use
     /// - Returns: The attributes of the token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getTokenAttributes(
         token: SLlamaToken,
         vocab: SLlamaVocabPointer?
@@ -287,6 +308,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - token: The token to check
     ///   - vocab: The vocabulary to use
     /// - Returns: True if the token is a control token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func isControlToken(
         token: SLlamaToken,
         vocab: SLlamaVocabPointer?
@@ -304,6 +328,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     ///   - addAssistant: Whether to end with assistant message tokens
     /// - Returns: The formatted prompt
     /// - Throws: SLlamaError if template application fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func applyChatTemplate(
         template: String?,
         messages: [SLlamaChatMessage],
@@ -351,6 +378,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
     /// Get list of built-in chat templates
     /// - Returns: Array of template names
     /// - Throws: SLlamaError if operation fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getBuiltinTemplates() throws -> [String] {
         let maxTemplates = 100
         var templates = [UnsafePointer<CChar>?](repeating: nil, count: maxTemplates)
@@ -375,6 +405,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
 
     /// Legacy tokenize method that returns nil (deprecated)
     @available(*, deprecated, message: "Use tokenize(text:vocab:addSpecial:parseSpecial:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _tokenize(
         text: String,
         vocab: SLlamaVocabPointer?,
@@ -388,6 +421,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
 
     /// Legacy tokenToPiece method that returns nil (deprecated)
     @available(*, deprecated, message: "Use tokenToPiece(token:vocab:lstrip:special:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _tokenToPiece(
         token: SLlamaToken,
         vocab: SLlamaVocabPointer?,
@@ -401,6 +437,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
 
     /// Legacy detokenize method that returns nil (deprecated)
     @available(*, deprecated, message: "Use detokenize(tokens:vocab:removeSpecial:unparseSpecial:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _detokenize(
         tokens: [SLlamaToken],
         vocab: SLlamaVocabPointer?,
@@ -414,6 +453,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
 
     /// Legacy applyChatTemplate method that returns nil (deprecated)
     @available(*, deprecated, message: "Use applyChatTemplate(template:messages:addAssistant:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _applyChatTemplate(
         template: String?,
         messages: [SLlamaChatMessage],
@@ -426,6 +468,9 @@ public class SLlamaTokenizer: PLlamaTokenizer {
 
     /// Legacy getBuiltinTemplates method that returns nil (deprecated)
     @available(*, deprecated, message: "Use getBuiltinTemplates() throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _getBuiltinTemplates() -> [String]? {
         try? getBuiltinTemplates()
     }

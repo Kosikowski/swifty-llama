@@ -5,7 +5,10 @@ import llama
 public class SLlamaVocab {
     // MARK: Properties
 
-    private let vocab: SLlamaVocabPointer?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let vocab: SLlamaVocabPointer?
 
     // MARK: Computed Properties
 
@@ -149,6 +152,9 @@ public class SLlamaVocab {
     /// Get text for a token
     /// - Parameter token: The token ID
     /// - Returns: The text representation of the token, or nil if not found
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getText(for token: SLlamaToken) -> String? {
         guard let vocab else { return nil }
         let text = llama_vocab_get_text(vocab, token)
@@ -158,6 +164,9 @@ public class SLlamaVocab {
     /// Get score for a token
     /// - Parameter token: The token ID
     /// - Returns: The score of the token, or 0.0 if not found
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getScore(for token: SLlamaToken) -> Float {
         guard let vocab else { return 0.0 }
         return llama_vocab_get_score(vocab, token)
@@ -166,6 +175,9 @@ public class SLlamaVocab {
     /// Get attribute for a token
     /// - Parameter token: The token ID
     /// - Returns: The attribute of the token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getAttribute(for token: SLlamaToken) -> SLlamaTokenAttribute {
         guard let vocab else { return .undefined }
         return llama_vocab_get_attr(vocab, token)
@@ -174,6 +186,9 @@ public class SLlamaVocab {
     /// Check if token is end-of-generation
     /// - Parameter token: The token ID
     /// - Returns: true if token is EOG, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func isEOG(_ token: SLlamaToken) -> Bool {
         guard let vocab else { return false }
         return llama_vocab_is_eog(vocab, token)
@@ -182,6 +197,9 @@ public class SLlamaVocab {
     /// Check if token is control token
     /// - Parameter token: The token ID
     /// - Returns: true if token is control, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func isControl(_ token: SLlamaToken) -> Bool {
         guard let vocab else { return false }
         return llama_vocab_is_control(vocab, token)

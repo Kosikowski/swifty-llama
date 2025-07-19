@@ -19,7 +19,10 @@ public typealias SSamplerPerformanceMetrics = SDetailedSamplerMetrics
 public class SLlamaPerformance {
     // MARK: Properties
 
-    private let context: SLlamaContext?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext?
 
     // MARK: Lifecycle
 
@@ -36,6 +39,9 @@ public class SLlamaPerformance {
     ///   - modelPath: Path to the model file
     ///   - iterations: Number of iterations to run
     /// - Returns: Loading benchmark results, or nil if benchmarking failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func benchmarkModelLoading(
         modelPath: String,
         iterations: Int = 5
@@ -83,6 +89,9 @@ public class SLlamaPerformance {
     ///   - operation: The operation to profile
     ///   - maxTokens: Maximum tokens to generate (for reference)
     /// - Returns: Memory profile results, or nil if profiling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func profileMemoryUsage(
         operation: () -> Void,
         maxTokens: Int = 100
@@ -110,6 +119,9 @@ public class SLlamaPerformance {
     ///   - operation: The operation to profile
     ///   - maxTokens: Maximum tokens to generate (for reference)
     /// - Returns: CPU profile results, or nil if profiling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func profileCPUUsage(
         operation: () -> Void,
         maxTokens: Int = 100
@@ -140,6 +152,9 @@ public class SLlamaPerformance {
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
     @MainActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func startMonitoring() -> SPerformanceMonitor? {
         SPerformanceMonitor(context: context)
     }
@@ -149,6 +164,9 @@ public class SLlamaPerformance {
     /// Get performance context data from llama.cpp
     /// - Parameter context: The llama context to get performance data for
     /// - Returns: Performance context data, or nil if context is invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getContextPerformanceData(context: SLlamaContext) -> SLlamaPerfContextData? {
         guard context.pointer != nil else { return nil }
 
@@ -177,6 +195,9 @@ public class SLlamaPerformance {
     /// .performance category for easy filtering and analysis in Console.app
     ///
     /// - Parameter metrics: The performance metrics to display
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func printContextPerformanceData(_ metrics: SContextPerformanceMetrics) {
         Omen.performance("=== Context Performance Data ===")
         Omen.performance("Start Time: \(metrics.startTimeMs) ms")
@@ -199,6 +220,9 @@ public class SLlamaPerformance {
     /// when performance monitoring cycles begin/end
     ///
     /// - Parameter context: The context to reset performance data for
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func resetContextPerformanceData(_ context: SLlamaContext) {
         guard let ctx = context.pointer else {
             Omen.error(
@@ -215,6 +239,9 @@ public class SLlamaPerformance {
     /// Get performance sampler data from llama.cpp
     /// - Parameter sampler: The sampler to get performance data for
     /// - Returns: Performance sampler data, or nil if sampler is invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getSamplerPerformanceData(sampler: PLlamaSampler) -> SLlamaPerfSamplerData? {
         guard sampler.cSampler != nil else { return nil }
 
@@ -238,6 +265,9 @@ public class SLlamaPerformance {
     /// to maintain consistency with other performance measurements
     ///
     /// - Parameter metrics: The sampler performance metrics to display
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func printSamplerPerformanceData(_ metrics: SSamplerPerformanceMetrics) {
         Omen.performance("=== Sampler Performance Data ===")
         Omen.performance("Sample Time: \(metrics.sampleTimeMs) ms")
@@ -249,6 +279,9 @@ public class SLlamaPerformance {
 
     /// Reset sampler performance data in llama.cpp
     /// - Parameter sampler: The sampler to reset performance data for
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func resetSamplerPerformanceData(_ sampler: PLlamaSampler) {
         guard let samplerPtr = sampler.cSampler else {
             Omen.error(
@@ -265,6 +298,9 @@ public class SLlamaPerformance {
     /// Get detailed performance metrics for a context
     /// - Parameter context: The llama context to analyze
     /// - Returns: Detailed performance metrics
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getDetailedContextMetrics(context: SLlamaContext) -> SDetailedContextMetrics {
         // Try to get llama.cpp performance data first
         if let perfData = getContextPerformanceData(context: context) {
@@ -294,6 +330,9 @@ public class SLlamaPerformance {
     /// Get detailed sampler metrics for debugging and analysis
     /// - Parameter sampler: The sampler to analyze
     /// - Returns: Detailed metrics structure
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getDetailedSamplerMetrics(sampler: PLlamaSampler) -> SDetailedSamplerMetrics {
         // Try to get llama.cpp performance data first
         if let perfData = getSamplerPerformanceData(sampler: sampler) {
@@ -332,7 +371,13 @@ public class SLlamaPerformance {
 
     /// Get current CPU usage
     /// - Returns: Current CPU usage as a percentage
-    private func getCurrentCPUUsage() -> Double {
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    func getCurrentCPUUsage() -> Double {
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
@@ -357,10 +402,34 @@ public class SLlamaPerformance {
 public final class SPerformanceMonitor: @unchecked Sendable {
     // MARK: Properties
 
-    private let context: SLlamaContext?
-    private var isMonitoring = false
-    private var monitoringTimer: Timer?
-    private var metrics: [SPerformanceMetric] = []
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var isMonitoring = false
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var monitoringTimer: Timer?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var metrics: [SPerformanceMetric] = []
 
     // MARK: Lifecycle
 
@@ -372,6 +441,9 @@ public final class SPerformanceMonitor: @unchecked Sendable {
 
     /// Start monitoring
     @MainActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func start() {
         guard !isMonitoring else { return }
 
@@ -385,6 +457,9 @@ public final class SPerformanceMonitor: @unchecked Sendable {
 
     /// Stop monitoring
     @MainActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func stop() {
         isMonitoring = false
         monitoringTimer?.invalidate()
@@ -394,12 +469,18 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     /// Get monitoring results
     /// - Returns: Array of recorded performance metrics
     @MainActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getResults() -> [SPerformanceMetric] {
         metrics
     }
 
     /// Clear monitoring results
     @MainActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func clearResults() {
         metrics.removeAll()
     }
@@ -435,7 +516,13 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     }
 
     /// Get current CPU usage
-    private func getCurrentCPUUsage() -> Double {
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    func getCurrentCPUUsage() -> Double {
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 

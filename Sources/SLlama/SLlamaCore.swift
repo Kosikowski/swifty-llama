@@ -60,7 +60,13 @@ import llama
 public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     // MARK: Properties
 
-    private let context: SLlamaContext
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext
 
     // MARK: Computed Properties
 
@@ -73,7 +79,7 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// ```swift
     /// if let model = core.coreModel {
-    ///     print("📚 Channeling wisdom from: \(model.embeddingDimensions) dimensions")
+    ///     // 📚 Channeling wisdom from: \(model.embeddingDimensions) dimensions
     ///     let vocab = model.vocab // 🔤 Access the mystical vocabulary
     /// }
     /// ```
@@ -124,6 +130,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// let logits = SLlamaLogits(context: context)
     /// let embeddings = logits.getEmbeddings()
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func encode(_ batch: SLlamaBatch) throws {
         guard let ctx = context.pointer else {
             throw SLlamaError.contextNotInitialized
@@ -166,6 +175,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// let logits = SLlamaLogits(context: context)
     /// let predictions = logits.getLogits()
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func decode(_ batch: SLlamaBatch) throws {
         guard let ctx = context.pointer else {
             throw SLlamaError.contextNotInitialized
@@ -203,8 +215,11 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// ```swift
     /// let coreCount = ProcessInfo.processInfo.processorCount
     /// core.setThreads(nThreads: Int32(coreCount), nThreadsBatch: Int32(coreCount))
-    /// print("🧵 Summoned \(coreCount) computational spirits")
+    /// // 🧵 Summoned \(coreCount) computational spirits
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setThreads(nThreads: Int32, nThreadsBatch: Int32) {
         guard let ctx = context.pointer else { return }
         llama_set_n_threads(ctx, nThreads, nThreadsBatch)
@@ -226,6 +241,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// let logits = SLlamaLogits(context: context)
     /// let vectors = logits.getEmbeddings() // 🌟 Extract the vector magic
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setEmbeddings(_ embeddings: Bool) {
         guard let ctx = context.pointer else { return }
         llama_set_embeddings(ctx, embeddings)
@@ -244,6 +262,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// core.setCausalAttention(true)  // 🧠 Enable proper text generation flow
     /// core.setCausalAttention(false) // 👁️ Enable omniscient analysis mode
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setCausalAttention(_ causalAttn: Bool) {
         guard let ctx = context.pointer else { return }
         llama_set_causal_attn(ctx, causalAttn)
@@ -263,6 +284,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// // ... perform many operations ...
     /// core.setWarmup(false)     // 💤 Return to energy conservation
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setWarmup(_ warmup: Bool) {
         guard let ctx = context.pointer else { return }
         llama_set_warmup(ctx, warmup)
@@ -284,6 +308,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// let logits = SLlamaLogits(context: context)
     /// let predictions = logits.getLogits() // ✅ Safe to access now
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func synchronize() {
         guard let ctx = context.pointer else { return }
         llama_synchronize(ctx)
@@ -300,8 +327,11 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// ```swift
     /// let contextSize = core.getContextSize()
-    /// print("🏛️ Context can hold \(contextSize) mystical tokens")
+    /// // 🏛️ Context can hold \(contextSize) mystical tokens
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getContextSize() -> UInt32 {
         guard let ctx = context.pointer else { return 0 }
         return llama_n_ctx(ctx)
@@ -316,8 +346,11 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// ```swift
     /// let batchSize = core.getBatchSize()
-    /// print("📦 Can process \(batchSize) tokens per mystical batch")
+    /// // 📦 Can process \(batchSize) tokens per mystical batch
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getBatchSize() -> UInt32 {
         guard let ctx = context.pointer else { return 0 }
         return llama_n_batch(ctx)
@@ -332,8 +365,11 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// ```swift
     /// let physicalBatch = core.getUnifiedBatchSize()
-    /// print("🎭 Hardware can handle \(physicalBatch) tokens simultaneously")
+    /// // 🎭 Hardware can handle \(physicalBatch) tokens simultaneously
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getUnifiedBatchSize() -> UInt32 {
         guard let ctx = context.pointer else { return 0 }
         return llama_n_ubatch(ctx)
@@ -348,8 +384,11 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// ```swift
     /// let maxStreams = core.getMaxSequences()
-    /// print("🌊 Can weave \(maxStreams) parallel conversation streams")
+    /// // 🌊 Can weave \(maxStreams) parallel conversation streams
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getMaxSequences() -> UInt32 {
         guard let ctx = context.pointer else { return 0 }
         return llama_n_seq_max(ctx)
@@ -364,9 +403,12 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// ```swift
     /// if let memory = core.getMemory() {
-    ///     print("🧠 Memory essence connected - conversation state preserved")
+    ///     // 🧠 Memory essence connected - conversation state preserved
     /// }
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getMemory() -> SLlamaMemory? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_memory(ctx)
@@ -381,8 +423,11 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// ```swift
     /// let poolingType = core.getPoolingType()
-    /// print("🔮 Using \(poolingType) pooling magic for output aggregation")
+    /// // 🔮 Using \(poolingType) pooling magic for output aggregation
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getPoolingType() -> SLlamaPoolingType {
         guard let ctx = context.pointer else { return .unspecified }
         return llama_pooling_type(ctx)
@@ -397,6 +442,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// - Parameter batch: A protocol-masked batch container
     /// - Throws: `SLlamaError` if the batch isn't a true `SLlamaBatch` or encoding fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func encode(_ batch: PLlamaBatch) throws {
         guard let concreteBatch = batch as? SLlamaBatch else {
             throw SLlamaError.invalidBatch("Protocol batch must be a concrete SLlamaBatch for mystical operations")
@@ -411,6 +459,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// - Parameter batch: A protocol-masked batch container
     /// - Throws: `SLlamaError` if the batch isn't a true `SLlamaBatch` or decoding fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func decode(_ batch: PLlamaBatch) throws {
         guard let concreteBatch = batch as? SLlamaBatch else {
             throw SLlamaError.invalidBatch("Protocol batch must be a concrete SLlamaBatch for mystical operations")
@@ -428,6 +479,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// - Parameter batch: The batch to encode using ancient methods
     /// - Returns: `0` for success, negative values for various forms of darkness
     @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _encode(_ batch: SLlamaBatch) -> Int32 {
         do {
             try encode(batch)
@@ -445,6 +499,9 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     /// - Parameter batch: The batch to decode using ancient methods
     /// - Returns: `0` for success, positive for warnings, negative for errors
     @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _decode(_ batch: SLlamaBatch) -> Int32 {
         do {
             try decode(batch)

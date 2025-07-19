@@ -23,6 +23,9 @@ public class SLlamaBackend {
     /// Initialize the llama backend
     /// This should be called before any other llama operations
     @MainActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func initialize() {
         if !_isInitialized {
             llama_backend_init()
@@ -33,6 +36,9 @@ public class SLlamaBackend {
     /// Free the llama backend
     /// This should be called when the application is shutting down
     @MainActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func free() {
         if _isInitialized {
             llama_backend_free()

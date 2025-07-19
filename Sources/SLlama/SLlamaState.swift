@@ -7,7 +7,10 @@ import llama
 public class SLlamaState {
     // MARK: Properties
 
-    private let context: SLlamaContext
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext
 
     // MARK: Lifecycle
 
@@ -21,6 +24,9 @@ public class SLlamaState {
 
     /// Get the size of the state data
     /// - Returns: The size of the state data in bytes
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getStateSize() -> size_t {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_get_size(ctx)
@@ -31,6 +37,9 @@ public class SLlamaState {
     ///   - data: Pointer to the data buffer
     ///   - size: Size of the buffer
     /// - Returns: The number of bytes written to the buffer
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getStateData(_ data: UnsafeMutablePointer<UInt8>, size: size_t) -> size_t {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_get_data(ctx, data, size)
@@ -41,6 +50,9 @@ public class SLlamaState {
     ///   - data: Pointer to the data buffer
     ///   - size: Size of the buffer
     /// - Returns: The number of bytes read from the buffer
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setStateData(_ data: UnsafePointer<UInt8>, size: size_t) -> size_t {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_set_data(ctx, data, size)
@@ -53,6 +65,9 @@ public class SLlamaState {
     ///   - nTokenCapacity: Capacity of the token buffer
     ///   - nTokenCountOut: Output parameter for number of tokens
     /// - Throws: SLlamaError if loading fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func loadFromFile(
         _ path: String,
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
@@ -102,6 +117,9 @@ public class SLlamaState {
     ///   - tokens: Array of tokens to save
     ///   - nTokenCount: Number of tokens
     /// - Throws: SLlamaError if saving fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func saveToFile(
         _ path: String,
         tokens: UnsafePointer<SLlamaToken>,
@@ -159,6 +177,9 @@ public class SLlamaState {
     ///   - nTokenCountOut: Output parameter for number of tokens
     /// - Returns: True if the state was loaded successfully, false otherwise
     @available(*, deprecated, message: "Use loadFromFile(_:tokensOut:nTokenCapacity:nTokenCountOut:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _loadFromFile(
         _ path: String,
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
@@ -182,6 +203,9 @@ public class SLlamaState {
     ///   - nTokenCount: Number of tokens
     /// - Returns: True if the state was saved successfully, false otherwise
     @available(*, deprecated, message: "Use saveToFile(_:tokens:nTokenCount:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _saveToFile(
         _ path: String,
         tokens: UnsafePointer<SLlamaToken>,
@@ -200,6 +224,9 @@ public class SLlamaState {
     /// Get the size of sequence state data
     /// - Parameter seqId: The sequence ID
     /// - Returns: The size of the sequence state data in bytes
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getSequenceStateSize(_ seqId: SLlamaSequenceId) -> size_t {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_seq_get_size(ctx, seqId)
@@ -211,6 +238,9 @@ public class SLlamaState {
     ///   - size: Size of the buffer
     ///   - seqId: The sequence ID
     /// - Returns: The number of bytes written to the buffer
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getSequenceStateData(
         _ data: UnsafeMutablePointer<UInt8>,
         size: size_t,
@@ -228,6 +258,9 @@ public class SLlamaState {
     ///   - size: Size of the buffer
     ///   - destSeqId: Destination sequence ID
     /// - Returns: The number of bytes read from the buffer
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setSequenceStateData(
         _ data: UnsafePointer<UInt8>,
         size: size_t,
@@ -246,6 +279,9 @@ public class SLlamaState {
     ///   - tokens: Array of tokens to save
     ///   - nTokenCount: Number of tokens
     /// - Returns: The number of bytes written to the file
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func saveSequenceStateToFile(
         _ path: String,
         seqId: SLlamaSequenceId,
@@ -266,6 +302,9 @@ public class SLlamaState {
     ///   - nTokenCapacity: Capacity of the token buffer
     ///   - nTokenCountOut: Output parameter for number of tokens
     /// - Returns: The number of bytes read from the file
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func loadSequenceStateFromFile(
         _ path: String,
         destSeqId: SLlamaSequenceId,

@@ -6,7 +6,10 @@ import Foundation
 public class SLlamaModelAdvanced {
     // MARK: Properties
 
-    private let model: PLlamaModel
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let model: PLlamaModel
 
     // MARK: Lifecycle
 
@@ -20,6 +23,9 @@ public class SLlamaModelAdvanced {
 
     /// Get model metadata as a dictionary
     /// - Returns: Dictionary containing model metadata, or nil if unavailable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getMetadata() -> [String: String]? {
         guard model.pointer != nil else { return nil }
 
@@ -47,18 +53,27 @@ public class SLlamaModelAdvanced {
 
     /// Get model size in bytes
     /// - Returns: Model size in bytes, or 0 if unavailable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getSize() -> UInt64 {
         model.size
     }
 
     /// Get number of parameters
     /// - Returns: Number of parameters, or 0 if unavailable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getParameterCount() -> UInt64 {
         model.parameters
     }
 
     /// Get model dimensions
     /// - Returns: Dictionary containing model dimensions, or nil if unavailable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getDimensions() -> [String: Int32]? {
         [
             "embedding_dimension": model.embeddingDimensions,
@@ -71,6 +86,9 @@ public class SLlamaModelAdvanced {
 
     /// Validate model integrity
     /// - Returns: true if model is valid, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func validateModel() -> Bool {
         guard model.pointer != nil else { return false }
 
@@ -84,6 +102,9 @@ public class SLlamaModelAdvanced {
 
     /// Check model compatibility with current llama.cpp version
     /// - Returns: true if compatible, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func isCompatible() -> Bool {
         guard model.pointer != nil else { return false }
 
@@ -100,6 +121,9 @@ public class SLlamaModelAdvanced {
     /// Save model to file
     /// - Parameter outputPath: Path for the saved model
     /// - Returns: true if save was successful, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func saveModel(to outputPath: String) -> Bool {
         guard model.pointer != nil else { return false }
 
@@ -133,6 +157,9 @@ public class SLlamaModelAdvanced {
 
     /// Get available optimization targets
     /// - Returns: Array of available optimization targets, or nil if unavailable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getAvailableOptimizations() -> [String]? {
         // Note: This is a placeholder implementation
         // In a real implementation, you would query the actual available optimizations
@@ -158,6 +185,9 @@ public class SLlamaModelAdvanced {
     ///   - target: Target hardware (e.g., "cpu", "gpu", "metal")
     ///   - optimizationLevel: Optimization level (0-3)
     /// - Returns: true if optimization was successful, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func optimizeForHardware(target: String, optimizationLevel: Int32) -> Bool {
         // Note: This is a placeholder implementation
         // In a real implementation, you would apply actual optimizations

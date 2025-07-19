@@ -9,7 +9,13 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
 
     var sampler: SLlamaSamplerPointer?
 
-    private let context: SLlamaContext
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext
 
     // MARK: Computed Properties
 
@@ -43,6 +49,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
 
     /// Accept a token (updates internal state of certain samplers)
     /// - Parameter token: The token to accept
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func accept(_ token: SLlamaToken) {
         guard let sampler else { return }
         llama_sampler_accept(sampler, token)
@@ -50,12 +59,18 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
 
     /// Apply the sampler to token data array
     /// - Parameter tokenDataArray: The token data array to apply sampling to
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func apply(to tokenDataArray: SLlamaTokenDataArrayPointer) {
         guard let sampler else { return }
         llama_sampler_apply(sampler, tokenDataArray)
     }
 
     /// Reset the sampler state
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func reset() {
         guard let sampler else { return }
         llama_sampler_reset(sampler)
@@ -63,6 +78,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
 
     /// Clone the sampler
     /// - Returns: A new sampler instance, or nil if cloning failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func clone() -> PLlamaSampler? {
         guard let sampler else { return nil }
         guard let clonedSampler = llama_sampler_clone(sampler) else { return nil }
@@ -101,6 +119,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     /// ```
     ///
     /// - Returns: The sampled token ID, or nil if sampling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func sample() -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
@@ -144,6 +165,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     /// Sample a token from the provided token data array (PLlamaSampler protocol method)
     /// - Parameter tokenDataArray: Pre-built token data array to sample from
     /// - Returns: The sampled token ID
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func sample(_ tokenDataArray: SLlamaTokenDataArrayPointer) -> SLlamaToken {
         guard let sampler else {
             // Fallback to greedy selection if no sampler configured
@@ -170,6 +194,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     ///
     /// - Parameter temperature: Temperature for sampling (0.0 = deterministic, higher = more random)
     /// - Returns: The sampled token ID, or nil if sampling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func sampleWithTemperature(_ temperature: Float) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
@@ -224,6 +251,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     ///
     /// - Parameter k: Number of top tokens to consider
     /// - Returns: The sampled token ID, or nil if sampling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func sampleTopK(_ k: Int) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
@@ -281,6 +311,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     ///
     /// - Parameter p: Cumulative probability threshold (0.0 to 1.0)
     /// - Returns: The sampled token ID, or nil if sampling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func sampleTopP(_ p: Float) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
@@ -364,6 +397,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     ///   - penalty: Repetition penalty factor (1.0 = no penalty, >1.0 = penalty)
     ///   - lastTokens: Array of last tokens to penalize
     /// - Returns: The sampled token ID, or nil if sampling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func sampleWithRepetitionPenalty(_ penalty: Float, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 

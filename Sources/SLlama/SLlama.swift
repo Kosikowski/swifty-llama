@@ -76,6 +76,9 @@ public final class SLlama: @unchecked Sendable {
     /// SLlama.initialize()
     /// defer { SLlama.cleanup() } // 🌙 Ensure peaceful slumber
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func initialize() {
         llama_backend_init()
     }
@@ -90,6 +93,9 @@ public final class SLlama: @unchecked Sendable {
     /// ```swift
     /// defer { SLlama.cleanup() } // 🌙 Automatic peaceful slumber
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func cleanup() {
         llama_backend_free()
     }
@@ -105,11 +111,14 @@ public final class SLlama: @unchecked Sendable {
     ///
     /// ```swift
     /// if SLlama.supportsMetal() {
-    ///     print("⚡ Metal spirits detected - prepare for lightning-fast inference!")
+    ///     // ⚡ Metal spirits detected - prepare for lightning-fast inference!
     /// } else {
-    ///     print("🧙‍♂️ CPU magic only - still powerful, but more contemplative")
+    ///     // 🧙‍♂️ CPU magic only - still powerful, but more contemplative
     /// }
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func supportsMetal() -> Bool {
         llama_supports_mmap() // Note: This maps to the actual Metal check in the implementation
     }
@@ -123,8 +132,11 @@ public final class SLlama: @unchecked Sendable {
     ///
     /// ```swift
     /// let deviceCount = SLlama.getMaxDevices()
-    /// print("🔮 \(deviceCount) mystical devices ready to serve")
+    /// // 🔮 \(deviceCount) mystical devices ready to serve
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getMaxDevices() -> Int {
         Int(llama_max_devices())
     }
@@ -138,8 +150,11 @@ public final class SLlama: @unchecked Sendable {
     ///
     /// ```swift
     /// let maxStreams = SLlama.getMaxParallelSequences()
-    /// print("🌊 Can weave \(maxStreams) parallel conversations")
+    /// // 🌊 Can weave \(maxStreams) parallel conversations
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getMaxParallelSequences() -> Int {
         Int(llama_max_parallel_sequences())
     }
@@ -155,9 +170,12 @@ public final class SLlama: @unchecked Sendable {
     ///
     /// ```swift
     /// if SLlama.supportsMmap() {
-    ///     print("🗺️ Memory mapping magic available - efficient model loading!")
+    ///     // 🗺️ Memory mapping magic available - efficient model loading!
     /// }
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func supportsMmap() -> Bool {
         llama_supports_mmap()
     }
@@ -171,9 +189,12 @@ public final class SLlama: @unchecked Sendable {
     ///
     /// ```swift
     /// if SLlama.supportsMlock() {
-    ///     print("🔒 Memory locking available - models stay in the fast realm!")
+    ///     // 🔒 Memory locking available - models stay in the fast realm!
     /// }
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func supportsMlock() -> Bool {
         llama_supports_mlock()
     }
@@ -187,9 +208,12 @@ public final class SLlama: @unchecked Sendable {
     ///
     /// ```swift
     /// if SLlama.supportsGPUOffload() {
-    ///     print("⚡ GPU acceleration available - harness the lightning!")
+    ///     // ⚡ GPU acceleration available - harness the lightning!
     /// }
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func supportsGPUOffload() -> Bool {
         llama_supports_gpu_offload()
     }
@@ -203,9 +227,12 @@ public final class SLlama: @unchecked Sendable {
     ///
     /// ```swift
     /// if SLlama.supportsRPC() {
-    ///     print("🌐 RPC mystical network available - distributed processing enabled!")
+    ///     // 🌐 RPC mystical network available - distributed processing enabled!
     /// }
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func supportsRPC() -> Bool {
         llama_supports_rpc()
     }
@@ -223,8 +250,11 @@ public final class SLlama: @unchecked Sendable {
     /// let startTime = SLlama.getCurrentTime()
     /// // ... perform mystical operations ...
     /// let duration = SLlama.getCurrentTime() - startTime
-    /// print("⏱️ Operation took \(duration) mystical microseconds")
+    /// // ⏱️ Operation took \(duration) mystical microseconds
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getCurrentTime() -> Int64 {
         llama_time_us()
     }
@@ -242,6 +272,9 @@ public final class SLlama: @unchecked Sendable {
     /// SLlama.disableLogging() // 🤫 Quiet the ancient C spirits
     /// // Omen will still provide mystical insights ✨
     /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func disableLogging() {
         llama_log_set(nil, nil)
     }

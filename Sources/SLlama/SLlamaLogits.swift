@@ -7,7 +7,10 @@ import llama
 public class SLlamaLogits {
     // MARK: Properties
 
-    private let context: SLlamaContext
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext
 
     // MARK: Lifecycle
 
@@ -21,6 +24,9 @@ public class SLlamaLogits {
 
     /// Get logits from the last decode call
     /// - Returns: Pointer to logits array, or nil if not available
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getLogits() -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_logits(ctx)
@@ -29,6 +35,9 @@ public class SLlamaLogits {
     /// Get logits for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to logits for the token, or nil if invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getLogits(for index: Int32) -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_logits_ith(ctx, index)
@@ -36,6 +45,9 @@ public class SLlamaLogits {
 
     /// Get embeddings from the last decode call
     /// - Returns: Pointer to embeddings array, or nil if not available
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getEmbeddings() -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings(ctx)
@@ -44,6 +56,9 @@ public class SLlamaLogits {
     /// Get embeddings for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Pointer to embeddings for the token, or nil if invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getEmbeddings(for index: Int32) -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings_ith(ctx, index)
@@ -52,6 +67,9 @@ public class SLlamaLogits {
     /// Get embeddings for a specific sequence
     /// - Parameter sequenceId: The sequence ID
     /// - Returns: Pointer to embeddings for the sequence, or nil if not available
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getEmbeddingsForSequence(_ sequenceId: SLlamaSeqId) -> SLlamaFloatPointer? {
         guard let ctx = context.pointer else { return nil }
         return llama_get_embeddings_seq(ctx, sequenceId)
@@ -60,6 +78,9 @@ public class SLlamaLogits {
     /// Get logits as an array for a specific token
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Array of logits for the token, or nil if invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getLogitsArray(for index: Int32) -> [Float]? {
         guard let logitsPtr = getLogits(for: index) else { return nil }
 
@@ -77,6 +98,9 @@ public class SLlamaLogits {
     /// Get embeddings as an array for a specific token
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: Array of embeddings for the token, or nil if invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getEmbeddingsArray(for index: Int32) -> [Float]? {
         guard let embeddingsPtr = getEmbeddings(for: index) else { return nil }
 
@@ -94,6 +118,9 @@ public class SLlamaLogits {
     /// Get embeddings as an array for a specific sequence
     /// - Parameter sequenceId: The sequence ID
     /// - Returns: Array of embeddings for the sequence, or nil if not available
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getEmbeddingsArrayForSequence(_ sequenceId: SLlamaSeqId) -> [Float]? {
         guard let embeddingsPtr = getEmbeddingsForSequence(sequenceId) else { return nil }
 
@@ -111,6 +138,9 @@ public class SLlamaLogits {
     /// Get the token with highest logit for a specific token index
     /// - Parameter index: Token index (negative for reverse order, -1 is last)
     /// - Returns: The token ID with highest logit, or nil if invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getMostLikelyToken(for index: Int32) -> SLlamaToken? {
         guard let logitsArray = getLogitsArray(for: index) else { return nil }
         guard let maxIndex = logitsArray.enumerated().max(by: { $0.element < $1.element })?.offset else { return nil }
@@ -122,6 +152,9 @@ public class SLlamaLogits {
     ///   - index: Token index (negative for reverse order, -1 is last)
     ///   - k: Number of top tokens to return
     /// - Returns: Array of (token, logit) pairs sorted by logit value, or nil if invalid
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getTopKTokens(for index: Int32, k: Int) -> [(token: SLlamaToken, logit: Float)]? {
         guard let logitsArray = getLogitsArray(for: index) else { return nil }
         let sortedIndices = logitsArray.enumerated()

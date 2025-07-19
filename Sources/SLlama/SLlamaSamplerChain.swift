@@ -7,8 +7,15 @@ import llama
 public class SLlamaSamplerChain {
     // MARK: Properties
 
-    private var chain: SLlamaSamplerPointer?
-    private let context: SLlamaContext
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var chain: SLlamaSamplerPointer?
+
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext
 
     // MARK: Computed Properties
 
@@ -42,6 +49,9 @@ public class SLlamaSamplerChain {
 
     /// Initialize the sampler chain with default parameters
     /// - Returns: true if initialization was successful, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func initialize() -> Bool {
         let params = SLlamaSamplerChainParams()
         chain = llama_sampler_chain_init(params)
@@ -50,6 +60,9 @@ public class SLlamaSamplerChain {
 
     /// Add a sampler to the chain
     /// - Parameter sampler: The sampler to add to the chain
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func addSampler(_ sampler: PLlamaSampler) {
         guard let chain, let samplerPtr = sampler.cSampler else { return }
         llama_sampler_chain_add(chain, samplerPtr)
@@ -58,6 +71,9 @@ public class SLlamaSamplerChain {
     /// Get a sampler from the chain by index
     /// - Parameter index: The index of the sampler to get
     /// - Returns: The sampler at the specified index, or nil if not found
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getSampler(at index: Int32) -> SLlamaSampler? {
         guard let chain else { return nil }
         guard let samplerPtr = llama_sampler_chain_get(chain, index) else { return nil }
@@ -70,6 +86,9 @@ public class SLlamaSamplerChain {
     /// Remove a sampler from the chain by index
     /// - Parameter index: The index of the sampler to remove
     /// - Returns: The removed sampler, or nil if not found
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func removeSampler(at index: Int32) -> SLlamaSampler? {
         guard let chain else { return nil }
         guard let samplerPtr = llama_sampler_chain_remove(chain, index) else { return nil }
@@ -106,6 +125,9 @@ public class SLlamaSamplerChain {
     /// ```
     ///
     /// - Returns: The sampled token ID, or nil if sampling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func sample() -> SLlamaToken? {
         guard let chain else { return nil }
         guard let ctx = context.pointer else { return nil }
@@ -153,12 +175,18 @@ public class SLlamaSamplerChain {
 
     /// Accept a token (updates internal state of samplers in the chain)
     /// - Parameter token: The token to accept
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func accept(_ token: SLlamaToken) {
         guard let chain else { return }
         llama_sampler_accept(chain, token)
     }
 
     /// Reset the chain state
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func reset() {
         guard let chain else { return }
         llama_sampler_reset(chain)
@@ -166,6 +194,9 @@ public class SLlamaSamplerChain {
 
     /// Clone the sampler chain
     /// - Returns: A new sampler chain instance, or nil if cloning failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func clone() -> SLlamaSamplerChain? {
         guard let chain else { return nil }
         guard let clonedChain = llama_sampler_clone(chain) else { return nil }

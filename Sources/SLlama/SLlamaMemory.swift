@@ -8,7 +8,11 @@ public class SLlamaMemoryManager {
     // MARK: Properties
 
     private var memory: SLlamaMemory?
-    private let context: SLlamaContext
+
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let context: SLlamaContext
 
     // MARK: Computed Properties
 
@@ -30,6 +34,9 @@ public class SLlamaMemoryManager {
 
     /// Clear all memory
     /// - Parameter data: If true, the data buffers will also be cleared together with the metadata
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func clear(data: Bool = false) {
         guard let memory else { return }
         llama_memory_clear(memory, data)
@@ -41,6 +48,9 @@ public class SLlamaMemoryManager {
     ///   - p0: Start position (p0 < 0 means [0, p1])
     ///   - p1: End position (p1 < 0 means [p0, inf))
     /// - Returns: True if the sequence was removed, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func removeSequence(_ seqId: SLlamaSequenceId, from p0: SLlamaPosition, to p1: SLlamaPosition) -> Bool {
         guard let memory else { return false }
         return llama_memory_seq_rm(memory, seqId, p0, p1)
@@ -52,6 +62,9 @@ public class SLlamaMemoryManager {
     ///   - seqIdDst: Destination sequence ID
     ///   - p0: Start position (p0 < 0 means [0, p1])
     ///   - p1: End position (p1 < 0 means [p0, inf))
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func copySequence(
         from seqIdSrc: SLlamaSequenceId,
         to seqIdDst: SLlamaSequenceId,
@@ -64,6 +77,9 @@ public class SLlamaMemoryManager {
 
     /// Keep only a portion of a sequence in memory
     /// - Parameter seqId: The sequence ID
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func keepSequence(_ seqId: SLlamaSequenceId) {
         guard let memory else { return }
         llama_memory_seq_keep(memory, seqId)
@@ -75,6 +91,9 @@ public class SLlamaMemoryManager {
     ///   - p0: Start position
     ///   - p1: End position
     ///   - delta: Relative position to add
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func addSequence(
         _ seqId: SLlamaSequenceId,
         from p0: SLlamaPosition,
@@ -91,6 +110,9 @@ public class SLlamaMemoryManager {
     ///   - p0: Start position
     ///   - p1: End position
     ///   - d: Division factor (must be > 1)
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func divideSequence(
         _ seqId: SLlamaSequenceId,
         from p0: SLlamaPosition,
@@ -104,6 +126,9 @@ public class SLlamaMemoryManager {
     /// Get the minimum position in a sequence
     /// - Parameter seqId: The sequence ID
     /// - Returns: The minimum position, or -1 if sequence is empty
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getSequenceMinPosition(_ seqId: SLlamaSequenceId) -> SLlamaPosition {
         guard let memory else { return -1 }
         return llama_memory_seq_pos_min(memory, seqId)
@@ -112,6 +137,9 @@ public class SLlamaMemoryManager {
     /// Get the maximum position in a sequence
     /// - Parameter seqId: The sequence ID
     /// - Returns: The maximum position, or -1 if sequence is empty
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getSequenceMaxPosition(_ seqId: SLlamaSequenceId) -> SLlamaPosition {
         guard let memory else { return -1 }
         return llama_memory_seq_pos_max(memory, seqId)
@@ -119,6 +147,9 @@ public class SLlamaMemoryManager {
 
     /// Check if memory can be shifted
     /// - Returns: True if memory can be shifted, false otherwise
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func canShift() -> Bool {
         guard let memory else { return false }
         return llama_memory_can_shift(memory)

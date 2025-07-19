@@ -5,8 +5,14 @@ import llama
 public class SLlamaContext: @unchecked Sendable, PLlamaContext {
     // MARK: Properties
 
-    private var context: SLlamaContextPointer?
-    private var model: PLlamaModel?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var context: SLlamaContextPointer?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var model: PLlamaModel?
 
     // MARK: Computed Properties
 
@@ -126,6 +132,9 @@ public class SLlamaContext: @unchecked Sendable, PLlamaContext {
     ///   - contextParams: Optional context parameters
     /// - Returns: SLlamaContext instance or nil if creation fails
     @available(*, deprecated, message: "Use init(model:contextParams:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _createContext(model: PLlamaModel, contextParams: SLlamaContextParams? = nil) -> SLlamaContext? {
         do {
             return try SLlamaContext(model: model, contextParams: contextParams)
@@ -136,6 +145,9 @@ public class SLlamaContext: @unchecked Sendable, PLlamaContext {
 
     /// Create default context parameters
     /// - Returns: Default context parameters
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func defaultParams() -> SLlamaContextParams {
         llama_context_default_params()
     }
@@ -151,6 +163,9 @@ public class SLlamaContext: @unchecked Sendable, PLlamaContext {
     ///   - enableEmbeddings: Whether to enable embeddings mode (default: false)
     ///   - enableOffloading: Whether to enable GPU offloading (default: true)
     /// - Returns: Configured context parameters
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func createParams(
         contextSize: UInt32 = 4096,
         batchSize: UInt32 = 2048,

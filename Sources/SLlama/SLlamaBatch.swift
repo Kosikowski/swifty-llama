@@ -5,8 +5,14 @@ import llama
 public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     // MARK: Properties
 
-    private var batch: llama_batch
-    private let maxTokens: Int32
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var batch: llama_batch
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    let maxTokens: Int32
 
     // MARK: Computed Properties
 
@@ -67,7 +73,10 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     }
 
     /// Private initializer for creating from C batch
-    private init(batch: llama_batch, maxTokens: Int32) {
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    init(batch: llama_batch, maxTokens: Int32) {
         self.batch = batch
         self.maxTokens = maxTokens
     }
@@ -77,6 +86,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     /// Create a batch with a single token
     /// - Parameter token: The token ID
     /// - Returns: A batch containing the single token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func single(token: SLlamaToken) -> SLlamaBatch {
         var tokenCopy = token
         let batch = llama_batch_get_one(&tokenCopy, 1)
@@ -86,6 +98,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     /// Create a batch with multiple tokens
     /// - Parameter tokens: Array of token IDs
     /// - Returns: A batch containing the tokens
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func fromTokens(_ tokens: [SLlamaToken]) -> SLlamaBatch {
         let batch = SLlamaBatch(nTokens: Int32(tokens.count), nSeqMax: 1)
         batch.setTokens(tokens)
@@ -97,6 +112,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     ///   - embeddings: Array of embedding values
     ///   - embeddingSize: Size of each embedding vector
     /// - Returns: A batch containing the embeddings
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func fromEmbeddings(_ embeddings: [Float], embeddingSize: Int32) -> SLlamaBatch {
         let batch = SLlamaBatch(nTokens: Int32(embeddings.count / Int(embeddingSize)), embd: embeddingSize, nSeqMax: 1)
         batch.setEmbeddings(embeddings)
@@ -107,6 +125,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set tokens for the batch
     /// - Parameter tokens: Array of token IDs
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setTokens(_ tokens: [SLlamaToken]) {
         guard tokens.count <= tokenCount else {
             fatalError("Too many tokens for batch capacity")
@@ -120,6 +141,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set embeddings for the batch
     /// - Parameter embeddings: Array of embedding values
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setEmbeddings(_ embeddings: [Float]) {
         guard embeddings.count <= tokenCount * (batch.embd != nil ? 1 : 0) else {
             fatalError("Too many embeddings for batch capacity")
@@ -132,6 +156,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set positions for the batch
     /// - Parameter positions: Array of position values
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setPositions(_ positions: [SLlamaPosition]) {
         guard positions.count <= tokenCount else {
             fatalError("Too many positions for batch capacity")
@@ -144,6 +171,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set logits output flags for the batch
     /// - Parameter logits: Array of logits flags (0 = no output, 1 = output)
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setLogits(_ logits: [Int8]) {
         guard logits.count <= tokenCount else {
             fatalError("Too many logits flags for batch capacity")
@@ -158,6 +188,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     /// - Parameters:
     ///   - tokenIndex: Index of the token
     ///   - sequenceIds: Array of sequence IDs for this token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func setSequenceIds(for tokenIndex: Int, sequenceIds: [SLlamaSeqId]) {
         guard tokenIndex < tokenCount else {
             fatalError("Token index out of bounds")
@@ -175,6 +208,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     ///   - position: Position of the token in the sequence
     ///   - sequenceIds: Array of sequence IDs for this token
     ///   - logits: Whether to output logits for this token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func addToken(
         _ token: SLlamaToken,
         position: SLlamaPosition,
@@ -208,6 +244,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     }
 
     /// Clear the batch (reset token count to 0)
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func clear() {
         batch.n_tokens = 0
     }
@@ -215,6 +254,9 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     /// Get batch with single token
     /// - Parameter token: The token to create batch for
     /// - Returns: A batch containing the single token
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func getSingleTokenBatch(_ token: SLlamaToken) -> PLlamaBatch {
         single(token: token)
     }

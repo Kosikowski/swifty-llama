@@ -11,6 +11,9 @@ public class SLlamaQuantization {
     ///   - outputPath: Path where the quantized model will be saved
     ///   - params: Quantization parameters (optional, uses defaults if nil)
     /// - Throws: SLlamaError if quantization fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func quantizeModel(
         inputPath: String,
         outputPath: String,
@@ -88,6 +91,9 @@ public class SLlamaQuantization {
     ///   - pure: Quantize all tensors to the default type
     ///   - keepSplit: Keep the same number of shards
     /// - Throws: SLlamaError if quantization fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func quantizeModel(
         inputPath: String,
         outputPath: String,
@@ -123,6 +129,9 @@ public class SLlamaQuantization {
     /// - Returns: 0 on success, non-zero on error
     @available(*, deprecated, message: "Use quantizeModel(inputPath:outputPath:params:) throws instead")
     @discardableResult
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _quantizeModel(
         inputPath: String,
         outputPath: String,
@@ -145,6 +154,9 @@ public class SLlamaQuantization {
         message: "Use quantizeModel(inputPath:outputPath:fileType:threads:allowRequantize:quantizeOutputTensor:onlyCopy:pure:keepSplit:) throws instead"
     )
     @discardableResult
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _quantizeModel(
         inputPath: String,
         outputPath: String,
@@ -178,6 +190,9 @@ public class SLlamaQuantization {
 
     /// Get default quantization parameters
     /// - Returns: Default quantization parameters
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func defaultParams() -> SLlamaModelQuantizeParams {
         llama_model_quantize_default_params()
     }
@@ -192,6 +207,9 @@ public class SLlamaQuantization {
     ///   - pure: Quantize all tensors to the default type
     ///   - keepSplit: Keep the same number of shards
     /// - Returns: Custom quantization parameters
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func createParams(
         fileType: SLlamaFileType,
         threads: Int32 = 0,

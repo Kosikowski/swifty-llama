@@ -84,6 +84,9 @@ public class SLlamaAdapter {
     ///   - path: Path to the LoRA adapter file
     /// - Returns: SLlamaAdapter instance or nil if loading fails
     @available(*, deprecated, message: "Use init(model:path:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _createAdapter(model: PLlamaModel, path: String) -> SLlamaAdapter? {
         do {
             return try SLlamaAdapter(model: model, path: path)

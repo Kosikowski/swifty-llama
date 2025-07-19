@@ -11,6 +11,9 @@ public class SLlamaModelSplitting {
     ///   - splitNumber: Current split number (0-based)
     ///   - totalSplits: Total number of splits
     /// - Returns: Generated split path, or nil if failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func buildSplitPath(
         pathPrefix: String,
         splitNumber: Int,
@@ -41,6 +44,9 @@ public class SLlamaModelSplitting {
     ///   - splitNumber: Expected split number
     ///   - totalSplits: Expected total number of splits
     /// - Returns: Extracted path prefix, or nil if failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func extractPathPrefix(
         from splitPath: String,
         splitNumber: Int,
@@ -70,6 +76,9 @@ public class SLlamaModelSplitting {
     ///   - pathPrefix: Base path for the model files
     ///   - totalSplits: Total number of splits
     /// - Returns: Array of all split paths
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func generateAllSplitPaths(
         pathPrefix: String,
         totalSplits: Int
@@ -99,6 +108,9 @@ public class SLlamaModelSplitting {
     ///   - splitNumber: Expected split number
     ///   - totalSplits: Expected total number of splits
     /// - Returns: True if the path is valid for the given parameters
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func validateSplitPath(
         _ splitPath: String,
         splitNumber: Int,
@@ -153,6 +165,9 @@ public struct SLlamaSplitModelInfo {
 
     /// Get all split paths for this model
     /// - Returns: Array of all split paths
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getAllSplitPaths() -> [String] {
         SLlamaModelSplitting.generateAllSplitPaths(
             pathPrefix: pathPrefix,
@@ -162,6 +177,9 @@ public struct SLlamaSplitModelInfo {
 
     /// Check if all split files exist
     /// - Returns: True if all split files exist
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func allSplitFilesExist() -> Bool {
         let paths = getAllSplitPaths()
         return paths.allSatisfy { FileManager.default.fileExists(atPath: $0) }
@@ -169,6 +187,9 @@ public struct SLlamaSplitModelInfo {
 
     /// Get the size of all split files combined
     /// - Returns: Total size in bytes, or nil if any file is missing
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getTotalSize() -> Int64? {
         let paths = getAllSplitPaths()
         var totalSize: Int64 = 0

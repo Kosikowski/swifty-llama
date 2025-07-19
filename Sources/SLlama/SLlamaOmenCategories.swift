@@ -62,6 +62,9 @@ public enum SLlamaOmenCategories {
     ///
     /// **USAGE PATTERN**: Call this once during app initialization to make
     /// SLlama categories available throughout the application.
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func registerAll() {
         for category in AI.allCases {
             OmenCategories.register(category)

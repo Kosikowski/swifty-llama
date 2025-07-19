@@ -5,7 +5,10 @@ import llama
 public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     // MARK: Properties
 
-    private var model: SLlamaModelPointer?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var model: SLlamaModelPointer?
 
     // MARK: Computed Properties
 
@@ -180,6 +183,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     /// - Parameter modelPath: Path to the model file
     /// - Returns: SLlamaModel instance or nil if loading fails
     @available(*, deprecated, message: "Use init(modelPath:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _createModel(modelPath: String) -> SLlamaModel? {
         do {
             return try SLlamaModel(modelPath: modelPath)
@@ -192,6 +198,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     /// - Parameter modelPointer: The model pointer
     /// - Returns: SLlamaModel instance or nil if pointer is invalid
     @available(*, deprecated, message: "Use init(modelPointer:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public static func _createModel(modelPointer: SLlamaModelPointer?) -> SLlamaModel? {
         do {
             return try SLlamaModel(modelPointer: modelPointer)
@@ -210,6 +219,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     ///   - bufferSize: Size of the buffer for the value (default: 256)
     /// - Returns: The metadata value as string
     /// - Throws: SLlamaError if the key is not found or buffer is too small
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func metadataValue(for key: String, bufferSize: Int = 256) throws -> String {
         guard let model else {
             throw SLlamaError.contextNotInitialized
@@ -238,6 +250,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     ///   - bufferSize: Size of the buffer for the key (default: 256)
     /// - Returns: The metadata key as string
     /// - Throws: SLlamaError if the index is invalid or buffer is too small
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func metadataKey(at index: Int32, bufferSize: Int = 256) throws -> String {
         guard let model else {
             throw SLlamaError.contextNotInitialized
@@ -270,6 +285,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     ///   - bufferSize: Size of the buffer for the value (default: 256)
     /// - Returns: The metadata value as string
     /// - Throws: SLlamaError if the index is invalid or buffer is too small
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func metadataValue(at index: Int32, bufferSize: Int = 256) throws -> String {
         guard let model else {
             throw SLlamaError.contextNotInitialized
@@ -300,6 +318,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     /// - Parameter bufferSize: Size of the buffer for the description (default: 1024)
     /// - Returns: The model description as string
     /// - Throws: SLlamaError if buffer is too small or model is not initialized
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func description(bufferSize: Int = 1024) throws -> String {
         guard let model else {
             throw SLlamaError.contextNotInitialized
@@ -326,6 +347,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     /// - Parameter name: The template name
     /// - Returns: The chat template as string
     /// - Throws: SLlamaError if template is not found or model is not initialized
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func chatTemplate(named name: String) throws -> String {
         guard let model else {
             throw SLlamaError.contextNotInitialized
@@ -342,45 +366,69 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
 
     /// Legacy method that returns nil on failure (deprecated)
     @available(*, deprecated, message: "Use metadataValue(for:bufferSize:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _metadataValue(for key: String, bufferSize: Int = 256) -> String? {
         try? metadataValue(for: key, bufferSize: bufferSize)
     }
 
     /// Legacy method that returns nil on failure (deprecated)
     @available(*, deprecated, message: "Use metadataKey(at:bufferSize:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _metadataKey(at index: Int32, bufferSize: Int = 256) -> String? {
         try? metadataKey(at: index, bufferSize: bufferSize)
     }
 
     /// Legacy method that returns nil on failure (deprecated)
     @available(*, deprecated, message: "Use metadataValue(at:bufferSize:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _metadataValue(at index: Int32, bufferSize: Int = 256) -> String? {
         try? metadataValue(at: index, bufferSize: bufferSize)
     }
 
     /// Legacy method that returns nil on failure (deprecated)
     @available(*, deprecated, message: "Use description(bufferSize:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _description(bufferSize: Int = 1024) -> String? {
         try? description(bufferSize: bufferSize)
     }
 
     /// Legacy method that returns nil on failure (deprecated)
     @available(*, deprecated, message: "Use chatTemplate(named:) throws instead")
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func _chatTemplate(named name: String) -> String? {
         try? chatTemplate(named: name)
     }
 
     /// Check if model has embeddings
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func hasEmbeddings() -> Bool {
         embeddingDimensions > 0
     }
 
     /// Get model description
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getDescription(bufferSize: Int) -> String? {
         try? description(bufferSize: bufferSize)
     }
 
     /// Get metadata value by key (protocol requirement)
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     public func getMetadata(key: String, bufferSize: Int) throws -> String {
         try metadataValue(for: key, bufferSize: bufferSize)
     }
