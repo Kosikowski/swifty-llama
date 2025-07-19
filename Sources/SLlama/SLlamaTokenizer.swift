@@ -63,7 +63,10 @@ public class SLlamaTokenizer {
                 case -3:
                     throw SLlamaError.encodingFailure
                 default:
-                    throw SLlamaError.tokenizationFailed("Tokenization failed for text of length \(textLength) with error code: \(result)")
+                    throw SLlamaError
+                        .tokenizationFailed(
+                            "Tokenization failed for text of length \(textLength) with error code: \(result)"
+                        )
             }
         }
 
@@ -110,7 +113,8 @@ public class SLlamaTokenizer {
                 case -2:
                     throw SLlamaError.bufferTooSmall
                 default:
-                    throw SLlamaError.detokenizationFailed("Token to piece failed for token \(token) with error code: \(result)")
+                    throw SLlamaError
+                        .detokenizationFailed("Token to piece failed for token \(token) with error code: \(result)")
             }
         }
 
@@ -170,7 +174,10 @@ public class SLlamaTokenizer {
                 case -3:
                     throw SLlamaError.encodingFailure
                 default:
-                    throw SLlamaError.detokenizationFailed("Detokenization failed for \(tokens.count) tokens with error code: \(result)")
+                    throw SLlamaError
+                        .detokenizationFailed(
+                            "Detokenization failed for \(tokens.count) tokens with error code: \(result)"
+                        )
             }
         }
 

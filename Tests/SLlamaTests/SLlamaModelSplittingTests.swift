@@ -76,7 +76,10 @@ struct SLlamaModelSplittingTests {
             #expect(path.hasSuffix(".gguf"), "All paths should end with .gguf")
             let expectedNumber = String(format: "%05d", index + 1)
             let expectedTotal = String(format: "%05d", totalSplits)
-            #expect(path.contains("\(expectedNumber)-of-\(expectedTotal)"), "Path \(index) should have correct padded numbers")
+            #expect(
+                path.contains("\(expectedNumber)-of-\(expectedTotal)"),
+                "Path \(index) should have correct padded numbers"
+            )
             #expect(path.contains(pathPrefix), "All paths should contain the prefix")
         }
 

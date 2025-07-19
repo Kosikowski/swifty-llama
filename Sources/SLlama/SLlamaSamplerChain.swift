@@ -82,7 +82,7 @@ public class SLlamaSamplerChain {
     /// Sample a token using the entire chain
     /// - Parameter lastTokens: Array of last tokens (negative indices for reverse order)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sample(lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sample(lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
         guard let chain else { return nil }
         guard let ctx = context.pointer else { return nil }
 
@@ -254,7 +254,7 @@ public extension SLlamaSamplerChain {
     /// - Returns: A configured sampler chain, or nil if initialization failed
     static func custom(
         context: SLlamaContext,
-        maxTokens: Int32 = 1000,
+        maxTokens _: Int32 = 1000,
         temperature: Float = 0.7,
         topK: Int32 = 40,
         topP: Float = 0.9,

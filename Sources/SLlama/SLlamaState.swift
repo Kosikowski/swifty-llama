@@ -80,7 +80,8 @@ public class SLlamaState {
                 throw SLlamaError.corruptedFile("State file is empty: '\(path)'")
             }
         } catch {
-            throw SLlamaError.fileAccessError("Could not read state file attributes for '\(path)': \(error.localizedDescription)")
+            throw SLlamaError
+                .fileAccessError("Could not read state file attributes for '\(path)': \(error.localizedDescription)")
         }
 
         let success = llama_state_load_file(ctx, path, tokensOut, nTokenCapacity, nTokenCountOut)
@@ -90,7 +91,8 @@ public class SLlamaState {
             if let nTokenCountOut = nTokenCountOut?.pointee, nTokenCountOut > nTokenCapacity {
                 throw SLlamaError.bufferTooSmall
             }
-            throw SLlamaError.stateLoadingFailed("Could not load state from '\(path)' (file may be corrupted or incompatible)")
+            throw SLlamaError
+                .stateLoadingFailed("Could not load state from '\(path)' (file may be corrupted or incompatible)")
         }
     }
 
@@ -135,13 +137,17 @@ public class SLlamaState {
                 throw SLlamaError.insufficientSpace
             }
         } catch {
-            throw SLlamaError.fileAccessError("Could not check disk space for directory '\(directory)': \(error.localizedDescription)")
+            throw SLlamaError
+                .fileAccessError(
+                    "Could not check disk space for directory '\(directory)': \(error.localizedDescription)"
+                )
         }
 
         let success = llama_state_save_file(ctx, path, tokens, nTokenCount)
 
         guard success else {
-            throw SLlamaError.stateSavingFailed("Could not save state to '\(path)' (check file permissions and disk space)")
+            throw SLlamaError
+                .stateSavingFailed("Could not save state to '\(path)' (check file permissions and disk space)")
         }
     }
 
@@ -325,7 +331,12 @@ public extension SLlamaContext {
         nTokenCountOut: UnsafeMutablePointer<size_t>?
     ) throws {
         let state = SLlamaState(context: self)
-        try state.loadFromFile(path, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
+        try state.loadFromFile(
+            path,
+            tokensOut: tokensOut,
+            nTokenCapacity: nTokenCapacity,
+            nTokenCountOut: nTokenCountOut
+        )
     }
 
     /// Save state to file
@@ -352,7 +363,11 @@ public extension SLlamaContext {
     ///   - nTokenCapacity: Capacity of the token buffer
     ///   - nTokenCountOut: Output parameter for number of tokens
     /// - Returns: True if the state was loaded successfully, false otherwise
-    @available(*, deprecated, message: "Use loadStateFromFile(_:tokensOut:nTokenCapacity:nTokenCountOut:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use loadStateFromFile(_:tokensOut:nTokenCapacity:nTokenCountOut:) throws instead"
+    )
     func _loadStateFromFile(
         _ path: String,
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
@@ -362,7 +377,12 @@ public extension SLlamaContext {
         -> Bool
     {
         do {
-            try loadStateFromFile(path, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
+            try loadStateFromFile(
+                path,
+                tokensOut: tokensOut,
+                nTokenCapacity: nTokenCapacity,
+                nTokenCountOut: nTokenCountOut
+            )
             return true
         } catch {
             return false
@@ -470,7 +490,13 @@ public extension SLlamaContext {
         -> size_t
     {
         let state = SLlamaState(context: self)
-        return state.loadSequenceStateFromFile(path, destSeqId: destSeqId, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
+        return state.loadSequenceStateFromFile(
+            path,
+            destSeqId: destSeqId,
+            tokensOut: tokensOut,
+            nTokenCapacity: nTokenCapacity,
+            nTokenCountOut: nTokenCountOut
+        )
     }
 
     /// Save complete state to file

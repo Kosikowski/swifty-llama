@@ -11,7 +11,10 @@ struct SLlamaPerformanceTests {
 
         // Test creating performance instance with nil context
         let performanceWithNil = SLlamaPerformance(context: nil)
-        #expect(type(of: performanceWithNil) == SLlamaPerformance.self, "Should create SLlamaPerformance instance with nil context")
+        #expect(
+            type(of: performanceWithNil) == SLlamaPerformance.self,
+            "Should create SLlamaPerformance instance with nil context"
+        )
     }
 
     @Test("Performance monitor can be created")
@@ -23,7 +26,10 @@ struct SLlamaPerformanceTests {
 
         // Test monitor control methods
         monitor.start()
-        #expect(monitor.getResults().isEmpty == false || monitor.getResults().isEmpty == true, "Results should be accessible")
+        #expect(
+            monitor.getResults().isEmpty == false || monitor.getResults().isEmpty == true,
+            "Results should be accessible"
+        )
 
         monitor.stop()
         monitor.clearResults()

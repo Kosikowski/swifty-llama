@@ -140,10 +140,16 @@ public class SLlamaModel {
                     if fileSize == 0 {
                         throw SLlamaError.corruptedFile("Model file is empty: '\(modelPath)'")
                     } else if fileSize < 1024 {
-                        throw SLlamaError.invalidFormat("Model file too small (\(fileSize) bytes) to be valid: '\(modelPath)' (minimum 1KB expected)")
+                        throw SLlamaError
+                            .invalidFormat(
+                                "Model file too small (\(fileSize) bytes) to be valid: '\(modelPath)' (minimum 1KB expected)"
+                            )
                     }
                 } catch {
-                    throw SLlamaError.fileAccessError("Could not read model file attributes for '\(modelPath)': \(error.localizedDescription)")
+                    throw SLlamaError
+                        .fileAccessError(
+                            "Could not read model file attributes for '\(modelPath)': \(error.localizedDescription)"
+                        )
                 }
             }
             let fileSize = (try? FileManager.default.attributesOfItem(atPath: modelPath)[.size] as? Int64) ?? nil

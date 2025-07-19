@@ -75,7 +75,7 @@ public class SLlamaSampler {
     /// Sample a token from the context
     /// - Parameter lastTokens: Array of last tokens (negative indices for reverse order)
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sample(lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sample(lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -120,7 +120,7 @@ public class SLlamaSampler {
     ///   - temperature: Temperature for sampling (0.0 = deterministic, higher = more random)
     ///   - lastTokens: Array of last tokens
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleWithTemperature(_ temperature: Float, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sampleWithTemperature(_ temperature: Float, lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -166,7 +166,7 @@ public class SLlamaSampler {
     ///   - k: Number of top tokens to consider
     ///   - lastTokens: Array of last tokens
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleTopK(_ k: Int, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sampleTopK(_ k: Int, lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -215,7 +215,7 @@ public class SLlamaSampler {
     ///   - p: Cumulative probability threshold (0.0 to 1.0)
     ///   - lastTokens: Array of last tokens
     /// - Returns: The sampled token ID, or nil if sampling failed
-    public func sampleTopP(_ p: Float, lastTokens: [SLlamaToken] = []) -> SLlamaToken? {
+    public func sampleTopP(_ p: Float, lastTokens _: [SLlamaToken] = []) -> SLlamaToken? {
         guard let ctx = context.pointer else { return nil }
 
         // Get logits from the last token
@@ -602,7 +602,11 @@ public extension SLlamaSampler {
             ))
         }
 
-        guard let samplerPtr = llama_sampler_init_logit_bias(nVocab, Int32(biasArray.count), biasArray.withUnsafeBufferPointer { $0.baseAddress }) else { return nil }
+        guard let samplerPtr = llama_sampler_init_logit_bias(
+            nVocab,
+            Int32(biasArray.count),
+            biasArray.withUnsafeBufferPointer { $0.baseAddress }
+        ) else { return nil }
 
         let sampler = SLlamaSampler(context: context)
         sampler.sampler = samplerPtr
@@ -648,7 +652,8 @@ public extension SLlamaSampler {
     )
         -> SLlamaSampler?
     {
-        guard let samplerPtr = llama_sampler_init_penalties(penaltyLastN, penaltyRepeat, penaltyFreq, penaltyPresent) else { return nil }
+        guard let samplerPtr = llama_sampler_init_penalties(penaltyLastN, penaltyRepeat, penaltyFreq, penaltyPresent)
+        else { return nil }
 
         let sampler = SLlamaSampler(context: context)
         sampler.sampler = samplerPtr

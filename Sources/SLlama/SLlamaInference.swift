@@ -152,7 +152,7 @@ public class SLlamaInference {
     /// - Parameters:
     ///   - callback: The abort callback function
     ///   - userData: User data passed to the callback
-    public func setAbortCallback(_ callback: @escaping () -> Bool, userData: SLlamaRawPointer? = nil) {
+    public func setAbortCallback(_: @escaping () -> Bool, userData: SLlamaRawPointer? = nil) {
         guard let ctx = context.pointer else { return }
 
         // Note: This is a simplified implementation that doesn't capture the callback

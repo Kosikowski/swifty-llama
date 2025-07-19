@@ -23,8 +23,14 @@ struct SLlamaTypesTests {
     func basicTypeDefinitions() throws {
         // Test that basic C types are properly bridged
         #expect(type(of: SLlamaTokenNull) == SLlamaToken.self, "SLlamaTokenNull should be SLlamaToken")
-        #expect(type(of: SLlamaVocabType.none) == SLlamaVocabType.self, "SLlamaVocabType.none should be SLlamaVocabType")
-        #expect(type(of: SLlamaTokenAttribute.undefined) == SLlamaTokenAttribute.self, "SLlamaTokenAttribute.undefined should be SLlamaTokenAttribute")
+        #expect(
+            type(of: SLlamaVocabType.none) == SLlamaVocabType.self,
+            "SLlamaVocabType.none should be SLlamaVocabType"
+        )
+        #expect(
+            type(of: SLlamaTokenAttribute.undefined) == SLlamaTokenAttribute.self,
+            "SLlamaTokenAttribute.undefined should be SLlamaTokenAttribute"
+        )
     }
 
     @Test("Pointer type aliases")

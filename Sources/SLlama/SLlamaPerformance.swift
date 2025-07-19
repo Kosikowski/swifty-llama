@@ -456,7 +456,11 @@ public final class SPerformanceMonitor: @unchecked Sendable {
         let result = task_threads(mach_task_self_, &threadList, &threadCount)
 
         if result == KERN_SUCCESS {
-            vm_deallocate(mach_task_self_, vm_address_t(UInt(bitPattern: threadList)), vm_size_t(threadCount) * vm_size_t(MemoryLayout<thread_t>.size))
+            vm_deallocate(
+                mach_task_self_,
+                vm_address_t(UInt(bitPattern: threadList)),
+                vm_size_t(threadCount) * vm_size_t(MemoryLayout<thread_t>.size)
+            )
             return Int(threadCount)
         }
 

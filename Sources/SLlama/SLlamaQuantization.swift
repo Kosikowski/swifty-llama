@@ -68,7 +68,10 @@ public class SLlamaQuantization {
                 case 4:
                     throw SLlamaError.fileAccessError("Could not write output file '\(outputPath)'")
                 default:
-                    throw SLlamaError.operationFailed("Quantization failed from '\(inputPath)' to '\(outputPath)' with error code: \(result)")
+                    throw SLlamaError
+                        .operationFailed(
+                            "Quantization failed from '\(inputPath)' to '\(outputPath)' with error code: \(result)"
+                        )
             }
         }
     }
@@ -136,7 +139,11 @@ public class SLlamaQuantization {
     }
 
     /// Legacy method that returns error code (deprecated)
-    @available(*, deprecated, message: "Use quantizeModel(inputPath:outputPath:fileType:threads:allowRequantize:quantizeOutputTensor:onlyCopy:pure:keepSplit:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use quantizeModel(inputPath:outputPath:fileType:threads:allowRequantize:quantizeOutputTensor:onlyCopy:pure:keepSplit:) throws instead"
+    )
     @discardableResult
     public static func _quantizeModel(
         inputPath: String,
@@ -220,19 +227,26 @@ public extension SLlamaModel {
     ///   - quantizeOutputTensor: Whether to quantize the output tensor
     /// - Throws: SLlamaError if quantization fails
     func quantize(
-        to outputPath: String,
-        fileType: SLlamaFileType,
-        threads: Int32 = 0,
-        allowRequantize: Bool = false,
-        quantizeOutputTensor: Bool = true
+        to _: String,
+        fileType _: SLlamaFileType,
+        threads _: Int32 = 0,
+        allowRequantize _: Bool = false,
+        quantizeOutputTensor _: Bool = true
     ) throws {
         // Note: This is a simplified approach - in a real implementation,
         // you might need to store the original model path during initialization
-        throw SLlamaError.operationFailed("Model quantization from instance not supported - use SLlamaQuantization.quantizeModel with file paths instead")
+        throw SLlamaError
+            .operationFailed(
+                "Model quantization from instance not supported - use SLlamaQuantization.quantizeModel with file paths instead"
+            )
     }
 
     /// Legacy quantize method that returns error code (deprecated)
-    @available(*, deprecated, message: "Use quantize(to:fileType:threads:allowRequantize:quantizeOutputTensor:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use quantize(to:fileType:threads:allowRequantize:quantizeOutputTensor:) throws instead"
+    )
     @discardableResult
     func _quantize(
         to outputPath: String,

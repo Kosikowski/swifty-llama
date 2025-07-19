@@ -49,15 +49,22 @@ public class SLlamaAdapter {
             if fileSize == 0 {
                 throw SLlamaError.corruptedFile("Adapter file is empty: '\(path)'")
             } else if fileSize < 100 {
-                throw SLlamaError.invalidFormat("Adapter file too small (\(fileSize) bytes) to be valid: '\(path)' (minimum 100 bytes expected)")
+                throw SLlamaError
+                    .invalidFormat(
+                        "Adapter file too small (\(fileSize) bytes) to be valid: '\(path)' (minimum 100 bytes expected)"
+                    )
             }
         } catch {
-            throw SLlamaError.fileAccessError("Could not read adapter file attributes for '\(path)': \(error.localizedDescription)")
+            throw SLlamaError
+                .fileAccessError("Could not read adapter file attributes for '\(path)': \(error.localizedDescription)")
         }
 
         let adapterPtr = llama_adapter_lora_init(modelPtr, path)
         guard adapterPtr != nil else {
-            throw SLlamaError.adapterLoadingFailed("Could not load LoRA adapter from '\(path)' (file may be corrupted or incompatible)")
+            throw SLlamaError
+                .adapterLoadingFailed(
+                    "Could not load LoRA adapter from '\(path)' (file may be corrupted or incompatible)"
+                )
         }
 
         adapter = adapterPtr
@@ -235,7 +242,11 @@ public extension SLlamaContext {
     ///   - layerStart: Starting layer index (inclusive)
     ///   - layerEnd: Ending layer index (inclusive)
     /// - Returns: 0 on success, negative value on error
-    @available(*, deprecated, message: "Use applyControlVector(data:length:embeddingDimensions:layerStart:layerEnd:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use applyControlVector(data:length:embeddingDimensions:layerStart:layerEnd:) throws instead"
+    )
     func _applyControlVector(
         data: UnsafePointer<Float>,
         length: Int,

@@ -99,9 +99,11 @@ public class SLlamaContext {
             if modelSize > availableMemory / 2 {
                 throw SLlamaError.outOfMemory
             } else if requestedContextSize > 32768 {
-                throw SLlamaError.invalidParameters("Context size (\(requestedContextSize)) may be too large for this model")
+                throw SLlamaError
+                    .invalidParameters("Context size (\(requestedContextSize)) may be too large for this model")
             } else {
-                throw SLlamaError.contextCreationFailed("Failed to create context with size \(requestedContextSize) for model")
+                throw SLlamaError
+                    .contextCreationFailed("Failed to create context with size \(requestedContextSize) for model")
             }
         }
 

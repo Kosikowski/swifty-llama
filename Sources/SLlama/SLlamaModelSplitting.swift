@@ -139,7 +139,11 @@ public struct SLlamaSplitModelInfo {
                 totalSplits: totalSplits
             )
         else {
-            throw NSError(domain: "SLlamaModelSplitting", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to generate split path"])
+            throw NSError(
+                domain: "SLlamaModelSplitting",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to generate split path"]
+            )
         }
 
         splitPath = path

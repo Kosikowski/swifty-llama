@@ -70,12 +70,10 @@ public extension SLlamaContext {
     ///   - useOptimalThreads: Whether to use optimal thread count
     ///   - customThreads: Custom thread count (ignored if useOptimalThreads is true)
     func optimizeForPerformance(useOptimalThreads: Bool = true, customThreads: Int32? = nil) {
-        let threadCount: Int32
-
-        if useOptimalThreads {
-            threadCount = Self.optimalThreadCount()
+        let threadCount: Int32 = if useOptimalThreads {
+            Self.optimalThreadCount()
         } else {
-            threadCount = customThreads ?? 4
+            customThreads ?? 4
         }
 
         setThreadCount(threadCount)
