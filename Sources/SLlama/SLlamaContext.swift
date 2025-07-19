@@ -76,8 +76,6 @@ public class SLlamaContext {
             throw SLlamaError.invalidModel("Model pointer is null")
         }
 
-        self.model = model
-
         let params = contextParams ?? llama_context_default_params()
 
         // Validate context parameters
@@ -89,31 +87,27 @@ public class SLlamaContext {
             throw SLlamaError.invalidParameters("Batch size cannot be zero")
         }
 
+        // Create context first, before setting model reference
         context = llama_init_from_model(modelPtr, params)
 
         guard context != nil else {
             // Try to provide more specific error information
-            let contextSize = params.n_ctx
-            let batchSize = params.n_batch
+            let modelSize = model.size
+            let requestedContextSize = params.n_ctx
+            let availableMemory = ProcessInfo.processInfo.physicalMemory
 
-            if contextSize > 32768 {
-                throw SLlamaError.invalidParameters("Context size too large: \(contextSize)")
+            if modelSize > availableMemory / 2 {
+                throw SLlamaError.outOfMemory
+            } else if requestedContextSize > 32768 {
+                throw SLlamaError.invalidParameters("Context size (\(requestedContextSize)) may be too large for this model")
+            } else {
+                throw SLlamaError.contextCreationFailed("Failed to create context with size \(requestedContextSize) for model")
             }
-
-            if batchSize > contextSize {
-                throw SLlamaError.invalidParameters("Batch size (\(batchSize)) cannot be larger than context size (\(contextSize))")
-            }
-
-            // Check system memory
-            let physicalMemory = ProcessInfo.processInfo.physicalMemory
-            let estimatedMemoryNeeded = UInt64(contextSize * batchSize * 4) // Rough estimate
-
-            if estimatedMemoryNeeded > physicalMemory / 2 {
-                throw SLlamaError.insufficientMemory
-            }
-
-            throw SLlamaError.contextCreationFailed("Failed to create context with size \(contextSize) and batch size \(batchSize)")
         }
+
+        // Only set model reference after successful context creation
+        // This prevents retain cycles when initialization fails
+        self.model = model
     }
 
     deinit {

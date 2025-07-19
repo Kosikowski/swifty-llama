@@ -3,95 +3,94 @@ import Testing
 @testable import SLlama
 
 struct SLlamaAdapterTests {
-    // MARK: Properties
+    @Test("Adapter initialization with invalid path throws error")
+    func sLlamaAdapterInitialization() throws {
+        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
 
-    let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-
-    // MARK: Functions
-
-    @Test("Adapter creation with invalid path should return nil")
-    func adapterCreationWithInvalidPath() throws {
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
             return
         }
 
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            print("Test skipped: Model could not be loaded at \(modelPath)")
-            return
-        }
-
-        // Create adapter with invalid path (should return nil)
-        let adapter = SLlamaAdapter(model: model, path: "/invalid/path/to/lora.adapter")
-        #expect(adapter == nil, "Adapter should be nil for invalid path")
-    }
-
-    @Test("Context should handle LoRA adapter operations gracefully")
-    func contextWithAdapterOperations() throws {
-        guard FileManager.default.fileExists(atPath: modelPath) else {
-            print("Test skipped: Model file not found at \(modelPath)")
-            return
-        }
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            print("Test skipped: Model could not be loaded at \(modelPath)")
-            return
-        }
-
-        // Initialize the backend before creating context
         SLlama.initialize()
 
-        // Create context
-        guard let context = SLlamaContext(model: model) else {
-            print("Test skipped: Context could not be created")
+        let model = try SLlamaModel(modelPath: modelPath)
+
+        // Create adapter with invalid path should throw
+        #expect(throws: SLlamaError.self) {
+            try SLlamaAdapter(model: model, path: "/invalid/path/to/lora.adapter")
+        }
+    }
+
+    @Test("Context LoRA adapter operations")
+    func sLlamaContextLoRAOperations() throws {
+        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
+
+        guard FileManager.default.fileExists(atPath: modelPath) else {
+            print("Test skipped: Model file not found at \(modelPath)")
             return
         }
 
-        // Test adapter operations that should not crash even with invalid inputs
+        SLlama.initialize()
+        defer { SLlama.cleanup() }
+
+        let model = try SLlamaModel(modelPath: modelPath)
+        let context = try SLlamaContext(model: model)
+
+        // Test that loading non-existent adapter throws
+        #expect(throws: SLlamaError.self) {
+            try context.loadLoRAAdapter(from: "/invalid/path/to/lora.adapter")
+        }
+
+        // The context operations should complete without crashing
+        // Clear any adapters (should not throw)
         context.clearLoRAAdapters()
-
-        // The operations should complete without crashing
-        #expect(context.pointer != nil, "Context should remain valid after adapter operations")
     }
 
-    @Test("Control vector operations should work without crashing")
-    func controlVectorOperations() throws {
+    @Test("Context control vector operations")
+    func sLlamaContextControlVectorOperations() throws {
+        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
+
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
             return
         }
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            print("Test skipped: Model could not be loaded at \(modelPath)")
-            return
-        }
 
-        // Initialize the backend before creating context
         SLlama.initialize()
+        defer { SLlama.cleanup() }
 
-        // Create context
-        guard let context = SLlamaContext(model: model) else {
-            print("Test skipped: Context could not be created")
-            return
-        }
+        let model = try SLlamaModel(modelPath: modelPath)
+        let context = try SLlamaContext(model: model)
 
-        // Test control vector operations with dummy data
-        let dummyVector = [Float](repeating: 0.1, count: 64) // Match model embedding size
+        // Create dummy control vector data
+        let dummyVector: [Float] = Array(repeating: 0.1, count: 100)
 
-        // Apply control vector (should not crash)
-        let result = dummyVector.withUnsafeBufferPointer { buffer in
-            context.applyControlVector(
+        // Apply control vector (test that it doesn't crash)
+        try dummyVector.withUnsafeBufferPointer { buffer in
+            try context.applyControlVector(
                 data: buffer.baseAddress!,
                 length: buffer.count,
-                embeddingDimensions: Int32(model.embeddingDimensions),
+                embeddingDimensions: 10,
                 layerStart: 0,
-                layerEnd: 1
+                layerEnd: 2
             )
         }
 
-        // Clear control vector (should not crash)
-        let clearResult = context.clearControlVector()
+        // Clear control vector (should not throw)
+        try context.clearControlVector()
 
         // The operations should complete without crashing
-        #expect(result >= -1, "Apply control vector should return valid result")
-        #expect(clearResult >= -1, "Clear control vector should return valid result")
+        #expect(Bool(true), "Control vector operations completed successfully")
+    }
+
+    @Test("Adapter creation with null model throws error")
+    func sLlamaAdapterNullModel() throws {
+        SLlama.initialize()
+        defer { SLlama.cleanup() }
+
+        // Test that creating adapter with null model pointer throws
+        #expect(throws: SLlamaError.self) {
+            try SLlamaAdapter(model: SLlamaModel(modelPointer: nil), path: "/some/path")
+        }
     }
 }

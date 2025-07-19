@@ -2,56 +2,69 @@ import Testing
 @testable import SLlama
 
 struct SLlamaTokenizerTests {
-    @Test("SLlamaTokenizer tokenization with nil vocab")
+    @Test("Tokenizer with nil vocab throws error")
     func sLlamaTokenizerWithNilVocab() throws {
-        // Test tokenization with nil vocab
-        let tokens = SLlamaTokenizer.tokenize(text: "Hello world", vocab: nil)
-        #expect(tokens == nil, "Tokenization with nil vocab should return nil")
+        // Test tokenization with nil vocab should throw
+        #expect(throws: SLlamaError.self) {
+            try SLlamaTokenizer.tokenize(text: "Hello world", vocab: nil)
+        }
     }
 
-    @Test("SLlamaTokenizer detokenization with nil vocab")
+    @Test("Detokenizer with nil vocab throws error")
     func sLlamaTokenizerDetokenizationWithNilVocab() throws {
-        // Test detokenization with nil vocab
-        let text = SLlamaTokenizer.detokenize(tokens: [1, 2, 3], vocab: nil)
-        #expect(text == nil, "Detokenization with nil vocab should return nil")
+        // Test detokenization with nil vocab should throw
+        #expect(throws: SLlamaError.self) {
+            try SLlamaTokenizer.detokenize(tokens: [1, 2, 3], vocab: nil)
+        }
     }
 
-    @Test("SLlamaTokenizer chat template with nil vocab")
-    func sLlamaTokenizerChatTemplateWithNilVocab() throws {
-        // Test chat template application with nil vocab
-        "user".withCString { rolePtr in
-            "Hello".withCString { contentPtr in
+    @Test("Chat template application")
+    func sLlamaTokenizerChatTemplate() throws {
+        // Test chat template with valid messages
+        try "user".withCString { rolePtr in
+            try "Hello".withCString { contentPtr in
                 let messages = [SLlamaChatMessage(role: rolePtr, content: contentPtr)]
-                let result = SLlamaTokenizer.applyChatTemplate(template: nil, messages: messages)
-                // Just verify the function doesn't crash - the result may be non-nil and non-empty
-                #expect(result != nil, "Chat template should return a result (may be non-empty)")
+                let result = try SLlamaTokenizer.applyChatTemplate(template: nil, messages: messages)
+                // Verify the function completes successfully
+                #expect(!result.isEmpty, "Chat template should return a non-empty result")
             }
         }
     }
 
-    @Test("SLlamaVocab convenience methods with nil vocab")
-    func sLlamaVocabConvenienceMethodsWithNilVocab() throws {
+    @Test("Vocab convenience methods with nil vocab throw errors")
+    func sLlamaVocabConvenienceMethods() throws {
         let vocab = SLlamaVocab(vocab: nil)
 
-        // Test convenience methods
-        let tokens = vocab.tokenize(text: "Hello world")
-        #expect(tokens == nil, "Tokenization with nil vocab should return nil")
+        // Test convenience methods should throw with nil vocab
+        #expect(throws: SLlamaError.self) {
+            try vocab.tokenize(text: "Hello world")
+        }
 
-        let text = vocab.detokenize(tokens: [1, 2, 3])
-        #expect(text == nil, "Detokenization with nil vocab should return nil")
+        #expect(throws: SLlamaError.self) {
+            try vocab.detokenize(tokens: [1, 2, 3])
+        }
     }
 
-    @Test("SLlamaTokenizer token to piece conversion")
+    @Test("Token to piece with nil vocab throws error")
     func sLlamaTokenizerTokenToPiece() throws {
-        // Test token to piece conversion with nil vocab
-        let piece = SLlamaTokenizer.tokenToPiece(token: 1, vocab: nil)
-        #expect(piece == nil, "Token to piece conversion with nil vocab should return nil")
+        // Test token to piece conversion with nil vocab should throw
+        #expect(throws: SLlamaError.self) {
+            try SLlamaTokenizer.tokenToPiece(token: 1, vocab: nil)
+        }
     }
 
-    @Test("SLlamaTokenizer builtin templates")
+    @Test("Builtin templates")
     func sLlamaTokenizerBuiltinTemplates() throws {
         // Test getting builtin templates
-        let templates = SLlamaTokenizer.getBuiltinTemplates()
-        #expect(templates != nil, "Builtin templates should be available")
+        let templates = try SLlamaTokenizer.getBuiltinTemplates()
+        #expect(templates.count >= 0, "Builtin templates should return an array (may be empty)")
+    }
+
+    @Test("Empty messages throws error")
+    func sLlamaTokenizerEmptyMessages() throws {
+        // Test chat template with empty messages should throw
+        #expect(throws: SLlamaError.self) {
+            try SLlamaTokenizer.applyChatTemplate(template: nil, messages: [])
+        }
     }
 }

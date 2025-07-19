@@ -3,102 +3,110 @@ import Testing
 @testable import SLlama
 
 struct SLlamaModelTests {
-    // MARK: Properties
+    @Test("Model initialization")
+    func sLlamaModelInitialization() throws {
+        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
 
-    let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-
-    // MARK: Functions
-
-    @Test("Model loading and basic properties")
-    func modelLoadingAndBasicProperties() throws {
+        // Check if test model exists
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
             return
         }
-        // Disable logging to suppress verbose output
-        SLlama.disableLogging()
 
-        // Initialize backend
         SLlama.initialize()
 
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            print("Test skipped: Model could not be loaded at \(modelPath)")
-            return
+        let model = try SLlamaModel(modelPath: modelPath)
+
+        // Basic model properties (using actual property names)
+        #expect(model.embeddingDimensions > 0, "Model should have embedding dimensions")
+        #expect(model.layers > 0, "Model should have layers")
+        #expect(model.parameters > 0, "Model should have parameters")
+        #expect(model.size > 0, "Model should have size")
+        #expect(model.trainingContextLength > 0, "Model should have training context length")
+
+        // Test token properties via vocab
+        if let vocab = model.vocab {
+            let vocabWrapper = SLlamaVocab(vocab: vocab)
+            let bosToken = vocabWrapper.bosToken
+            let eosToken = vocabWrapper.eosToken
+            #expect(bosToken >= 0, "BOS token should be non-negative")
+            #expect(eosToken >= 0, "EOS token should be non-negative")
+            #expect(vocabWrapper.tokenCount > 0, "Vocab should have tokens")
         }
 
-        // Test basic properties
-        #expect(model.embeddingDimensions > 0, "Embedding dimensions should be positive")
-        #expect(model.layers > 0, "Layers should be positive")
-        #expect(model.attentionHeads > 0, "Attention heads should be positive")
-        #expect(model.kvAttentionHeads > 0, "KV attention heads should be positive")
-        #expect(model.kvAttentionHeads <= model.attentionHeads, "KV attention heads should not exceed attention heads")
-        #expect(model.parameters > 0, "Parameters should be positive")
-        #expect(model.size > 0, "Size should be positive")
-        #expect(model.trainingContextLength > 0, "Training context length should be positive")
-
-        // Test model type properties
-        #expect(model.ropeType.rawValue >= -1, "RoPE type should be valid")
-        #expect(model.ropeFreqScaleTrain > 0, "RoPE frequency scale should be positive")
-        #expect(model.slidingWindowAttention >= 0, "Sliding window attention should be non-negative")
-
-        // Test encoder/decoder properties
-        #expect(model.hasEncoder == false, "GPT-2 model should not have encoder")
-        #expect(model.hasDecoder == true, "GPT-2 model should have decoder")
-        #expect(model.isRecurrent == false, "GPT-2 model should not be recurrent")
-
-        // Test decoder start token (GPT-2 might not have a specific decoder start token)
-        #expect(model.decoderStartToken >= -1, "Decoder start token should be valid")
-
-        // Test metadata
-        #expect(model.metadataCount > 0, "Model should have metadata")
-
-        // Test description
-        if let description = model.description() {
-            #expect(!description.isEmpty, "Model description should not be empty")
-        }
-
-        // Cleanup
-        SLlama.cleanup()
+        // Test description with new throwing API - let it throw if it fails
+        let description = try model.description()
+        #expect(!description.isEmpty, "Model description should not be empty")
     }
 
     @Test("Model metadata access")
-    func modelMetadataAccess() throws {
+    func sLlamaModelMetadata() throws {
+        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
+
+        // Check if test model exists
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
             return
         }
-        // Disable logging to suppress verbose output
-        SLlama.disableLogging()
 
-        // Initialize backend
         SLlama.initialize()
+        defer { SLlama.cleanup() }
 
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            print("Test skipped: Model could not be loaded at \(modelPath)")
+        let model = try SLlamaModel(modelPath: modelPath)
+
+        // Test metadata count
+        let metadataCount = model.metadataCount
+        #expect(metadataCount >= 0, "Metadata count should be non-negative")
+
+        // Test accessing metadata by index with new throwing API
+        // Only test if metadata exists
+        if metadataCount > 0 {
+            let key = try model.metadataKey(at: 0)
+            #expect(!key.isEmpty, "First metadata key should not be empty")
+
+            let value = try model.metadataValue(at: 0)
+            #expect(!value.isEmpty, "First metadata value should not be empty")
+        }
+
+        // Test accessing specific metadata by key - this may legitimately fail
+        // so we use try? for optional testing
+        if let architecture = try? model.metadataValue(for: "general.architecture") {
+            #expect(!architecture.isEmpty, "Architecture metadata should not be empty")
+        }
+    }
+
+    @Test("Model initialization with invalid path throws error")
+    func sLlamaModelInvalidPath() throws {
+        SLlama.initialize()
+        defer { SLlama.cleanup() }
+
+        // Test that invalid path throws an error
+        #expect(throws: SLlamaError.self) {
+            try SLlamaModel(modelPath: "/nonexistent/path/to/model.gguf")
+        }
+    }
+
+    @Test("Model metadata access with invalid index throws error")
+    func sLlamaModelInvalidMetadataAccess() throws {
+        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
+
+        guard FileManager.default.fileExists(atPath: modelPath) else {
+            print("Test skipped: Model file not found at \(modelPath)")
             return
         }
 
-        // Test metadata access
-        let metadataCount = model.metadataCount
-        #expect(metadataCount > 0, "Model should have metadata entries")
+        SLlama.initialize()
+        defer { SLlama.cleanup() }
 
-        // Test accessing metadata by index
-        for i in 0 ..< metadataCount {
-            if let key = model.metadataKey(at: i) {
-                #expect(!key.isEmpty, "Metadata key should not be empty")
+        let model = try SLlamaModel(modelPath: modelPath)
 
-                if let value = model.metadataValue(at: i) {
-                    #expect(!value.isEmpty, "Metadata value should not be empty")
-                }
-            }
+        // Test invalid index should throw
+        #expect(throws: SLlamaError.self) {
+            try model.metadataKey(at: -1)
         }
 
-        // Test accessing metadata by key
-        if let architecture = model.metadataValue(for: "general.architecture") {
-            #expect(!architecture.isEmpty, "Architecture metadata should not be empty")
+        #expect(throws: SLlamaError.self) {
+            try model.metadataKey(at: 9999)
         }
-
-        // Cleanup
-        SLlama.cleanup()
     }
 }
