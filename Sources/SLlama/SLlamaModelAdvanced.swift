@@ -14,8 +14,6 @@ public class SLlamaModelAdvanced {
         self.model = model
     }
 
-    // MARK: Functions
-
     // MARK: - Model Metadata
 
     /// Get model metadata as a dictionary

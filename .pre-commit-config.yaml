@@ -76,6 +76,14 @@ repos:
         files: Package\.swift$
         pass_filenames: false
 
+      # Check for consecutive MARK comments
+      - id: check-consecutive-marks
+        name: Check Consecutive MARK Comments
+        entry: bash -c 'result=0; for file in Sources/**/*.swift Tests/**/*.swift; do [ ! -f "$file" ] && continue; if awk "/\\/\\/ MARK:/{if(prev_mark_line && NR-prev_mark_line<=2) {print FILENAME":"prev_mark_line":"prev_mark; print FILENAME":"NR":"$0; exit 1} prev_mark_line=NR; prev_mark=$0; next} {if(!/^[[:space:]]*$/) prev_mark_line=""}" "$file"; then :; else echo "❌ Found consecutive MARK comments in $file"; result=1; fi; done; if [ $result -eq 0 ]; then echo "✅ No consecutive MARK comments found"; fi; exit $result'
+        language: system
+        files: \.swift$
+        pass_filenames: false
+
   # Documentation checks
   - repo: local
     hooks:

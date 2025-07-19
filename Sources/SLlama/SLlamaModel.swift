@@ -134,9 +134,7 @@ public class SLlamaModel {
         }
     }
 
-    // MARK: Functions
-
-    // MARK: Metadata Methods
+    // MARK: - Metadata Methods
 
     /// Get metadata value by key
     /// - Parameters:

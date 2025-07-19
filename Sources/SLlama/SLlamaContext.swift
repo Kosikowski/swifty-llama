@@ -82,9 +82,7 @@ public class SLlamaContext {
         }
     }
 
-    // MARK: Functions
-
-    // MARK: System Configuration
+    // MARK: - System Configuration
 
     /// Configure context for optimal performance
     /// - Parameters:
