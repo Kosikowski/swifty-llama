@@ -1,9 +1,10 @@
 import Foundation
 import llama
 
+// MARK: - SLlamaQuantization
+
 /// A wrapper for llama.cpp model quantization functionality
 public class SLlamaQuantization {
-    
     /// Quantize a model to reduce its size and memory usage
     /// - Parameters:
     ///   - inputPath: Path to the input model file
@@ -15,11 +16,13 @@ public class SLlamaQuantization {
         inputPath: String,
         outputPath: String,
         params: SLlamaModelQuantizeParams? = nil
-    ) -> UInt32 {
+    )
+        -> UInt32
+    {
         var quantizeParams = params ?? llama_model_quantize_default_params()
         return llama_model_quantize(inputPath, outputPath, &quantizeParams)
     }
-    
+
     /// Quantize a model with custom parameters
     /// - Parameters:
     ///   - inputPath: Path to the input model file
@@ -43,7 +46,9 @@ public class SLlamaQuantization {
         onlyCopy: Bool = false,
         pure: Bool = false,
         keepSplit: Bool = false
-    ) -> UInt32 {
+    )
+        -> UInt32
+    {
         var params = llama_model_quantize_default_params()
         params.ftype = fileType
         params.nthread = threads
@@ -52,16 +57,16 @@ public class SLlamaQuantization {
         params.only_copy = onlyCopy
         params.pure = pure
         params.keep_split = keepSplit
-        
+
         return llama_model_quantize(inputPath, outputPath, &params)
     }
-    
+
     /// Get default quantization parameters
     /// - Returns: Default quantization parameters
     public static func defaultParams() -> SLlamaModelQuantizeParams {
-        return llama_model_quantize_default_params()
+        llama_model_quantize_default_params()
     }
-    
+
     /// Create quantization parameters with custom settings
     /// - Parameters:
     ///   - fileType: Target quantization type
@@ -80,7 +85,9 @@ public class SLlamaQuantization {
         onlyCopy: Bool = false,
         pure: Bool = false,
         keepSplit: Bool = false
-    ) -> SLlamaModelQuantizeParams {
+    )
+        -> SLlamaModelQuantizeParams
+    {
         var params = llama_model_quantize_default_params()
         params.ftype = fileType
         params.nthread = threads
@@ -96,7 +103,6 @@ public class SLlamaQuantization {
 // MARK: - Convenience Extensions
 
 public extension SLlamaModel {
-    
     /// Quantize this model to a new file
     /// - Parameters:
     ///   - outputPath: Path where the quantized model will be saved
@@ -112,11 +118,13 @@ public extension SLlamaModel {
         threads: Int32 = 0,
         allowRequantize: Bool = false,
         quantizeOutputTensor: Bool = true
-    ) -> UInt32 {
+    )
+        -> UInt32
+    {
         // Get the model file path (this is a simplified approach)
         // In a real implementation, you might need to store the original path
         let inputPath = "model.gguf" // This would need to be the actual model path
-        
+
         return SLlamaQuantization.quantizeModel(
             inputPath: inputPath,
             outputPath: outputPath,
@@ -126,4 +134,4 @@ public extension SLlamaModel {
             quantizeOutputTensor: quantizeOutputTensor
         )
     }
-} 
+}

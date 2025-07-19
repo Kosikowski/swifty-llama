@@ -104,6 +104,38 @@ public class SLlamaModel {
         return llama_model_decoder_start_token(model)
     }
 
+    /// Get number of metadata entries
+    public var metadataCount: Int32 {
+        guard let model else { return 0 }
+        return llama_model_meta_count(model)
+    }
+
+    // MARK: Lifecycle
+
+    public init?(modelPath: String) {
+        let params = llama_model_default_params()
+        model = llama_model_load_from_file(modelPath, params)
+
+        if model == nil {
+            return nil
+        }
+    }
+
+    /// Initialize with an existing model pointer (does not take ownership)
+    /// - Parameter modelPointer: The model pointer
+    public init?(modelPointer: SLlamaModelPointer?) {
+        guard let modelPointer else { return nil }
+        model = modelPointer
+    }
+
+    deinit {
+        if let model {
+            llama_model_free(model)
+        }
+    }
+
+    // MARK: Functions
+
     // MARK: Metadata Methods
 
     /// Get metadata value by key
@@ -113,22 +145,16 @@ public class SLlamaModel {
     /// - Returns: The metadata value as string, or nil if not found
     public func metadataValue(for key: String, bufferSize: Int = 256) -> String? {
         guard let model else { return nil }
-        
+
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_meta_val_str(model, key, &buffer, bufferSize)
-        
+
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
             return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
         }
         return nil
-    }
-
-    /// Get number of metadata entries
-    public var metadataCount: Int32 {
-        guard let model else { return 0 }
-        return llama_model_meta_count(model)
     }
 
     /// Get metadata key by index
@@ -138,10 +164,10 @@ public class SLlamaModel {
     /// - Returns: The metadata key as string, or nil if index is invalid
     public func metadataKey(at index: Int32, bufferSize: Int = 256) -> String? {
         guard let model else { return nil }
-        
+
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_meta_key_by_index(model, index, &buffer, bufferSize)
-        
+
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
@@ -157,10 +183,10 @@ public class SLlamaModel {
     /// - Returns: The metadata value as string, or nil if index is invalid
     public func metadataValue(at index: Int32, bufferSize: Int = 256) -> String? {
         guard let model else { return nil }
-        
+
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_meta_val_str_by_index(model, index, &buffer, bufferSize)
-        
+
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
@@ -174,10 +200,10 @@ public class SLlamaModel {
     /// - Returns: The model description as string, or nil if failed
     public func description(bufferSize: Int = 1024) -> String? {
         guard let model else { return nil }
-        
+
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_desc(model, &buffer, bufferSize)
-        
+
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
@@ -193,29 +219,5 @@ public class SLlamaModel {
         guard let model else { return nil }
         let template = llama_model_chat_template(model, name)
         return template != nil ? String(cString: template!) : nil
-    }
-
-    // MARK: Lifecycle
-
-    public init?(modelPath: String) {
-        let params = llama_model_default_params()
-        model = llama_model_load_from_file(modelPath, params)
-
-        if model == nil {
-            return nil
-        }
-    }
-    
-    /// Initialize with an existing model pointer (does not take ownership)
-    /// - Parameter modelPointer: The model pointer
-    public init?(modelPointer: SLlamaModelPointer?) {
-        guard let modelPointer = modelPointer else { return nil }
-        self.model = modelPointer
-    }
-
-    deinit {
-        if let model {
-            llama_model_free(model)
-        }
     }
 }

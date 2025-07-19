@@ -1,23 +1,31 @@
 import Foundation
 import llama
 
+// MARK: - SLlamaState
+
 /// A wrapper for llama state operations
 public class SLlamaState {
+    // MARK: Properties
+
     private let context: SLlamaContext
-    
+
+    // MARK: Lifecycle
+
     /// Initialize with a context
     /// - Parameter context: The llama context to use for state operations
     public init(context: SLlamaContext) {
         self.context = context
     }
-    
+
+    // MARK: Functions
+
     /// Get the size of the state data
     /// - Returns: The size of the state data in bytes
     public func getStateSize() -> size_t {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_get_size(ctx)
     }
-    
+
     /// Get state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -27,7 +35,7 @@ public class SLlamaState {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_get_data(ctx, data, size)
     }
-    
+
     /// Set state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -37,7 +45,7 @@ public class SLlamaState {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_set_data(ctx, data, size)
     }
-    
+
     /// Load state from file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -50,11 +58,13 @@ public class SLlamaState {
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
         nTokenCapacity: size_t,
         nTokenCountOut: UnsafeMutablePointer<size_t>?
-    ) -> Bool {
+    )
+        -> Bool
+    {
         guard let ctx = context.pointer else { return false }
         return llama_state_load_file(ctx, path, tokensOut, nTokenCapacity, nTokenCountOut)
     }
-    
+
     /// Save state to file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -65,11 +75,13 @@ public class SLlamaState {
         _ path: String,
         tokens: UnsafePointer<SLlamaToken>,
         nTokenCount: size_t
-    ) -> Bool {
+    )
+        -> Bool
+    {
         guard let ctx = context.pointer else { return false }
         return llama_state_save_file(ctx, path, tokens, nTokenCount)
     }
-    
+
     /// Get the size of sequence state data
     /// - Parameter seqId: The sequence ID
     /// - Returns: The size of the sequence state data in bytes
@@ -77,7 +89,7 @@ public class SLlamaState {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_seq_get_size(ctx, seqId)
     }
-    
+
     /// Get sequence state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -88,11 +100,13 @@ public class SLlamaState {
         _ data: UnsafeMutablePointer<UInt8>,
         size: size_t,
         seqId: SLlamaSequenceId
-    ) -> size_t {
+    )
+        -> size_t
+    {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_seq_get_data(ctx, data, size, seqId)
     }
-    
+
     /// Set sequence state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -103,11 +117,13 @@ public class SLlamaState {
         _ data: UnsafePointer<UInt8>,
         size: size_t,
         destSeqId: SLlamaSequenceId
-    ) -> size_t {
+    )
+        -> size_t
+    {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_seq_set_data(ctx, data, size, destSeqId)
     }
-    
+
     /// Save sequence state to file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -120,11 +136,13 @@ public class SLlamaState {
         seqId: SLlamaSequenceId,
         tokens: UnsafePointer<SLlamaToken>,
         nTokenCount: size_t
-    ) -> size_t {
+    )
+        -> size_t
+    {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_seq_save_file(ctx, path, seqId, tokens, nTokenCount)
     }
-    
+
     /// Load sequence state from file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -139,7 +157,9 @@ public class SLlamaState {
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
         nTokenCapacity: size_t,
         nTokenCountOut: UnsafeMutablePointer<size_t>?
-    ) -> size_t {
+    )
+        -> size_t
+    {
         guard let ctx = context.pointer else { return 0 }
         return llama_state_seq_load_file(ctx, path, destSeqId, tokensOut, nTokenCapacity, nTokenCountOut)
     }
@@ -148,20 +168,19 @@ public class SLlamaState {
 // MARK: - Extension to SLlamaContext for State
 
 public extension SLlamaContext {
-    
     /// Get state for this context
     /// - Returns: A SLlamaState instance
     func state() -> SLlamaState {
-        return SLlamaState(context: self)
+        SLlamaState(context: self)
     }
-    
+
     /// Get the size of the state data
     /// - Returns: The size of the state data in bytes
     func getStateSize() -> size_t {
         let state = SLlamaState(context: self)
         return state.getStateSize()
     }
-    
+
     /// Get state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -171,7 +190,7 @@ public extension SLlamaContext {
         let state = SLlamaState(context: self)
         return state.getStateData(data, size: size)
     }
-    
+
     /// Set state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -181,7 +200,7 @@ public extension SLlamaContext {
         let state = SLlamaState(context: self)
         return state.setStateData(data, size: size)
     }
-    
+
     /// Load state from file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -194,11 +213,13 @@ public extension SLlamaContext {
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
         nTokenCapacity: size_t,
         nTokenCountOut: UnsafeMutablePointer<size_t>?
-    ) -> Bool {
+    )
+        -> Bool
+    {
         let state = SLlamaState(context: self)
         return state.loadFromFile(path, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
     }
-    
+
     /// Save state to file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -209,11 +230,13 @@ public extension SLlamaContext {
         _ path: String,
         tokens: UnsafePointer<SLlamaToken>,
         nTokenCount: size_t
-    ) -> Bool {
+    )
+        -> Bool
+    {
         let state = SLlamaState(context: self)
         return state.saveToFile(path, tokens: tokens, nTokenCount: nTokenCount)
     }
-    
+
     /// Get the size of sequence state data
     /// - Parameter seqId: The sequence ID
     /// - Returns: The size of the sequence state data in bytes
@@ -221,7 +244,7 @@ public extension SLlamaContext {
         let state = SLlamaState(context: self)
         return state.getSequenceStateSize(seqId)
     }
-    
+
     /// Get sequence state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -232,11 +255,13 @@ public extension SLlamaContext {
         _ data: UnsafeMutablePointer<UInt8>,
         size: size_t,
         seqId: SLlamaSequenceId
-    ) -> size_t {
+    )
+        -> size_t
+    {
         let state = SLlamaState(context: self)
         return state.getSequenceStateData(data, size: size, seqId: seqId)
     }
-    
+
     /// Set sequence state data
     /// - Parameters:
     ///   - data: Pointer to the data buffer
@@ -247,11 +272,13 @@ public extension SLlamaContext {
         _ data: UnsafePointer<UInt8>,
         size: size_t,
         destSeqId: SLlamaSequenceId
-    ) -> size_t {
+    )
+        -> size_t
+    {
         let state = SLlamaState(context: self)
         return state.setSequenceStateData(data, size: size, destSeqId: destSeqId)
     }
-    
+
     /// Save sequence state to file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -264,11 +291,13 @@ public extension SLlamaContext {
         seqId: SLlamaSequenceId,
         tokens: UnsafePointer<SLlamaToken>,
         nTokenCount: size_t
-    ) -> size_t {
+    )
+        -> size_t
+    {
         let state = SLlamaState(context: self)
         return state.saveSequenceStateToFile(path, seqId: seqId, tokens: tokens, nTokenCount: nTokenCount)
     }
-    
+
     /// Load sequence state from file
     /// - Parameters:
     ///   - path: Path to the state file
@@ -283,11 +312,13 @@ public extension SLlamaContext {
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
         nTokenCapacity: size_t,
         nTokenCountOut: UnsafeMutablePointer<size_t>?
-    ) -> size_t {
+    )
+        -> size_t
+    {
         let state = SLlamaState(context: self)
         return state.loadSequenceStateFromFile(path, destSeqId: destSeqId, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
     }
-    
+
     /// Save complete state to file with error handling
     /// - Parameter path: Path to the state file
     /// - Returns: True if the state was saved successfully, false otherwise
@@ -298,7 +329,7 @@ public extension SLlamaContext {
             saveStateToFile(path, tokens: tokens.baseAddress!, nTokenCount: tokens.count)
         }
     }
-    
+
     /// Load complete state from file with error handling
     /// - Parameter path: Path to the state file
     /// - Returns: True if the state was loaded successfully, false otherwise
@@ -306,22 +337,22 @@ public extension SLlamaContext {
         var tokenCount: size_t = 0
         return loadStateFromFile(path, tokensOut: nil, nTokenCapacity: 0, nTokenCountOut: &tokenCount)
     }
-    
+
     /// Save state data to buffer
     /// - Returns: The state data as Data, or nil if failed
     func saveStateToData() -> Data? {
         let size = getStateSize()
         guard size > 0 else { return nil }
-        
+
         var data = Data(count: size)
         let bytesWritten = data.withUnsafeMutableBytes { buffer in
             getStateData(buffer.bindMemory(to: UInt8.self).baseAddress!, size: size)
         }
-        
+
         guard bytesWritten == size else { return nil }
         return data
     }
-    
+
     /// Load state data from buffer
     /// - Parameter data: The state data
     /// - Returns: True if the state was loaded successfully, false otherwise
@@ -331,23 +362,23 @@ public extension SLlamaContext {
         }
         return bytesRead == data.count
     }
-    
+
     /// Save sequence state data to buffer
     /// - Parameter seqId: The sequence ID
     /// - Returns: The sequence state data as Data, or nil if failed
     func saveSequenceStateToData(_ seqId: SLlamaSequenceId) -> Data? {
         let size = getSequenceStateSize(seqId)
         guard size > 0 else { return nil }
-        
+
         var data = Data(count: size)
         let bytesWritten = data.withUnsafeMutableBytes { buffer in
             getSequenceStateData(buffer.bindMemory(to: UInt8.self).baseAddress!, size: size, seqId: seqId)
         }
-        
+
         guard bytesWritten == size else { return nil }
         return data
     }
-    
+
     /// Load sequence state data from buffer
     /// - Parameters:
     ///   - seqId: The sequence ID
@@ -359,4 +390,4 @@ public extension SLlamaContext {
         }
         return bytesRead == data.count
     }
-} 
+}

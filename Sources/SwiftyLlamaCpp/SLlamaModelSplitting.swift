@@ -1,9 +1,10 @@
 import Foundation
 import llama
 
+// MARK: - SLlamaModelSplitting
+
 /// A wrapper for llama.cpp model splitting functionality
 public class SLlamaModelSplitting {
-    
     /// Build a split model file path
     /// - Parameters:
     ///   - pathPrefix: Base path for the model files
@@ -14,10 +15,12 @@ public class SLlamaModelSplitting {
         pathPrefix: String,
         splitNumber: Int,
         totalSplits: Int
-    ) -> String? {
+    )
+        -> String?
+    {
         let maxLength = 1024
         var splitPath = [CChar](repeating: 0, count: maxLength)
-        
+
         let result = llama_split_path(
             &splitPath,
             maxLength,
@@ -25,13 +28,13 @@ public class SLlamaModelSplitting {
             Int32(splitNumber),
             Int32(totalSplits)
         )
-        
+
         if result > 0 {
             return String(cString: splitPath, encoding: .utf8) ?? ""
         }
         return nil
     }
-    
+
     /// Extract the path prefix from a split path
     /// - Parameters:
     ///   - splitPath: Full path of a split file
@@ -42,10 +45,12 @@ public class SLlamaModelSplitting {
         from splitPath: String,
         splitNumber: Int,
         totalSplits: Int
-    ) -> String? {
+    )
+        -> String?
+    {
         let maxLength = 1024
         var pathPrefix = [CChar](repeating: 0, count: maxLength)
-        
+
         let result = llama_split_prefix(
             &pathPrefix,
             maxLength,
@@ -53,13 +58,13 @@ public class SLlamaModelSplitting {
             Int32(splitNumber),
             Int32(totalSplits)
         )
-        
+
         if result > 0 {
             return String(cString: pathPrefix, encoding: .utf8) ?? ""
         }
         return nil
     }
-    
+
     /// Generate all split paths for a model
     /// - Parameters:
     ///   - pathPrefix: Base path for the model files
@@ -68,22 +73,26 @@ public class SLlamaModelSplitting {
     public static func generateAllSplitPaths(
         pathPrefix: String,
         totalSplits: Int
-    ) -> [String] {
+    )
+        -> [String]
+    {
         var paths: [String] = []
-        
-        for i in 0..<totalSplits {
-            if let path = buildSplitPath(
-                pathPrefix: pathPrefix,
-                splitNumber: i,
-                totalSplits: totalSplits
-            ) {
+
+        for i in 0 ..< totalSplits {
+            if
+                let path = buildSplitPath(
+                    pathPrefix: pathPrefix,
+                    splitNumber: i,
+                    totalSplits: totalSplits
+                )
+            {
                 paths.append(path)
             }
         }
-        
+
         return paths
     }
-    
+
     /// Validate if a split path matches the expected pattern
     /// - Parameters:
     ///   - splitPath: Path to validate
@@ -94,8 +103,10 @@ public class SLlamaModelSplitting {
         _ splitPath: String,
         splitNumber: Int,
         totalSplits: Int
-    ) -> Bool {
-        return extractPathPrefix(
+    )
+        -> Bool
+    {
+        extractPathPrefix(
             from: splitPath,
             splitNumber: splitNumber,
             totalSplits: totalSplits
@@ -103,63 +114,71 @@ public class SLlamaModelSplitting {
     }
 }
 
-// MARK: - Model Splitting Info Struct
+// MARK: - SLlamaSplitModelInfo
 
 /// Information about a split model
 public struct SLlamaSplitModelInfo {
+    // MARK: Properties
+
     public let pathPrefix: String
     public let splitNumber: Int
     public let totalSplits: Int
     public let splitPath: String
-    
+
+    // MARK: Lifecycle
+
     public init(pathPrefix: String, splitNumber: Int, totalSplits: Int) throws {
         self.pathPrefix = pathPrefix
         self.splitNumber = splitNumber
         self.totalSplits = totalSplits
-        
-        guard let path = SLlamaModelSplitting.buildSplitPath(
-            pathPrefix: pathPrefix,
-            splitNumber: splitNumber,
-            totalSplits: totalSplits
-        ) else {
+
+        guard
+            let path = SLlamaModelSplitting.buildSplitPath(
+                pathPrefix: pathPrefix,
+                splitNumber: splitNumber,
+                totalSplits: totalSplits
+            )
+        else {
             throw NSError(domain: "SLlamaModelSplitting", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to generate split path"])
         }
-        
-        self.splitPath = path
+
+        splitPath = path
     }
-    
+
+    // MARK: Functions
+
     /// Get all split paths for this model
     /// - Returns: Array of all split paths
     public func getAllSplitPaths() -> [String] {
-        return SLlamaModelSplitting.generateAllSplitPaths(
+        SLlamaModelSplitting.generateAllSplitPaths(
             pathPrefix: pathPrefix,
             totalSplits: totalSplits
         )
     }
-    
+
     /// Check if all split files exist
     /// - Returns: True if all split files exist
     public func allSplitFilesExist() -> Bool {
         let paths = getAllSplitPaths()
         return paths.allSatisfy { FileManager.default.fileExists(atPath: $0) }
     }
-    
+
     /// Get the size of all split files combined
     /// - Returns: Total size in bytes, or nil if any file is missing
     public func getTotalSize() -> Int64? {
         let paths = getAllSplitPaths()
         var totalSize: Int64 = 0
-        
+
         for path in paths {
-            guard let attributes = try? FileManager.default.attributesOfItem(atPath: path),
-                  let fileSize = attributes[.size] as? Int64 else {
+            guard
+                let attributes = try? FileManager.default.attributesOfItem(atPath: path),
+                let fileSize = attributes[.size] as? Int64
+            else {
                 return nil
             }
             totalSize += fileSize
         }
-        
+
         return totalSize
     }
 }
-
- 

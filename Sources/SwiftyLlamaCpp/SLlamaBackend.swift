@@ -1,11 +1,25 @@
 import Foundation
 import llama
 
+// MARK: - SLlamaBackend
+
 /// A wrapper for llama backend management and performance optimization
 public class SLlamaBackend {
-    
+    // MARK: Static Properties
+
     @MainActor private static var _isInitialized = false
-    
+
+    // MARK: Static Computed Properties
+
+    /// Check if the backend is initialized
+    /// - Returns: true if the backend is initialized, false otherwise
+    @MainActor
+    public static var isInitialized: Bool {
+        _isInitialized
+    }
+
+    // MARK: Static Functions
+
     /// Initialize the llama backend
     /// This should be called before any other llama operations
     @MainActor
@@ -15,7 +29,7 @@ public class SLlamaBackend {
             _isInitialized = true
         }
     }
-    
+
     /// Free the llama backend
     /// This should be called when the application is shutting down
     @MainActor
@@ -25,19 +39,11 @@ public class SLlamaBackend {
             _isInitialized = false
         }
     }
-    
-    /// Check if the backend is initialized
-    /// - Returns: true if the backend is initialized, false otherwise
-    @MainActor
-    public static var isInitialized: Bool {
-        return _isInitialized
-    }
 }
 
 // MARK: - Extension to SLlamaContext for Performance Optimization
 
 public extension SLlamaContext {
-    
     /// Set the number of threads for inference
     /// - Parameters:
     ///   - threads: Number of threads for inference
@@ -46,32 +52,32 @@ public extension SLlamaContext {
         guard let context = pointer else { return }
         llama_set_n_threads(context, inference, batch)
     }
-    
+
     /// Set the number of threads for inference (same for both inference and batch)
     /// - Parameter threads: Number of threads
     func setThreadCount(_ threads: Int32) {
         setThreadCount(inference: threads, batch: threads)
     }
-    
+
     /// Get optimal thread count for the current system
     /// - Returns: Recommended number of threads
     static func optimalThreadCount() -> Int32 {
-        return Int32(ProcessInfo.processInfo.activeProcessorCount)
+        Int32(ProcessInfo.processInfo.activeProcessorCount)
     }
-    
+
     /// Configure context for optimal performance
     /// - Parameters:
     ///   - useOptimalThreads: Whether to use optimal thread count
     ///   - customThreads: Custom thread count (ignored if useOptimalThreads is true)
     func optimizeForPerformance(useOptimalThreads: Bool = true, customThreads: Int32? = nil) {
         let threadCount: Int32
-        
+
         if useOptimalThreads {
             threadCount = Self.optimalThreadCount()
         } else {
             threadCount = customThreads ?? 4
         }
-        
+
         setThreadCount(threadCount)
     }
-} 
+}

@@ -1,18 +1,23 @@
 import Foundation
 
-// MARK: - Performance Utilities
+// MARK: - SLlamaPerformance
 
 /// Performance monitoring and benchmarking utilities
 public class SLlamaPerformance {
-    
+    // MARK: Properties
+
     private let context: SLlamaContext?
-    
+
+    // MARK: Lifecycle
+
     public init(context: SLlamaContext? = nil) {
         self.context = context
     }
-    
+
+    // MARK: Functions
+
     // MARK: - Benchmarking
-    
+
     /// Benchmark model loading performance
     /// - Parameters:
     ///   - modelPath: Path to the model file
@@ -21,27 +26,29 @@ public class SLlamaPerformance {
     public func benchmarkModelLoading(
         modelPath: String,
         iterations: Int = 5
-    ) -> SLoadingBenchmarkResults? {
+    )
+        -> SLoadingBenchmarkResults?
+    {
         var totalLoadTime: TimeInterval = 0
         var loadTimes: [TimeInterval] = []
-        
-        for _ in 0..<iterations {
+
+        for _ in 0 ..< iterations {
             let startTime = CFAbsoluteTimeGetCurrent()
-            
+
             guard let model = SLlamaModel(modelPath: modelPath) else { continue }
             guard let _ = SLlamaContext(model: model) else { continue }
-            
+
             let endTime = CFAbsoluteTimeGetCurrent()
             let loadTime = endTime - startTime
-            
+
             totalLoadTime += loadTime
             loadTimes.append(loadTime)
         }
-        
+
         let avgLoadTime = totalLoadTime / Double(iterations)
         let minLoadTime = loadTimes.min() ?? 0
         let maxLoadTime = loadTimes.max() ?? 0
-        
+
         return SLoadingBenchmarkResults(
             averageLoadTime: avgLoadTime,
             minimumLoadTime: minLoadTime,
@@ -50,9 +57,9 @@ public class SLlamaPerformance {
             totalLoadTime: totalLoadTime
         )
     }
-    
+
     // MARK: - Profiling
-    
+
     /// Profile memory usage during a custom operation
     /// - Parameters:
     ///   - operation: The operation to profile
@@ -61,14 +68,16 @@ public class SLlamaPerformance {
     public func profileMemoryUsage(
         operation: () -> Void,
         maxTokens: Int = 100
-    ) -> SMemoryProfileResults? {
+    )
+        -> SMemoryProfileResults?
+    {
         let initialMemory = getCurrentMemoryUsage()
-        
+
         // Run the operation
         operation()
-        
+
         let finalMemory = getCurrentMemoryUsage()
-        
+
         return SMemoryProfileResults(
             initialMemory: initialMemory,
             finalMemory: finalMemory,
@@ -77,7 +86,7 @@ public class SLlamaPerformance {
             memorySnapshots: []
         )
     }
-    
+
     /// Profile CPU usage during a custom operation
     /// - Parameters:
     ///   - operation: The operation to profile
@@ -86,16 +95,18 @@ public class SLlamaPerformance {
     public func profileCPUUsage(
         operation: () -> Void,
         maxTokens: Int = 100
-    ) -> SCPUProfileResults? {
+    )
+        -> SCPUProfileResults?
+    {
         let startTime = CFAbsoluteTimeGetCurrent()
         let startCPU = getCurrentCPUUsage()
-        
+
         // Run the operation
         operation()
-        
+
         let endTime = CFAbsoluteTimeGetCurrent()
         let endCPU = getCurrentCPUUsage()
-        
+
         return SCPUProfileResults(
             startCPU: startCPU,
             endCPU: endCPU,
@@ -105,66 +116,30 @@ public class SLlamaPerformance {
             cpuSnapshots: []
         )
     }
-    
+
     // MARK: - Performance Monitoring
-    
+
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
     @MainActor
     public func startMonitoring() -> SPerformanceMonitor? {
-        return SPerformanceMonitor(context: context)
+        SPerformanceMonitor(context: context)
     }
-    
-    /// Get current memory usage
-    /// - Returns: Current memory usage in bytes
-    private func getCurrentMemoryUsage() -> UInt64 {
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
-        
-        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
-                          task_flavor_t(MACH_TASK_BASIC_INFO),
-                          $0,
-                          &count)
-            }
-        }
-        
-        return kerr == KERN_SUCCESS ? info.resident_size : 0
-    }
-    
-    /// Get current CPU usage
-    /// - Returns: Current CPU usage as a percentage
-    private func getCurrentCPUUsage() -> Double {
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
-        
-        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
-                          task_flavor_t(MACH_TASK_BASIC_INFO),
-                          $0,
-                          &count)
-            }
-        }
-        
-        return kerr == KERN_SUCCESS ? Double(info.user_time.seconds) : 0.0
-    }
-    
+
     // MARK: - Llama.cpp Performance Functions
-    
+
     /// Get performance context data from llama.cpp
     /// - Parameter context: The llama context to get performance data for
     /// - Returns: Performance context data, or nil if context is invalid
     public func getContextPerformanceData(context: SLlamaContext) -> SLlamaPerfContextData? {
         guard context.pointer != nil else { return nil }
-        
+
         // Try to use llama.cpp performance functions if available
         #if canImport(llama)
-        // Note: These functions may not be available in all builds
-        // We'll provide fallback implementations
+            // Note: These functions may not be available in all builds
+            // We'll provide fallback implementations
         #endif
-        
+
         // Fallback: Return custom performance data based on available metrics
         let metrics = getDetailedContextMetrics(context: context)
         return SLlamaPerfContextData(
@@ -177,18 +152,18 @@ public class SLlamaPerformance {
             n_reused: Int32(metrics.reusedCount)
         )
     }
-    
+
     /// Print performance context data to console
     /// - Parameter context: The llama context to print performance data for
     public func printContextPerformance(context: SLlamaContext) {
         guard context.pointer != nil else { return }
-        
+
         // Try to use llama.cpp performance functions if available
         #if canImport(llama)
-        // Note: These functions may not be available in all builds
-        // We'll provide fallback implementations
+            // Note: These functions may not be available in all builds
+            // We'll provide fallback implementations
         #endif
-        
+
         // Fallback: Print custom performance data
         let metrics = getDetailedContextMetrics(context: context)
         print("=== Context Performance Data ===")
@@ -205,34 +180,34 @@ public class SLlamaPerformance {
         print("Efficiency Ratio: \(metrics.efficiencyRatio)")
         print("================================")
     }
-    
+
     /// Reset performance context data
     /// - Parameter context: The llama context to reset performance data for
     public func resetContextPerformance(context: SLlamaContext) {
         guard context.pointer != nil else { return }
-        
+
         // Try to use llama.cpp performance functions if available
         #if canImport(llama)
-        // Note: These functions may not be available in all builds
-        // We'll provide fallback implementations
+            // Note: These functions may not be available in all builds
+            // We'll provide fallback implementations
         #endif
-        
+
         // Fallback: Reset custom performance tracking
         print("Context performance data reset")
     }
-    
+
     /// Get performance sampler data from llama.cpp
     /// - Parameter sampler: The sampler to get performance data for
     /// - Returns: Performance sampler data, or nil if sampler is invalid
     public func getSamplerPerformanceData(sampler: SLlamaSampler) -> SLlamaPerfSamplerData? {
         guard sampler.cSampler != nil else { return nil }
-        
+
         // Try to use llama.cpp performance functions if available
         #if canImport(llama)
-        // Note: These functions may not be available in all builds
-        // We'll provide fallback implementations
+            // Note: These functions may not be available in all builds
+            // We'll provide fallback implementations
         #endif
-        
+
         // Fallback: Return custom performance data based on available metrics
         let metrics = getDetailedSamplerMetrics(sampler: sampler)
         return SLlamaPerfSamplerData(
@@ -240,18 +215,18 @@ public class SLlamaPerformance {
             n_sample: Int32(metrics.sampleCount)
         )
     }
-    
+
     /// Print performance sampler data to console
     /// - Parameter sampler: The sampler to print performance data for
     public func printSamplerPerformance(sampler: SLlamaSampler) {
         guard sampler.cSampler != nil else { return }
-        
+
         // Try to use llama.cpp performance functions if available
         #if canImport(llama)
-        // Note: These functions may not be available in all builds
-        // We'll provide fallback implementations
+            // Note: These functions may not be available in all builds
+            // We'll provide fallback implementations
         #endif
-        
+
         // Fallback: Print custom performance data
         let metrics = getDetailedSamplerMetrics(sampler: sampler)
         print("=== Sampler Performance Data ===")
@@ -261,22 +236,22 @@ public class SLlamaPerformance {
         print("Samples Per Second: \(metrics.samplesPerSecond)")
         print("================================")
     }
-    
+
     /// Reset performance sampler data
     /// - Parameter sampler: The sampler to reset performance data for
     public func resetSamplerPerformance(sampler: SLlamaSampler) {
         guard sampler.cSampler != nil else { return }
-        
+
         // Try to use llama.cpp performance functions if available
         #if canImport(llama)
-        // Note: These functions may not be available in all builds
-        // We'll provide fallback implementations
+            // Note: These functions may not be available in all builds
+            // We'll provide fallback implementations
         #endif
-        
+
         // Fallback: Reset custom performance tracking
         print("Sampler performance data reset")
     }
-    
+
     /// Get detailed performance metrics for a context
     /// - Parameter context: The llama context to analyze
     /// - Returns: Detailed performance metrics
@@ -293,7 +268,7 @@ public class SLlamaPerformance {
                 reusedCount: Int(perfData.n_reused)
             )
         }
-        
+
         // Fallback: Return custom metrics based on available data
         return SDetailedContextMetrics(
             startTimeMs: 0.0, // Not available without llama.cpp functions
@@ -305,7 +280,7 @@ public class SLlamaPerformance {
             reusedCount: 0
         )
     }
-    
+
     /// Get detailed performance metrics for a sampler
     /// - Parameter sampler: The sampler to analyze
     /// - Returns: Detailed sampler metrics
@@ -317,34 +292,79 @@ public class SLlamaPerformance {
                 sampleCount: Int(perfData.n_sample)
             )
         }
-        
+
         // Fallback: Return custom metrics based on available data
         return SDetailedSamplerMetrics(
             sampleTimeMs: 0.0, // Not available without llama.cpp functions
             sampleCount: 0
         )
     }
+
+    /// Get current memory usage
+    /// - Returns: Current memory usage in bytes
+    private func getCurrentMemoryUsage() -> UInt64 {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+
+        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(
+                    mach_task_self_,
+                    task_flavor_t(MACH_TASK_BASIC_INFO),
+                    $0,
+                    &count
+                )
+            }
+        }
+
+        return kerr == KERN_SUCCESS ? info.resident_size : 0
+    }
+
+    /// Get current CPU usage
+    /// - Returns: Current CPU usage as a percentage
+    private func getCurrentCPUUsage() -> Double {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+
+        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(
+                    mach_task_self_,
+                    task_flavor_t(MACH_TASK_BASIC_INFO),
+                    $0,
+                    &count
+                )
+            }
+        }
+
+        return kerr == KERN_SUCCESS ? Double(info.user_time.seconds) : 0.0
+    }
 }
 
-// MARK: - Performance Monitor
+// MARK: - SPerformanceMonitor
 
 /// Real-time performance monitoring
 public final class SPerformanceMonitor: @unchecked Sendable {
-    
+    // MARK: Properties
+
     private let context: SLlamaContext?
     private var isMonitoring = false
     private var monitoringTimer: Timer?
     private var metrics: [SPerformanceMetric] = []
-    
+
+    // MARK: Lifecycle
+
     public init(context: SLlamaContext?) {
         self.context = context
     }
-    
+
+    // MARK: Functions
+
     /// Start monitoring
     @MainActor
     public func start() {
         guard !isMonitoring else { return }
-        
+
         isMonitoring = true
         monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             Task { @MainActor in
@@ -352,7 +372,7 @@ public final class SPerformanceMonitor: @unchecked Sendable {
             }
         }
     }
-    
+
     /// Stop monitoring
     @MainActor
     public func stop() {
@@ -360,20 +380,20 @@ public final class SPerformanceMonitor: @unchecked Sendable {
         monitoringTimer?.invalidate()
         monitoringTimer = nil
     }
-    
+
     /// Get monitoring results
     /// - Returns: Array of recorded performance metrics
     @MainActor
     public func getResults() -> [SPerformanceMetric] {
-        return metrics
+        metrics
     }
-    
+
     /// Clear monitoring results
     @MainActor
     public func clearResults() {
         metrics.removeAll()
     }
-    
+
     /// Record current metrics
     private func recordMetrics() {
         let metric = SPerformanceMetric(
@@ -384,58 +404,62 @@ public final class SPerformanceMonitor: @unchecked Sendable {
         )
         metrics.append(metric)
     }
-    
+
     /// Get current memory usage
     private func getCurrentMemoryUsage() -> UInt64 {
         var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
-        
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
-                          task_flavor_t(MACH_TASK_BASIC_INFO),
-                          $0,
-                          &count)
+                task_info(
+                    mach_task_self_,
+                    task_flavor_t(MACH_TASK_BASIC_INFO),
+                    $0,
+                    &count
+                )
             }
         }
-        
+
         return kerr == KERN_SUCCESS ? info.resident_size : 0
     }
-    
+
     /// Get current CPU usage
     private func getCurrentCPUUsage() -> Double {
         var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
-        
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
-                          task_flavor_t(MACH_TASK_BASIC_INFO),
-                          $0,
-                          &count)
+                task_info(
+                    mach_task_self_,
+                    task_flavor_t(MACH_TASK_BASIC_INFO),
+                    $0,
+                    &count
+                )
             }
         }
-        
+
         return kerr == KERN_SUCCESS ? Double(info.user_time.seconds) : 0.0
     }
-    
+
     /// Get active thread count
     private func getActiveThreadCount() -> Int {
         var threadList: thread_act_array_t?
         var threadCount: mach_msg_type_number_t = 0
-        
+
         let result = task_threads(mach_task_self_, &threadList, &threadCount)
-        
+
         if result == KERN_SUCCESS {
             vm_deallocate(mach_task_self_, vm_address_t(UInt(bitPattern: threadList)), vm_size_t(threadCount) * vm_size_t(MemoryLayout<thread_t>.size))
             return Int(threadCount)
         }
-        
+
         return 0
     }
 }
 
-// MARK: - Result Types
+// MARK: - SLoadingBenchmarkResults
 
 /// Benchmark results for model loading performance
 public struct SLoadingBenchmarkResults {
@@ -446,6 +470,8 @@ public struct SLoadingBenchmarkResults {
     public let totalLoadTime: TimeInterval
 }
 
+// MARK: - SMemoryProfileResults
+
 /// Memory profile results
 public struct SMemoryProfileResults {
     public let initialMemory: UInt64
@@ -454,6 +480,8 @@ public struct SMemoryProfileResults {
     public let tokenCount: Int
     public let memorySnapshots: [SMemorySnapshot]
 }
+
+// MARK: - SCPUProfileResults
 
 /// CPU profile results
 public struct SCPUProfileResults {
@@ -465,6 +493,8 @@ public struct SCPUProfileResults {
     public let cpuSnapshots: [SCPUSnapshot]
 }
 
+// MARK: - SMemorySnapshot
+
 /// Memory snapshot
 public struct SMemorySnapshot {
     public let tokenIndex: Int
@@ -472,12 +502,16 @@ public struct SMemorySnapshot {
     public let timestamp: TimeInterval
 }
 
+// MARK: - SCPUSnapshot
+
 /// CPU snapshot
 public struct SCPUSnapshot {
     public let tokenIndex: Int
     public let cpuUsage: Double
     public let timestamp: TimeInterval
 }
+
+// MARK: - SPerformanceMetric
 
 /// Performance metric
 public struct SPerformanceMetric {
@@ -487,8 +521,12 @@ public struct SPerformanceMetric {
     public let activeThreads: Int
 }
 
+// MARK: - SDetailedContextMetrics
+
 /// Detailed context performance metrics from llama.cpp
 public struct SDetailedContextMetrics {
+    // MARK: Properties
+
     public let startTimeMs: Double
     public let loadTimeMs: Double
     public let promptEvalTimeMs: Double
@@ -496,22 +534,24 @@ public struct SDetailedContextMetrics {
     public let promptEvalCount: Int
     public let evalCount: Int
     public let reusedCount: Int
-    
+
+    // MARK: Computed Properties
+
     /// Total evaluation time (prompt + eval)
     public var totalEvalTimeMs: Double {
-        return promptEvalTimeMs + evalTimeMs
+        promptEvalTimeMs + evalTimeMs
     }
-    
+
     /// Average time per evaluation
     public var averageEvalTimeMs: Double {
-        return evalCount > 0 ? evalTimeMs / Double(evalCount) : 0.0
+        evalCount > 0 ? evalTimeMs / Double(evalCount) : 0.0
     }
-    
+
     /// Average time per prompt evaluation
     public var averagePromptEvalTimeMs: Double {
-        return promptEvalCount > 0 ? promptEvalTimeMs / Double(promptEvalCount) : 0.0
+        promptEvalCount > 0 ? promptEvalTimeMs / Double(promptEvalCount) : 0.0
     }
-    
+
     /// Efficiency ratio (reused vs total evaluations)
     public var efficiencyRatio: Double {
         let totalEvals = promptEvalCount + evalCount
@@ -519,50 +559,55 @@ public struct SDetailedContextMetrics {
     }
 }
 
+// MARK: - SDetailedSamplerMetrics
+
 /// Detailed sampler performance metrics from llama.cpp
 public struct SDetailedSamplerMetrics {
+    // MARK: Properties
+
     public let sampleTimeMs: Double
     public let sampleCount: Int
-    
+
+    // MARK: Computed Properties
+
     /// Average time per sample
     public var averageSampleTimeMs: Double {
-        return sampleCount > 0 ? sampleTimeMs / Double(sampleCount) : 0.0
+        sampleCount > 0 ? sampleTimeMs / Double(sampleCount) : 0.0
     }
-    
+
     /// Samples per second
     public var samplesPerSecond: Double {
-        return sampleTimeMs > 0 ? Double(sampleCount) / (sampleTimeMs / 1000.0) : 0.0
+        sampleTimeMs > 0 ? Double(sampleCount) / (sampleTimeMs / 1000.0) : 0.0
     }
 }
 
 // MARK: - Extension to SLlamaContext
 
 public extension SLlamaContext {
-    
     /// Get performance utilities interface
     /// - Returns: SLlamaPerformance instance for this context
     func performance() -> SLlamaPerformance {
-        return SLlamaPerformance(context: self)
+        SLlamaPerformance(context: self)
     }
-    
+
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
     @MainActor
     func startPerformanceMonitoring() -> SPerformanceMonitor? {
-        return performance().startMonitoring()
+        performance().startMonitoring()
     }
-    
+
     /// Get detailed performance metrics for this context
     /// - Returns: Detailed performance metrics
     func getDetailedPerformanceMetrics() -> SDetailedContextMetrics {
-        return performance().getDetailedContextMetrics(context: self)
+        performance().getDetailedContextMetrics(context: self)
     }
-    
+
     /// Print performance data for this context to console
     func printPerformanceData() {
         performance().printContextPerformance(context: self)
     }
-    
+
     /// Reset performance data for this context
     func resetPerformanceData() {
         performance().resetContextPerformance(context: self)
@@ -572,23 +617,22 @@ public extension SLlamaContext {
 // MARK: - Extension to SLlamaSampler
 
 public extension SLlamaSampler {
-    
     /// Get detailed performance metrics for this sampler
     /// - Returns: Detailed sampler metrics
     func getDetailedPerformanceMetrics() -> SDetailedSamplerMetrics {
         let performance = SLlamaPerformance()
         return performance.getDetailedSamplerMetrics(sampler: self)
     }
-    
+
     /// Print performance data for this sampler to console
     func printPerformanceData() {
         let performance = SLlamaPerformance()
         performance.printSamplerPerformance(sampler: self)
     }
-    
+
     /// Reset performance data for this sampler
     func resetPerformanceData() {
         let performance = SLlamaPerformance()
         performance.resetSamplerPerformance(sampler: self)
     }
-} 
+}

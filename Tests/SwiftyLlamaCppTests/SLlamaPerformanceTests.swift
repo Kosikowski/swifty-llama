@@ -2,63 +2,62 @@ import Testing
 @testable import SwiftyLlamaCpp
 
 struct SLlamaPerformanceTests {
-    
     @Test("Performance instance can be created")
-    func testPerformanceInstanceCreation() throws {
+    func performanceInstanceCreation() throws {
         // Test creating performance instance without context
         let performance = SLlamaPerformance()
         #expect(type(of: performance) == SLlamaPerformance.self, "Should create SLlamaPerformance instance")
-        
+
         // Test creating performance instance with nil context
         let performanceWithNil = SLlamaPerformance(context: nil)
         #expect(type(of: performanceWithNil) == SLlamaPerformance.self, "Should create SLlamaPerformance instance with nil context")
     }
-    
+
     @Test("Performance monitor can be created")
     @MainActor
-    func testPerformanceMonitorCreation() throws {
+    func performanceMonitorCreation() throws {
         // Test creating monitor without context
         let monitor = SPerformanceMonitor(context: nil)
         #expect(type(of: monitor) == SPerformanceMonitor.self, "Should create SPerformanceMonitor instance")
-        
+
         // Test monitor control methods
         monitor.start()
         #expect(monitor.getResults().isEmpty == false || monitor.getResults().isEmpty == true, "Results should be accessible")
-        
+
         monitor.stop()
         monitor.clearResults()
         #expect(monitor.getResults().isEmpty, "Results should be empty after clearing")
     }
-    
+
     @Test("Performance benchmark methods work")
-    func testPerformanceBenchmarkMethods() throws {
+    func performanceBenchmarkMethods() throws {
         let performance = SLlamaPerformance()
-        
+
         // Test memory profiling
         let memoryResults = performance.profileMemoryUsage(
-            operation: { 
+            operation: {
                 // Simple operation for testing
-                let _ = [1, 2, 3, 4, 5].map { $0 * 2 }
+                _ = [1, 2, 3, 4, 5].map { $0 * 2 }
             },
             maxTokens: 10
         )
-        
+
         #expect(memoryResults != nil, "Memory profiling should return results")
         if let results = memoryResults {
             #expect(results.initialMemory >= 0, "Initial memory should be non-negative")
             #expect(results.finalMemory >= 0, "Final memory should be non-negative")
             #expect(results.memoryIncrease >= 0, "Memory increase should be non-negative")
         }
-        
+
         // Test CPU profiling
         let cpuResults = performance.profileCPUUsage(
-            operation: { 
+            operation: {
                 // Simple operation for testing
-                let _ = [1, 2, 3, 4, 5].map { $0 * 2 }
+                _ = [1, 2, 3, 4, 5].map { $0 * 2 }
             },
             maxTokens: 10
         )
-        
+
         #expect(cpuResults != nil, "CPU profiling should return results")
         if let results = cpuResults {
             #expect(results.duration >= 0, "Duration should be non-negative")
@@ -66,17 +65,17 @@ struct SLlamaPerformanceTests {
             #expect(results.endCPU >= 0, "End CPU should be non-negative")
         }
     }
-    
+
     @Test("Model loading benchmark works")
-    func testModelLoadingBenchmark() throws {
+    func modelLoadingBenchmark() throws {
         let performance = SLlamaPerformance()
-        
+
         // Test model loading benchmark with a small number of iterations
         let benchmarkResults = performance.benchmarkModelLoading(
             modelPath: "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
             iterations: 1
         )
-        
+
         #expect(benchmarkResults != nil, "Benchmark should return results")
         if let results = benchmarkResults {
             #expect(results.iterations == 1, "Should have correct iteration count")
@@ -86,4 +85,4 @@ struct SLlamaPerformanceTests {
             #expect(results.totalLoadTime >= 0, "Total load time should be non-negative")
         }
     }
-} 
+}

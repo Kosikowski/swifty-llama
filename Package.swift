@@ -36,7 +36,7 @@ let package = Package(
             dependencies: ["SwiftyLlamaCpp"],
             path: "Tests/SwiftyLlamaCppTests",
             cSettings: [
-                .define("LLAMA_LOG_LEVEL", to: "0")
+                .define("LLAMA_LOG_LEVEL", to: "0"),
             ]
         ),
     ]

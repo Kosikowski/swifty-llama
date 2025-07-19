@@ -81,9 +81,11 @@ public class SLlamaContext {
             llama_free(context)
         }
     }
-    
+
+    // MARK: Functions
+
     // MARK: System Configuration
-    
+
     /// Configure context for optimal performance
     /// - Parameters:
     ///   - useOptimalThreads: Whether to use optimal thread count
@@ -100,7 +102,7 @@ public class SLlamaContext {
             let threadCount = Self.optimalThreadCount()
             setThreadCount(threadCount)
         }
-        
+
         setEmbeddings(enableEmbeddings)
         setCausalAttention(enableCausalAttention)
         setWarmup(enableWarmup)
