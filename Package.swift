@@ -14,8 +14,8 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "SLlama",
-            targets: ["SLlama"]
+            name: "SwiftyLlama",
+            targets: ["SwiftyLlama"]
         ),
         .library(
             name: "Omen",
@@ -37,6 +37,11 @@ let package = Package(
             dependencies: ["llama", "Omen"],
             path: "Sources/SLlama"
         ),
+        .target(
+            name: "SwiftyLlama",
+            dependencies: ["SLlama", "Omen"],
+            path: "Sources/SwiftyLlama"
+        ),
         .binaryTarget(
             name: "llama",
             path: "Sources/llama.cpp/llama.xcframework"
@@ -45,6 +50,17 @@ let package = Package(
             name: "SLlamaTests",
             dependencies: ["SLlama"],
             path: "Tests/SLlamaTests",
+            resources: [
+                .copy("../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+            ],
+            cSettings: [
+                .define("LLAMA_LOG_LEVEL", to: "0"),
+            ]
+        ),
+        .testTarget(
+            name: "SwiftyLlamaTests",
+            dependencies: ["SwiftyLlama"],
+            path: "Tests/SwiftyLlamaTests",
             resources: [
                 .copy("../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
             ],
