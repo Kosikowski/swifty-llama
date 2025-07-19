@@ -2,7 +2,7 @@ import Foundation
 import llama
 
 /// A wrapper for llama context
-public class SLlamaContext {
+public class SLlamaContext: @unchecked Sendable, PLlamaContext {
     // MARK: Properties
 
     private var context: SLlamaContextPointer?
@@ -45,7 +45,7 @@ public class SLlamaContext {
     }
 
     /// Get the model from context
-    public var contextModel: SLlamaModel? {
+    public var contextModel: PLlamaModel? {
         guard let context else { return nil }
         let modelPtr = llama_get_model(context)
         return try? SLlamaModel(modelPointer: modelPtr)

@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaInference
 
 /// A wrapper for llama inference operations
-public class SLlamaInference {
+public class SLlamaInference: @unchecked Sendable, PLlamaInference {
     // MARK: Properties
 
     private let context: SLlamaContext
@@ -12,7 +12,7 @@ public class SLlamaInference {
     // MARK: Computed Properties
 
     /// Get the model from inference context
-    public var inferenceModel: SLlamaModel? {
+    public var inferenceModel: PLlamaModel? {
         guard let ctx = context.pointer else { return nil }
         let modelPtr = llama_get_model(ctx)
         return try? SLlamaModel(modelPointer: modelPtr)
@@ -52,6 +52,17 @@ public class SLlamaInference {
         }
     }
 
+    /// Encode a batch of tokens (protocol conformance)
+    /// - Parameter batch: The batch to encode
+    /// - Throws: SLlamaError if encoding fails
+    public func encode(_ batch: PLlamaBatch) throws {
+        if let concreteBatch = batch as? SLlamaBatch {
+            try encode(concreteBatch)
+        } else {
+            throw SLlamaError.invalidBatch("PLlamaBatch must be SLlamaBatch for encoding")
+        }
+    }
+
     /// Decode a batch of tokens (uses KV cache)
     /// - Parameter batch: The batch to decode
     /// - Throws: SLlamaError if decoding fails
@@ -75,7 +86,18 @@ public class SLlamaInference {
                     throw SLlamaError.batchOperationFailed("Decoding failed with error code: \(result)")
             }
         }
-        // Note: Positive values are warnings and are not treated as errors
+        // Note: Positive values are warnings but we don't throw for them
+    }
+
+    /// Decode a batch of tokens (protocol conformance)
+    /// - Parameter batch: The batch to decode
+    /// - Throws: SLlamaError if decoding fails
+    public func decode(_ batch: PLlamaBatch) throws {
+        if let concreteBatch = batch as? SLlamaBatch {
+            try decode(concreteBatch)
+        } else {
+            throw SLlamaError.invalidBatch("PLlamaBatch must be SLlamaBatch for decoding")
+        }
     }
 
     /// Legacy encode method that returns error code (deprecated)
@@ -213,22 +235,22 @@ public class SLlamaInference {
 /// Extension to SLlamaContext for inference operations
 public extension SLlamaContext {
     /// Create an inference wrapper for this context
-    /// - Returns: A SLlamaInference instance
-    func inference() -> SLlamaInference {
+    /// - Returns: A PLlamaInference instance
+    func inference() -> PLlamaInference {
         SLlamaInference(context: self)
     }
 
     /// Encode a batch of tokens (does not use KV cache)
     /// - Parameter batch: The batch to encode
     /// - Throws: SLlamaError if encoding fails
-    func encode(_ batch: SLlamaBatch) throws {
+    func encode(_ batch: PLlamaBatch) throws {
         try inference().encode(batch)
     }
 
     /// Decode a batch of tokens (uses KV cache)
     /// - Parameter batch: The batch to decode
     /// - Throws: SLlamaError if decoding fails
-    func decode(_ batch: SLlamaBatch) throws {
+    func decode(_ batch: PLlamaBatch) throws {
         try inference().decode(batch)
     }
 
@@ -270,7 +292,7 @@ public extension SLlamaContext {
     /// - Returns: 0 on success, negative value on error
     @available(*, deprecated, message: "Use encode(_:) throws instead")
     func _encode(_ batch: SLlamaBatch) -> Int32 {
-        inference()._encode(batch)
+        (inference() as! SLlamaInference)._encode(batch)
     }
 
     /// Legacy decode method that returns error code (deprecated)
@@ -278,6 +300,6 @@ public extension SLlamaContext {
     /// - Returns: 0 on success, positive values are warnings, negative values are errors
     @available(*, deprecated, message: "Use decode(_:) throws instead")
     func _decode(_ batch: SLlamaBatch) -> Int32 {
-        inference()._decode(batch)
+        (inference() as! SLlamaInference)._decode(batch)
     }
 }
