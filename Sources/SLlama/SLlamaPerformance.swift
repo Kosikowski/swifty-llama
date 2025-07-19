@@ -35,14 +35,19 @@ public class SLlamaPerformance {
         for _ in 0 ..< iterations {
             let startTime = CFAbsoluteTimeGetCurrent()
 
-            guard let model = SLlamaModel(modelPath: modelPath) else { continue }
-            guard let _ = SLlamaContext(model: model) else { continue }
+            do {
+                let model = try SLlamaModel(modelPath: modelPath)
+                _ = try SLlamaContext(model: model)
 
-            let endTime = CFAbsoluteTimeGetCurrent()
-            let loadTime = endTime - startTime
+                let endTime = CFAbsoluteTimeGetCurrent()
+                let loadTime = endTime - startTime
 
-            totalLoadTime += loadTime
-            loadTimes.append(loadTime)
+                totalLoadTime += loadTime
+                loadTimes.append(loadTime)
+            } catch {
+                // Skip this iteration on error
+                continue
+            }
         }
 
         let avgLoadTime = totalLoadTime / Double(iterations)

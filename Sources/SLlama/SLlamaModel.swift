@@ -112,25 +112,85 @@ public class SLlamaModel {
 
     // MARK: Lifecycle
 
-    public init?(modelPath: String) {
+    /// Initialize with a model file path
+    /// - Parameter modelPath: Path to the model file
+    /// - Throws: SLlamaError if model loading fails
+    public init(modelPath: String) throws {
+        // Check if file exists
+        guard FileManager.default.fileExists(atPath: modelPath) else {
+            throw SLlamaError.fileNotFound(modelPath)
+        }
+
+        // Check if file is readable
+        guard FileManager.default.isReadableFile(atPath: modelPath) else {
+            throw SLlamaError.permissionDenied(modelPath)
+        }
+
         let params = llama_model_default_params()
         model = llama_model_load_from_file(modelPath, params)
 
-        if model == nil {
-            return nil
+        guard model != nil else {
+            // Try to determine the specific error
+            let fileURL = URL(fileURLWithPath: modelPath)
+            if !fileURL.hasDirectoryPath {
+                // Check file size to detect potential issues
+                do {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: modelPath)
+                    let fileSize = attributes[.size] as? Int64 ?? 0
+                    if fileSize == 0 {
+                        throw SLlamaError.corruptedFile("Model file is empty: '\(modelPath)'")
+                    } else if fileSize < 1024 {
+                        throw SLlamaError.invalidFormat("Model file too small (\(fileSize) bytes) to be valid: '\(modelPath)' (minimum 1KB expected)")
+                    }
+                } catch {
+                    throw SLlamaError.fileAccessError("Could not read model file attributes for '\(modelPath)': \(error.localizedDescription)")
+                }
+            }
+            let fileSize = (try? FileManager.default.attributesOfItem(atPath: modelPath)[.size] as? Int64) ?? nil
+            let sizeInfo = fileSize.map { " (file size: \($0) bytes)" } ?? ""
+            throw SLlamaError.modelLoadingFailed("Model could not be loaded from '\(modelPath)'\(sizeInfo)")
         }
     }
 
     /// Initialize with an existing model pointer (does not take ownership)
     /// - Parameter modelPointer: The model pointer
-    public init?(modelPointer: SLlamaModelPointer?) {
-        guard let modelPointer else { return nil }
+    /// - Throws: SLlamaError if the model pointer is invalid
+    public init(modelPointer: SLlamaModelPointer?) throws {
+        guard let modelPointer else {
+            throw SLlamaError.invalidModel("Model pointer is null")
+        }
         model = modelPointer
     }
 
     deinit {
         if let model {
             llama_model_free(model)
+        }
+    }
+
+    // MARK: Static Functions
+
+    /// Legacy initializer that returns nil on failure (deprecated)
+    /// - Parameter modelPath: Path to the model file
+    /// - Returns: SLlamaModel instance or nil if loading fails
+    @available(*, deprecated, message: "Use init(modelPath:) throws instead")
+    public static func _createModel(modelPath: String) -> SLlamaModel? {
+        do {
+            return try SLlamaModel(modelPath: modelPath)
+        } catch {
+            return nil
+        }
+    }
+
+    /// Legacy initializer that returns nil on failure (deprecated)
+    /// - Parameter modelPointer: The model pointer
+    /// - Returns: SLlamaModel instance or nil if pointer is invalid
+    @available(*, deprecated, message: "Use init(modelPointer:) throws instead")
+    public static func _createModel(modelPointer: SLlamaModelPointer?) -> SLlamaModel? {
+        do {
+            return try SLlamaModel(modelPointer: modelPointer)
+        } catch {
+            return nil
         }
     }
 
@@ -142,9 +202,12 @@ public class SLlamaModel {
     /// - Parameters:
     ///   - key: The metadata key
     ///   - bufferSize: Size of the buffer for the value (default: 256)
-    /// - Returns: The metadata value as string, or nil if not found
-    public func metadataValue(for key: String, bufferSize: Int = 256) -> String? {
-        guard let model else { return nil }
+    /// - Returns: The metadata value as string
+    /// - Throws: SLlamaError if the key is not found or buffer is too small
+    public func metadataValue(for key: String, bufferSize: Int = 256) throws -> String {
+        guard let model else {
+            throw SLlamaError.contextNotInitialized
+        }
 
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_meta_val_str(model, key, &buffer, bufferSize)
@@ -152,18 +215,31 @@ public class SLlamaModel {
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
-            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
+            guard let string = String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self) as String? else {
+                throw SLlamaError.encodingFailure
+            }
+            return string
+        } else if result == 0 {
+            throw SLlamaError.keyNotFound("Metadata key '\(key)' not found in model")
+        } else {
+            throw SLlamaError.bufferTooSmall
         }
-        return nil
     }
 
     /// Get metadata key by index
     /// - Parameters:
     ///   - index: The metadata index
     ///   - bufferSize: Size of the buffer for the key (default: 256)
-    /// - Returns: The metadata key as string, or nil if index is invalid
-    public func metadataKey(at index: Int32, bufferSize: Int = 256) -> String? {
-        guard let model else { return nil }
+    /// - Returns: The metadata key as string
+    /// - Throws: SLlamaError if the index is invalid or buffer is too small
+    public func metadataKey(at index: Int32, bufferSize: Int = 256) throws -> String {
+        guard let model else {
+            throw SLlamaError.contextNotInitialized
+        }
+
+        guard index >= 0, index < metadataCount else {
+            throw SLlamaError.invalidIndex("Metadata index \(index) out of range [0..\(metadataCount - 1)]")
+        }
 
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_meta_key_by_index(model, index, &buffer, bufferSize)
@@ -171,18 +247,31 @@ public class SLlamaModel {
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
-            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
+            guard let string = String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self) as String? else {
+                throw SLlamaError.encodingFailure
+            }
+            return string
+        } else if result == 0 {
+            throw SLlamaError.invalidIndex("Metadata index \(index) is invalid or out of range")
+        } else {
+            throw SLlamaError.bufferTooSmall
         }
-        return nil
     }
 
     /// Get metadata value by index
     /// - Parameters:
     ///   - index: The metadata index
     ///   - bufferSize: Size of the buffer for the value (default: 256)
-    /// - Returns: The metadata value as string, or nil if index is invalid
-    public func metadataValue(at index: Int32, bufferSize: Int = 256) -> String? {
-        guard let model else { return nil }
+    /// - Returns: The metadata value as string
+    /// - Throws: SLlamaError if the index is invalid or buffer is too small
+    public func metadataValue(at index: Int32, bufferSize: Int = 256) throws -> String {
+        guard let model else {
+            throw SLlamaError.contextNotInitialized
+        }
+
+        guard index >= 0, index < metadataCount else {
+            throw SLlamaError.invalidIndex("Metadata index \(index) out of range [0..\(metadataCount - 1)]")
+        }
 
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_meta_val_str_by_index(model, index, &buffer, bufferSize)
@@ -190,16 +279,25 @@ public class SLlamaModel {
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
-            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
+            guard let string = String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self) as String? else {
+                throw SLlamaError.encodingFailure
+            }
+            return string
+        } else if result == 0 {
+            throw SLlamaError.invalidIndex("Metadata index \(index) is invalid or out of range")
+        } else {
+            throw SLlamaError.bufferTooSmall
         }
-        return nil
     }
 
     /// Get model description
     /// - Parameter bufferSize: Size of the buffer for the description (default: 1024)
-    /// - Returns: The model description as string, or nil if failed
-    public func description(bufferSize: Int = 1024) -> String? {
-        guard let model else { return nil }
+    /// - Returns: The model description as string
+    /// - Throws: SLlamaError if buffer is too small or model is not initialized
+    public func description(bufferSize: Int = 1024) throws -> String {
+        guard let model else {
+            throw SLlamaError.contextNotInitialized
+        }
 
         var buffer = [CChar](repeating: 0, count: bufferSize)
         let result = llama_model_desc(model, &buffer, bufferSize)
@@ -207,17 +305,62 @@ public class SLlamaModel {
         if result > 0 {
             // Convert CChar array to UInt8 array for UTF8 decoding
             let uint8Buffer = buffer.map { UInt8(bitPattern: $0) }
-            return String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self)
+            guard let string = String(decoding: uint8Buffer.prefix(Int(result)), as: UTF8.self) as String? else {
+                throw SLlamaError.encodingFailure
+            }
+            return string
+        } else if result == 0 {
+            throw SLlamaError.metadataAccessFailed("Model description not available")
+        } else {
+            throw SLlamaError.bufferTooSmall
         }
-        return nil
     }
 
     /// Get chat template by name
     /// - Parameter name: The template name
-    /// - Returns: The chat template as string, or nil if not found
-    public func chatTemplate(named name: String) -> String? {
-        guard let model else { return nil }
+    /// - Returns: The chat template as string
+    /// - Throws: SLlamaError if template is not found or model is not initialized
+    public func chatTemplate(named name: String) throws -> String {
+        guard let model else {
+            throw SLlamaError.contextNotInitialized
+        }
+
         let template = llama_model_chat_template(model, name)
-        return template != nil ? String(cString: template!) : nil
+        guard let template, let templateString = String(cString: template, encoding: .utf8) else {
+            throw SLlamaError.keyNotFound("Chat template '\(name)' not found")
+        }
+        return templateString
+    }
+
+    // MARK: - Legacy Methods (Deprecated)
+
+    /// Legacy method that returns nil on failure (deprecated)
+    @available(*, deprecated, message: "Use metadataValue(for:bufferSize:) throws instead")
+    public func _metadataValue(for key: String, bufferSize: Int = 256) -> String? {
+        try? metadataValue(for: key, bufferSize: bufferSize)
+    }
+
+    /// Legacy method that returns nil on failure (deprecated)
+    @available(*, deprecated, message: "Use metadataKey(at:bufferSize:) throws instead")
+    public func _metadataKey(at index: Int32, bufferSize: Int = 256) -> String? {
+        try? metadataKey(at: index, bufferSize: bufferSize)
+    }
+
+    /// Legacy method that returns nil on failure (deprecated)
+    @available(*, deprecated, message: "Use metadataValue(at:bufferSize:) throws instead")
+    public func _metadataValue(at index: Int32, bufferSize: Int = 256) -> String? {
+        try? metadataValue(at: index, bufferSize: bufferSize)
+    }
+
+    /// Legacy method that returns nil on failure (deprecated)
+    @available(*, deprecated, message: "Use description(bufferSize:) throws instead")
+    public func _description(bufferSize: Int = 1024) -> String? {
+        try? description(bufferSize: bufferSize)
+    }
+
+    /// Legacy method that returns nil on failure (deprecated)
+    @available(*, deprecated, message: "Use chatTemplate(named:) throws instead")
+    public func _chatTemplate(named name: String) -> String? {
+        try? chatTemplate(named: name)
     }
 }

@@ -377,3 +377,196 @@ public extension SLlamaModelKvOverrideType {
     /// String override type
     static let string = LLAMA_KV_OVERRIDE_TYPE_STR
 }
+
+// MARK: - Error Types
+
+/// Comprehensive error types for SLlama operations
+public enum SLlamaError: Error {
+    // MARK: - File Operations
+
+    case fileNotFound(String)
+    case invalidFormat(String)
+    case permissionDenied(String)
+    case insufficientSpace
+    case corruptedFile(String)
+    case fileAccessError(String)
+
+    // MARK: - Model Operations
+
+    case invalidModel(String)
+    case incompatibleModel(String)
+    case unsupportedArchitecture
+    case unsupportedQuantization
+    case modelLoadingFailed(String)
+    case modelValidationFailed(String)
+
+    // MARK: - Memory Operations
+
+    case outOfMemory
+    case insufficientMemory
+    case memoryAllocation
+    case bufferTooSmall
+
+    // MARK: - Context Operations
+
+    case invalidParameters(String)
+    case contextFull
+    case inferenceFailure(String)
+    case contextCreationFailed(String)
+    case contextNotInitialized
+
+    // MARK: - Tokenization Operations
+
+    case invalidVocabulary
+    case invalidToken(SLlamaToken)
+    case encodingFailure
+    case textTooLong
+    case tokenizationFailed(String)
+    case detokenizationFailed(String)
+
+    // MARK: - Adapter Operations
+
+    case adapterNotFound
+    case invalidAdapter(String)
+    case incompatibleAdapter
+    case adapterLoadingFailed(String)
+    case adapterOperationFailed(String)
+
+    // MARK: - State Operations
+
+    case corruptedState
+    case incompatibleVersion
+    case stateLoadingFailed(String)
+    case stateSavingFailed(String)
+
+    // MARK: - Metadata Operations
+
+    case keyNotFound(String)
+    case invalidIndex(String)
+    case metadataAccessFailed(String)
+
+    // MARK: - Backend Operations
+
+    case backendNotInitialized
+    case backendOperationFailed(String)
+
+    // MARK: - Batch Operations
+
+    case invalidBatch(String)
+    case batchOperationFailed(String)
+
+    // MARK: - General Operations
+
+    case operationFailed(String)
+    case unknownError(Int32)
+}
+
+// MARK: - Error Description
+
+extension SLlamaError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+            // File Operations
+            case let .fileNotFound(path):
+                return "File not found: \(path)"
+            case let .invalidFormat(details):
+                return "Invalid file format: \(details)"
+            case let .permissionDenied(path):
+                return "Permission denied: \(path)"
+            case .insufficientSpace:
+                return "Insufficient disk space"
+            case let .corruptedFile(path):
+                return "Corrupted file: \(path)"
+            case let .fileAccessError(details):
+                return "File access error: \(details)"
+            // Model Operations
+            case let .invalidModel(details):
+                return "Invalid model: \(details)"
+            case let .incompatibleModel(details):
+                return "Incompatible model: \(details)"
+            case .unsupportedArchitecture:
+                return "Unsupported model architecture"
+            case .unsupportedQuantization:
+                return "Unsupported quantization type"
+            case let .modelLoadingFailed(details):
+                return "Model loading failed: \(details)"
+            case let .modelValidationFailed(details):
+                return "Model validation failed: \(details)"
+            // Memory Operations
+            case .outOfMemory:
+                return "Out of memory"
+            case .insufficientMemory:
+                return "Insufficient memory available"
+            case .memoryAllocation:
+                return "Memory allocation failed"
+            case .bufferTooSmall:
+                return "Buffer size too small"
+            // Context Operations
+            case let .invalidParameters(details):
+                return "Invalid parameters: \(details)"
+            case .contextFull:
+                return "Context is full"
+            case let .inferenceFailure(details):
+                return "Inference failure: \(details)"
+            case let .contextCreationFailed(details):
+                return "Context creation failed: \(details)"
+            case .contextNotInitialized:
+                return "Context not initialized"
+            // Tokenization Operations
+            case .invalidVocabulary:
+                return "Invalid vocabulary"
+            case let .invalidToken(token):
+                return "Invalid token: \(token)"
+            case .encodingFailure:
+                return "Text encoding failure"
+            case .textTooLong:
+                return "Text too long for tokenization"
+            case let .tokenizationFailed(details):
+                return "Tokenization failed: \(details)"
+            case let .detokenizationFailed(details):
+                return "Detokenization failed: \(details)"
+            // Adapter Operations
+            case .adapterNotFound:
+                return "Adapter not found"
+            case let .invalidAdapter(details):
+                return "Invalid adapter: \(details)"
+            case .incompatibleAdapter:
+                return "Incompatible adapter"
+            case let .adapterLoadingFailed(details):
+                return "Adapter loading failed: \(details)"
+            case let .adapterOperationFailed(details):
+                return "Adapter operation failed: \(details)"
+            // State Operations
+            case .corruptedState:
+                return "Corrupted state data"
+            case .incompatibleVersion:
+                return "Incompatible state version"
+            case let .stateLoadingFailed(details):
+                return "State loading failed: \(details)"
+            case let .stateSavingFailed(details):
+                return "State saving failed: \(details)"
+            // Metadata Operations
+            case let .keyNotFound(key):
+                return "Metadata key not found: \(key)"
+            case let .invalidIndex(message):
+                return "Invalid index: \(message)"
+            case let .metadataAccessFailed(details):
+                return "Metadata access failed: \(details)"
+            // Backend Operations
+            case .backendNotInitialized:
+                return "Backend not initialized"
+            case let .backendOperationFailed(details):
+                return "Backend operation failed: \(details)"
+            // Batch Operations
+            case let .invalidBatch(details):
+                return "Invalid batch: \(details)"
+            case let .batchOperationFailed(details):
+                return "Batch operation failed: \(details)"
+            // General Operations
+            case let .operationFailed(details):
+                return "Operation failed: \(details)"
+            case let .unknownError(code):
+                return "Unknown error with code: \(code)"
+        }
+    }
+}

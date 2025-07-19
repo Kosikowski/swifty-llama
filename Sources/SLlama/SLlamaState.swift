@@ -52,17 +52,46 @@ public class SLlamaState {
     ///   - tokensOut: Buffer for tokens
     ///   - nTokenCapacity: Capacity of the token buffer
     ///   - nTokenCountOut: Output parameter for number of tokens
-    /// - Returns: True if the state was loaded successfully, false otherwise
+    /// - Throws: SLlamaError if loading fails
     public func loadFromFile(
         _ path: String,
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
         nTokenCapacity: size_t,
         nTokenCountOut: UnsafeMutablePointer<size_t>?
-    )
-        -> Bool
-    {
-        guard let ctx = context.pointer else { return false }
-        return llama_state_load_file(ctx, path, tokensOut, nTokenCapacity, nTokenCountOut)
+    ) throws {
+        guard let ctx = context.pointer else {
+            throw SLlamaError.contextNotInitialized
+        }
+
+        // Validate file exists and is readable
+        guard FileManager.default.fileExists(atPath: path) else {
+            throw SLlamaError.fileNotFound(path)
+        }
+
+        guard FileManager.default.isReadableFile(atPath: path) else {
+            throw SLlamaError.permissionDenied(path)
+        }
+
+        // Check file size
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: path)
+            let fileSize = attributes[.size] as? Int64 ?? 0
+            if fileSize == 0 {
+                throw SLlamaError.corruptedFile("State file is empty: '\(path)'")
+            }
+        } catch {
+            throw SLlamaError.fileAccessError("Could not read state file attributes for '\(path)': \(error.localizedDescription)")
+        }
+
+        let success = llama_state_load_file(ctx, path, tokensOut, nTokenCapacity, nTokenCountOut)
+
+        guard success else {
+            // Try to determine specific error
+            if let nTokenCountOut = nTokenCountOut?.pointee, nTokenCountOut > nTokenCapacity {
+                throw SLlamaError.bufferTooSmall
+            }
+            throw SLlamaError.stateLoadingFailed("Could not load state from '\(path)' (file may be corrupted or incompatible)")
+        }
     }
 
     /// Save state to file
@@ -70,16 +99,96 @@ public class SLlamaState {
     ///   - path: Path to the state file
     ///   - tokens: Array of tokens to save
     ///   - nTokenCount: Number of tokens
-    /// - Returns: True if the state was saved successfully, false otherwise
+    /// - Throws: SLlamaError if saving fails
     public func saveToFile(
+        _ path: String,
+        tokens: UnsafePointer<SLlamaToken>,
+        nTokenCount: size_t
+    ) throws {
+        guard let ctx = context.pointer else {
+            throw SLlamaError.contextNotInitialized
+        }
+
+        // Validate output directory exists and is writable
+        let fileURL = URL(fileURLWithPath: path)
+        let directory = fileURL.deletingLastPathComponent().path
+
+        guard FileManager.default.fileExists(atPath: directory) else {
+            throw SLlamaError.fileNotFound("Directory does not exist: \(directory)")
+        }
+
+        guard FileManager.default.isWritableFile(atPath: directory) else {
+            throw SLlamaError.permissionDenied("Cannot write to directory: \(directory)")
+        }
+
+        // Check available disk space
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: directory)
+            let availableSpace = attributes[.systemFreeSize] as? Int64 ?? 0
+
+            // Rough estimate: state size + token array size
+            let stateSize = getStateSize()
+            let tokenSize = nTokenCount * MemoryLayout<SLlamaToken>.size
+            let totalSize = Int64(stateSize + tokenSize)
+
+            if availableSpace < totalSize {
+                throw SLlamaError.insufficientSpace
+            }
+        } catch {
+            throw SLlamaError.fileAccessError("Could not check disk space for directory '\(directory)': \(error.localizedDescription)")
+        }
+
+        let success = llama_state_save_file(ctx, path, tokens, nTokenCount)
+
+        guard success else {
+            throw SLlamaError.stateSavingFailed("Could not save state to '\(path)' (check file permissions and disk space)")
+        }
+    }
+
+    /// Legacy load method that returns bool (deprecated)
+    /// - Parameters:
+    ///   - path: Path to the state file
+    ///   - tokensOut: Buffer for tokens
+    ///   - nTokenCapacity: Capacity of the token buffer
+    ///   - nTokenCountOut: Output parameter for number of tokens
+    /// - Returns: True if the state was loaded successfully, false otherwise
+    @available(*, deprecated, message: "Use loadFromFile(_:tokensOut:nTokenCapacity:nTokenCountOut:) throws instead")
+    public func _loadFromFile(
+        _ path: String,
+        tokensOut: UnsafeMutablePointer<SLlamaToken>?,
+        nTokenCapacity: size_t,
+        nTokenCountOut: UnsafeMutablePointer<size_t>?
+    )
+        -> Bool
+    {
+        do {
+            try loadFromFile(path, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Legacy save method that returns bool (deprecated)
+    /// - Parameters:
+    ///   - path: Path to the state file
+    ///   - tokens: Array of tokens to save
+    ///   - nTokenCount: Number of tokens
+    /// - Returns: True if the state was saved successfully, false otherwise
+    @available(*, deprecated, message: "Use saveToFile(_:tokens:nTokenCount:) throws instead")
+    public func _saveToFile(
         _ path: String,
         tokens: UnsafePointer<SLlamaToken>,
         nTokenCount: size_t
     )
         -> Bool
     {
-        guard let ctx = context.pointer else { return false }
-        return llama_state_save_file(ctx, path, tokens, nTokenCount)
+        do {
+            try saveToFile(path, tokens: tokens, nTokenCount: nTokenCount)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// Get the size of sequence state data
@@ -167,6 +276,7 @@ public class SLlamaState {
 
 // MARK: - Extension to SLlamaContext for State
 
+/// Extension to SLlamaContext for state operations
 public extension SLlamaContext {
     /// Get state for this context
     /// - Returns: A SLlamaState instance
@@ -207,17 +317,15 @@ public extension SLlamaContext {
     ///   - tokensOut: Buffer for tokens
     ///   - nTokenCapacity: Capacity of the token buffer
     ///   - nTokenCountOut: Output parameter for number of tokens
-    /// - Returns: True if the state was loaded successfully, false otherwise
+    /// - Throws: SLlamaError if loading fails
     func loadStateFromFile(
         _ path: String,
         tokensOut: UnsafeMutablePointer<SLlamaToken>?,
         nTokenCapacity: size_t,
         nTokenCountOut: UnsafeMutablePointer<size_t>?
-    )
-        -> Bool
-    {
+    ) throws {
         let state = SLlamaState(context: self)
-        return state.loadFromFile(path, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
+        try state.loadFromFile(path, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
     }
 
     /// Save state to file
@@ -225,16 +333,62 @@ public extension SLlamaContext {
     ///   - path: Path to the state file
     ///   - tokens: Array of tokens to save
     ///   - nTokenCount: Number of tokens
-    /// - Returns: True if the state was saved successfully, false otherwise
+    /// - Throws: SLlamaError if saving fails
     func saveStateToFile(
+        _ path: String,
+        tokens: UnsafePointer<SLlamaToken>,
+        nTokenCount: size_t
+    ) throws {
+        let state = SLlamaState(context: self)
+        try state.saveToFile(path, tokens: tokens, nTokenCount: nTokenCount)
+    }
+
+    // MARK: - Legacy Methods (Deprecated)
+
+    /// Legacy load state method that returns bool (deprecated)
+    /// - Parameters:
+    ///   - path: Path to the state file
+    ///   - tokensOut: Buffer for tokens
+    ///   - nTokenCapacity: Capacity of the token buffer
+    ///   - nTokenCountOut: Output parameter for number of tokens
+    /// - Returns: True if the state was loaded successfully, false otherwise
+    @available(*, deprecated, message: "Use loadStateFromFile(_:tokensOut:nTokenCapacity:nTokenCountOut:) throws instead")
+    func _loadStateFromFile(
+        _ path: String,
+        tokensOut: UnsafeMutablePointer<SLlamaToken>?,
+        nTokenCapacity: size_t,
+        nTokenCountOut: UnsafeMutablePointer<size_t>?
+    )
+        -> Bool
+    {
+        do {
+            try loadStateFromFile(path, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Legacy save state method that returns bool (deprecated)
+    /// - Parameters:
+    ///   - path: Path to the state file
+    ///   - tokens: Array of tokens to save
+    ///   - nTokenCount: Number of tokens
+    /// - Returns: True if the state was saved successfully, false otherwise
+    @available(*, deprecated, message: "Use saveStateToFile(_:tokens:nTokenCount:) throws instead")
+    func _saveStateToFile(
         _ path: String,
         tokens: UnsafePointer<SLlamaToken>,
         nTokenCount: size_t
     )
         -> Bool
     {
-        let state = SLlamaState(context: self)
-        return state.saveToFile(path, tokens: tokens, nTokenCount: nTokenCount)
+        do {
+            try saveStateToFile(path, tokens: tokens, nTokenCount: nTokenCount)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// Get the size of sequence state data
@@ -319,23 +473,49 @@ public extension SLlamaContext {
         return state.loadSequenceStateFromFile(path, destSeqId: destSeqId, tokensOut: tokensOut, nTokenCapacity: nTokenCapacity, nTokenCountOut: nTokenCountOut)
     }
 
-    /// Save complete state to file with error handling
+    /// Save complete state to file
     /// - Parameter path: Path to the state file
-    /// - Returns: True if the state was saved successfully, false otherwise
-    func saveCompleteState(_ path: String) -> Bool {
+    /// - Throws: SLlamaError if saving fails
+    func saveCompleteState(_ path: String) throws {
         // For complete state save, we pass empty tokens array
         let emptyTokens: [SLlamaToken] = []
-        return emptyTokens.withUnsafeBufferPointer { tokens in
-            saveStateToFile(path, tokens: tokens.baseAddress!, nTokenCount: tokens.count)
+        try emptyTokens.withUnsafeBufferPointer { tokens in
+            try saveStateToFile(path, tokens: tokens.baseAddress!, nTokenCount: tokens.count)
         }
     }
 
-    /// Load complete state from file with error handling
+    /// Load complete state from file
+    /// - Parameter path: Path to the state file
+    /// - Throws: SLlamaError if loading fails
+    func loadCompleteState(_ path: String) throws {
+        var tokenCount: size_t = 0
+        try loadStateFromFile(path, tokensOut: nil, nTokenCapacity: 0, nTokenCountOut: &tokenCount)
+    }
+
+    /// Legacy save complete state method that returns bool (deprecated)
+    /// - Parameter path: Path to the state file
+    /// - Returns: True if the state was saved successfully, false otherwise
+    @available(*, deprecated, message: "Use saveCompleteState(_:) throws instead")
+    func _saveCompleteState(_ path: String) -> Bool {
+        do {
+            try saveCompleteState(path)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Legacy load complete state method that returns bool (deprecated)
     /// - Parameter path: Path to the state file
     /// - Returns: True if the state was loaded successfully, false otherwise
-    func loadCompleteState(_ path: String) -> Bool {
-        var tokenCount: size_t = 0
-        return loadStateFromFile(path, tokensOut: nil, nTokenCapacity: 0, nTokenCountOut: &tokenCount)
+    @available(*, deprecated, message: "Use loadCompleteState(_:) throws instead")
+    func _loadCompleteState(_ path: String) -> Bool {
+        do {
+            try loadCompleteState(path)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// Save state data to buffer

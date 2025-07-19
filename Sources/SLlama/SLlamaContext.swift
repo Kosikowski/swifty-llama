@@ -48,7 +48,7 @@ public class SLlamaContext {
     public var contextModel: SLlamaModel? {
         guard let context else { return nil }
         let modelPtr = llama_get_model(context)
-        return SLlamaModel(modelPointer: modelPtr)
+        return try? SLlamaModel(modelPointer: modelPtr)
     }
 
     /// Get memory from context
@@ -65,20 +65,76 @@ public class SLlamaContext {
 
     // MARK: Lifecycle
 
-    public init?(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) {
+    /// Initialize context with a model and optional parameters
+    /// - Parameters:
+    ///   - model: The model to create context from
+    ///   - contextParams: Optional context parameters (uses defaults if nil)
+    /// - Throws: SLlamaError if context creation fails
+    public init(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) throws {
+        // Validate model
+        guard let modelPtr = model.pointer else {
+            throw SLlamaError.invalidModel("Model pointer is null")
+        }
+
         self.model = model
 
         let params = contextParams ?? llama_context_default_params()
-        context = llama_init_from_model(model.pointer, params)
 
-        if context == nil {
-            return nil
+        // Validate context parameters
+        if params.n_ctx == 0 {
+            throw SLlamaError.invalidParameters("Context size cannot be zero")
+        }
+
+        if params.n_batch == 0 {
+            throw SLlamaError.invalidParameters("Batch size cannot be zero")
+        }
+
+        context = llama_init_from_model(modelPtr, params)
+
+        guard context != nil else {
+            // Try to provide more specific error information
+            let contextSize = params.n_ctx
+            let batchSize = params.n_batch
+
+            if contextSize > 32768 {
+                throw SLlamaError.invalidParameters("Context size too large: \(contextSize)")
+            }
+
+            if batchSize > contextSize {
+                throw SLlamaError.invalidParameters("Batch size (\(batchSize)) cannot be larger than context size (\(contextSize))")
+            }
+
+            // Check system memory
+            let physicalMemory = ProcessInfo.processInfo.physicalMemory
+            let estimatedMemoryNeeded = UInt64(contextSize * batchSize * 4) // Rough estimate
+
+            if estimatedMemoryNeeded > physicalMemory / 2 {
+                throw SLlamaError.insufficientMemory
+            }
+
+            throw SLlamaError.contextCreationFailed("Failed to create context with size \(contextSize) and batch size \(batchSize)")
         }
     }
 
     deinit {
         if let context {
             llama_free(context)
+        }
+    }
+
+    // MARK: Static Functions
+
+    /// Legacy initializer that returns nil on failure (deprecated)
+    /// - Parameters:
+    ///   - model: The model to create context from
+    ///   - contextParams: Optional context parameters
+    /// - Returns: SLlamaContext instance or nil if creation fails
+    @available(*, deprecated, message: "Use init(model:contextParams:) throws instead")
+    public static func _createContext(model: SLlamaModel, contextParams: SLlamaContextParams? = nil) -> SLlamaContext? {
+        do {
+            return try SLlamaContext(model: model, contextParams: contextParams)
+        } catch {
+            return nil
         }
     }
 

@@ -9,6 +9,15 @@ public class SLlamaInference {
 
     private let context: SLlamaContext
 
+    // MARK: Computed Properties
+
+    /// Get the model from inference context
+    public var inferenceModel: SLlamaModel? {
+        guard let ctx = context.pointer else { return nil }
+        let modelPtr = llama_get_model(ctx)
+        return try? SLlamaModel(modelPointer: modelPtr)
+    }
+
     // MARK: Lifecycle
 
     /// Initialize with a context
@@ -21,22 +30,78 @@ public class SLlamaInference {
 
     /// Encode a batch of tokens (does not use KV cache)
     /// - Parameter batch: The batch to encode
-    /// - Returns: 0 on success, negative value on error
-    public func encode(_ batch: SLlamaBatch) -> Int32 {
+    /// - Throws: SLlamaError if encoding fails
+    public func encode(_ batch: SLlamaBatch) throws {
         guard let ctx = context.pointer else {
-            return -1
+            throw SLlamaError.contextNotInitialized
         }
-        return llama_encode(ctx, batch.cBatch)
+
+        let result = llama_encode(ctx, batch.cBatch)
+
+        guard result == 0 else {
+            switch result {
+                case -1:
+                    throw SLlamaError.invalidBatch("Invalid batch for encoding")
+                case -2:
+                    throw SLlamaError.contextFull
+                case -3:
+                    throw SLlamaError.outOfMemory
+                default:
+                    throw SLlamaError.batchOperationFailed("Encoding failed with error code: \(result)")
+            }
+        }
     }
 
     /// Decode a batch of tokens (uses KV cache)
     /// - Parameter batch: The batch to decode
-    /// - Returns: 0 on success, positive values are warnings, negative values are errors
-    public func decode(_ batch: SLlamaBatch) -> Int32 {
+    /// - Throws: SLlamaError if decoding fails
+    public func decode(_ batch: SLlamaBatch) throws {
         guard let ctx = context.pointer else {
-            return -1
+            throw SLlamaError.contextNotInitialized
         }
-        return llama_decode(ctx, batch.cBatch)
+
+        let result = llama_decode(ctx, batch.cBatch)
+
+        // Positive values are warnings, negative values are errors
+        if result < 0 {
+            switch result {
+                case -1:
+                    throw SLlamaError.invalidBatch("Invalid batch for decoding")
+                case -2:
+                    throw SLlamaError.contextFull
+                case -3:
+                    throw SLlamaError.outOfMemory
+                default:
+                    throw SLlamaError.batchOperationFailed("Decoding failed with error code: \(result)")
+            }
+        }
+        // Note: Positive values are warnings and are not treated as errors
+    }
+
+    /// Legacy encode method that returns error code (deprecated)
+    /// - Parameter batch: The batch to encode
+    /// - Returns: 0 on success, negative value on error
+    @available(*, deprecated, message: "Use encode(_:) throws instead")
+    public func _encode(_ batch: SLlamaBatch) -> Int32 {
+        do {
+            try encode(batch)
+            return 0
+        } catch {
+            return -1 // Generic error code for legacy compatibility
+        }
+    }
+
+    /// Legacy decode method that returns error code (deprecated)
+    /// - Parameter batch: The batch to decode
+    /// - Returns: 0 on success, positive values are warnings, negative values are errors
+    @available(*, deprecated, message: "Use decode(_:) throws instead")
+    public func _decode(_ batch: SLlamaBatch) -> Int32 {
+        do {
+            try decode(batch)
+            return 0
+        } catch {
+            return -1 // Generic error code for legacy compatibility
+        }
     }
 
     /// Set the number of threads used for decoding
@@ -130,14 +195,6 @@ public class SLlamaInference {
         return llama_n_seq_max(ctx)
     }
 
-    /// Get the associated model
-    /// - Returns: The model associated with this context
-    public func getModel() -> SLlamaModel? {
-        guard let ctx = context.pointer else { return nil }
-        let modelPtr = llama_get_model(ctx)
-        return SLlamaModel(modelPointer: modelPtr)
-    }
-
     /// Get memory
     /// - Returns: The memory associated with this context
     public func getMemory() -> SLlamaMemory? {
@@ -163,16 +220,16 @@ public extension SLlamaContext {
 
     /// Encode a batch of tokens (does not use KV cache)
     /// - Parameter batch: The batch to encode
-    /// - Returns: 0 on success, negative value on error
-    func encode(_ batch: SLlamaBatch) -> Int32 {
-        inference().encode(batch)
+    /// - Throws: SLlamaError if encoding fails
+    func encode(_ batch: SLlamaBatch) throws {
+        try inference().encode(batch)
     }
 
     /// Decode a batch of tokens (uses KV cache)
     /// - Parameter batch: The batch to decode
-    /// - Returns: 0 on success, positive values are warnings, negative values are errors
-    func decode(_ batch: SLlamaBatch) -> Int32 {
-        inference().decode(batch)
+    /// - Throws: SLlamaError if decoding fails
+    func decode(_ batch: SLlamaBatch) throws {
+        try inference().decode(batch)
     }
 
     /// Set the number of threads
@@ -204,5 +261,23 @@ public extension SLlamaContext {
     /// Synchronize computations
     func synchronize() {
         inference().synchronize()
+    }
+
+    // MARK: - Legacy Methods (Deprecated)
+
+    /// Legacy encode method that returns error code (deprecated)
+    /// - Parameter batch: The batch to encode
+    /// - Returns: 0 on success, negative value on error
+    @available(*, deprecated, message: "Use encode(_:) throws instead")
+    func _encode(_ batch: SLlamaBatch) -> Int32 {
+        inference()._encode(batch)
+    }
+
+    /// Legacy decode method that returns error code (deprecated)
+    /// - Parameter batch: The batch to decode
+    /// - Returns: 0 on success, positive values are warnings, negative values are errors
+    @available(*, deprecated, message: "Use decode(_:) throws instead")
+    func _decode(_ batch: SLlamaBatch) -> Int32 {
+        inference()._decode(batch)
     }
 }
