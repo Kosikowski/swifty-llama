@@ -351,7 +351,10 @@ public class SLlamaPerformance {
 
     /// Get current memory usage
     /// - Returns: Current memory usage in bytes
-    private func getCurrentMemoryUsage() -> UInt64 {
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    func getCurrentMemoryUsage() -> UInt64 {
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
@@ -371,9 +374,6 @@ public class SLlamaPerformance {
 
     /// Get current CPU usage
     /// - Returns: Current CPU usage as a percentage
-    #if SLLAMA_INLINE_ALL
-        @usableFromInline
-    #endif
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
@@ -405,13 +405,7 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
-    #if SLLAMA_INLINE_ALL
-        @usableFromInline
-    #endif
     let context: SLlamaContext?
-    #if SLLAMA_INLINE_ALL
-        @usableFromInline
-    #endif
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
@@ -419,13 +413,7 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
-    #if SLLAMA_INLINE_ALL
-        @usableFromInline
-    #endif
     var monitoringTimer: Timer?
-    #if SLLAMA_INLINE_ALL
-        @usableFromInline
-    #endif
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
@@ -486,7 +474,10 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     }
 
     /// Record current metrics
-    private func recordMetrics() {
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    func recordMetrics() {
         let metric = SPerformanceMetric(
             timestamp: Date(),
             memoryUsage: getCurrentMemoryUsage(),
@@ -497,7 +488,10 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     }
 
     /// Get current memory usage
-    private func getCurrentMemoryUsage() -> UInt64 {
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    func getCurrentMemoryUsage() -> UInt64 {
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
@@ -516,9 +510,6 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     }
 
     /// Get current CPU usage
-    #if SLLAMA_INLINE_ALL
-        @usableFromInline
-    #endif
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
@@ -541,7 +532,7 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     }
 
     /// Get active thread count
-    private func getActiveThreadCount() -> Int {
+    func getActiveThreadCount() -> Int {
         var threadList: thread_act_array_t?
         var threadCount: mach_msg_type_number_t = 0
 
@@ -569,6 +560,20 @@ public struct SLoadingBenchmarkResults {
     public let maximumLoadTime: TimeInterval
     public let iterations: Int
     public let totalLoadTime: TimeInterval
+
+    public init(
+        averageLoadTime: TimeInterval,
+        minimumLoadTime: TimeInterval,
+        maximumLoadTime: TimeInterval,
+        iterations: Int,
+        totalLoadTime: TimeInterval
+    ) {
+        self.averageLoadTime = averageLoadTime
+        self.minimumLoadTime = minimumLoadTime
+        self.maximumLoadTime = maximumLoadTime
+        self.iterations = iterations
+        self.totalLoadTime = totalLoadTime
+    }
 }
 
 // MARK: - SMemoryProfileResults
@@ -580,6 +585,20 @@ public struct SMemoryProfileResults {
     public let memoryIncrease: UInt64
     public let tokenCount: Int
     public let memorySnapshots: [SMemorySnapshot]
+
+    public init(
+        initialMemory: UInt64,
+        finalMemory: UInt64,
+        memoryIncrease: UInt64,
+        tokenCount: Int,
+        memorySnapshots: [SMemorySnapshot]
+    ) {
+        self.initialMemory = initialMemory
+        self.finalMemory = finalMemory
+        self.memoryIncrease = memoryIncrease
+        self.tokenCount = tokenCount
+        self.memorySnapshots = memorySnapshots
+    }
 }
 
 // MARK: - SCPUProfileResults
@@ -592,6 +611,22 @@ public struct SCPUProfileResults {
     public let duration: TimeInterval
     public let tokenCount: Int
     public let cpuSnapshots: [SCPUSnapshot]
+
+    public init(
+        startCPU: Double,
+        endCPU: Double,
+        averageCPU: Double,
+        duration: TimeInterval,
+        tokenCount: Int,
+        cpuSnapshots: [SCPUSnapshot]
+    ) {
+        self.startCPU = startCPU
+        self.endCPU = endCPU
+        self.averageCPU = averageCPU
+        self.duration = duration
+        self.tokenCount = tokenCount
+        self.cpuSnapshots = cpuSnapshots
+    }
 }
 
 // MARK: - SMemorySnapshot
@@ -636,6 +671,24 @@ public struct SDetailedContextMetrics {
     public let evalCount: Int
     public let reusedCount: Int
 
+    public init(
+        startTimeMs: Double,
+        loadTimeMs: Double,
+        promptEvalTimeMs: Double,
+        evalTimeMs: Double,
+        promptEvalCount: Int,
+        evalCount: Int,
+        reusedCount: Int
+    ) {
+        self.startTimeMs = startTimeMs
+        self.loadTimeMs = loadTimeMs
+        self.promptEvalTimeMs = promptEvalTimeMs
+        self.evalTimeMs = evalTimeMs
+        self.promptEvalCount = promptEvalCount
+        self.evalCount = evalCount
+        self.reusedCount = reusedCount
+    }
+
     // MARK: Computed Properties
 
     /// Total evaluation time (prompt + eval)
@@ -668,6 +721,14 @@ public struct SDetailedSamplerMetrics {
 
     public let sampleTimeMs: Double
     public let sampleCount: Int
+
+    public init(
+        sampleTimeMs: Double,
+        sampleCount: Int
+    ) {
+        self.sampleTimeMs = sampleTimeMs
+        self.sampleCount = sampleCount
+    }
 
     // MARK: Computed Properties
 

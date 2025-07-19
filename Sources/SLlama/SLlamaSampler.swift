@@ -7,11 +7,11 @@ import llama
 public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     // MARK: Properties
 
-    var sampler: SLlamaSamplerPointer?
-
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
+    var sampler: SLlamaSamplerPointer?
+
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif

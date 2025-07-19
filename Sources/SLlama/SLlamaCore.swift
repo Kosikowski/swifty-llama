@@ -63,9 +63,6 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
-    #if SLLAMA_INLINE_ALL
-        @usableFromInline
-    #endif
     let context: SLlamaContext
 
     // MARK: Computed Properties

@@ -7,7 +7,7 @@ import llama
 public class SLlamaAdapter {
     // MARK: Properties
 
-    private var adapter: SLlamaAdapterLoraPointer?
+    var adapter: SLlamaAdapterLoraPointer?
 
     // MARK: Computed Properties
 

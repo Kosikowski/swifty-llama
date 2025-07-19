@@ -78,73 +78,97 @@ public extension Omen {
     // MARK: - AI/ML Category Shortcuts
 
     /// 🧠 Model omen — intelligence visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func model(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.model, message())
     }
 
     /// 🧠 Model debug whisper
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func modelDebug(_ message: @autoclosure () -> String) {
         debug(SLlamaOmenCategories.AI.model, message())
     }
 
     /// 🧠 Model error portent
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func modelError(_ message: @autoclosure () -> String) {
         error(SLlamaOmenCategories.AI.model, message())
     }
 
     /// 🎯 Context omen — contextual visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func context(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.context, message())
     }
 
     /// 🎲 Sampler omen — randomness visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func sampler(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.sampler, message())
     }
 
     /// 🔍 Inference omen — prediction visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func inference(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.inference, message())
     }
 
     /// 📝 Tokenizer omen — language visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func tokenizer(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.tokenizer, message())
     }
 
     /// ⚖️ Quantization omen — precision visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func quantization(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.quantization, message())
     }
 
     /// 🔗 Adapter omen — adaptation visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func adapter(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.adapter, message())
     }
 
     /// 📦 Batch omen — batch visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func batch(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.batch, message())
     }
 
     /// 🔧 System info omen — hardware visions
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func systemInfo(_ message: @autoclosure () -> String) {
         info(SLlamaOmenCategories.AI.systemInfo, message())
     }
 
     /// 🔧 System debug whisper
-    @inlinable
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
     static func systemDebug(_ message: @autoclosure () -> String) {
         debug(SLlamaOmenCategories.AI.systemInfo, message())
     }

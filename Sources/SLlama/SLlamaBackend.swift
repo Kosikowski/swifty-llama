@@ -7,7 +7,10 @@ import llama
 public class SLlamaBackend {
     // MARK: Static Properties
 
-    @MainActor private static var _isInitialized = false
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    @MainActor static var _isInitialized = false
 
     // MARK: Static Computed Properties
 

@@ -7,7 +7,10 @@ import llama
 public class SLlamaMemoryManager {
     // MARK: Properties
 
-    private var memory: SLlamaMemory?
+    #if SLLAMA_INLINE_ALL
+        @usableFromInline
+    #endif
+    var memory: SLlamaMemory?
 
     #if SLLAMA_INLINE_ALL
         @usableFromInline
