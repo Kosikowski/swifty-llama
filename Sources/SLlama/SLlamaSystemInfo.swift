@@ -100,7 +100,7 @@ public struct SLlamaSystemCapabilities {
 
 // MARK: - Convenience Extensions
 
-public extension SwiftyLlamaCpp {
+public extension SLlama {
     /// Get comprehensive system information
     /// - Returns: System capabilities information
     static func getSystemCapabilities() -> SLlamaSystemCapabilities {

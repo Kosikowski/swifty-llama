@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 struct SLlamaStateTests {
     @Test("SLlamaState construction and basic API")

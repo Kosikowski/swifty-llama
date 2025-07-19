@@ -1,5 +1,5 @@
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 struct SLlamaTypesTests {
     @Test("Type aliases are properly defined")

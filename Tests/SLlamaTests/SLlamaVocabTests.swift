@@ -1,5 +1,5 @@
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 struct SLlamaVocabTests {
     @Test("SLlamaVocab initialization with nil pointer")

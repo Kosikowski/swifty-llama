@@ -1,5 +1,5 @@
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 struct SLlamaTokenizerTests {
     @Test("SLlamaTokenizer tokenization with nil vocab")

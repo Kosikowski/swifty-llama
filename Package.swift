@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "SwiftyLlamaCpp",
+    name: "SLlama",
     platforms: [
         .iOS(.v16),
         .macOS(.v13),
@@ -14,8 +14,8 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "SwiftyLlamaCpp",
-            targets: ["SwiftyLlamaCpp"]
+            name: "SLlama",
+            targets: ["SLlama"]
         ),
     ],
     dependencies: [
@@ -23,18 +23,18 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SwiftyLlamaCpp",
+            name: "SLlama",
             dependencies: ["llama"],
-            path: "Sources/SwiftyLlamaCpp"
+            path: "Sources/SLlama"
         ),
         .binaryTarget(
             name: "llama",
             path: "Sources/llama.cpp/llama.xcframework"
         ),
         .testTarget(
-            name: "SwiftyLlamaCppTests",
-            dependencies: ["SwiftyLlamaCpp"],
-            path: "Tests/SwiftyLlamaCppTests",
+            name: "SLlamaTests",
+            dependencies: ["SLlama"],
+            path: "Tests/SLlamaTests",
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
             ]

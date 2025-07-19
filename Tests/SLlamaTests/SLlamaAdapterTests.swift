@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 struct SLlamaAdapterTests {
     // MARK: Properties
@@ -38,7 +38,7 @@ struct SLlamaAdapterTests {
         }
 
         // Initialize the backend before creating context
-        SwiftyLlamaCpp.initialize()
+        SLlama.initialize()
 
         // Create context
         guard let context = SLlamaContext(model: model) else {
@@ -65,7 +65,7 @@ struct SLlamaAdapterTests {
         }
 
         // Initialize the backend before creating context
-        SwiftyLlamaCpp.initialize()
+        SLlama.initialize()
 
         // Create context
         guard let context = SLlamaContext(model: model) else {

@@ -1,5 +1,5 @@
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 struct SLlamaSystemInfoTests {
     @Test("System info logging works")
@@ -46,14 +46,14 @@ struct SLlamaSystemInfoTests {
         #expect(!capabilities.systemInfo.isEmpty, "System info should not be empty")
     }
 
-    @Test("SwiftyLlamaCpp extensions work")
-    func swiftyLlamaCppExtensions() throws {
+    @Test("SLlama extensions work")
+    func SLlamaExtensions() throws {
         // Test system capabilities
-        let capabilities = SwiftyLlamaCpp.getSystemCapabilities()
+        let capabilities = SLlama.getSystemCapabilities()
         #expect(capabilities.maxDevices > 0, "Max devices should be positive")
         #expect(capabilities.maxParallelSequences > 0, "Max parallel sequences should be positive")
 
         // Test system info printing
-        SwiftyLlamaCpp.printSystemInfo()
+        SLlama.printSystemInfo()
     }
 }

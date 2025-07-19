@@ -87,8 +87,8 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
   - `supportsRpc()` - Check RPC support
 - ✅ **SLlamaSystemCapabilities** - Aggregate system information
   - Complete system capabilities structure
-  - `SwiftyLlamaCpp.getSystemCapabilities()` - Get system capabilities
-  - `SwiftyLlamaCpp.printSystemInfo()` - Print system information
+  - `SLlama.getSystemCapabilities()` - Get system capabilities
+  - `SLlama.printSystemInfo()` - Print system information
 
 ### ✅ Model Splitting Support
 - ✅ **SLlamaModelSplitting** - Complete wrapper for model splitting utilities
@@ -299,8 +299,8 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_apply_adapter_cvec** - Wrapped in `SLlamaContext.applyControlVector()` and `clearControlVector()`
 
 #### Backend and System
-- ✅ **llama_backend_init** - Wrapped in `SLlamaBackend.initialize()` and `SwiftyLlamaCpp.initialize()`
-- ✅ **llama_backend_free** - Wrapped in `SLlamaBackend.free()` and `SwiftyLlamaCpp.free()`
+- ✅ **llama_backend_init** - Wrapped in `SLlamaBackend.initialize()` and `SLlama.initialize()`
+- ✅ **llama_backend_free** - Wrapped in `SLlamaBackend.free()` and `SLlama.free()`
 - ❌ **llama_numa_init** - Available but not wrapped
 - ❌ **llama_attach_threadpool** - Available but not wrapped
 - ❌ **llama_detach_threadpool** - Available but not wrapped
@@ -320,7 +320,7 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 - ✅ **llama_split_path** - Wrapped in `SLlamaModelSplitting.buildSplitPath()`
 - ✅ **llama_split_prefix** - Wrapped in `SLlamaModelSplitting.extractPathPrefix()`
 - ✅ **llama_print_system_info** - Wrapped in `SLlamaSystemInfo.logSystemInfo()`
-- ✅ **llama_log_set** - Wrapped as `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
+- ✅ **llama_log_set** - Wrapped as `SLlama.disableLogging()` to suppress verbose Metal initialization logs
 
 ## Swift Wrapper Implementation Status
 
@@ -342,7 +342,7 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 15. **LoRA Adapters**: Complete LoRA adapter functionality with control vector support
 16. **Vocabulary Functions**: Complete vocabulary API with all utility functions
 17. **Threading Control**: Complete thread management through `SLlamaInference` and `SLlamaBackend`
-18. **Backend Management**: Complete backend initialization and cleanup through `SLlamaBackend` and `SwiftyLlamaCpp`
+18. **Backend Management**: Complete backend initialization and cleanup through `SLlamaBackend` and `SLlama`
 19. **Model Quantization**: `SLlamaQuantization` for model quantization with complete parameter support
 20. **System Information**: `SLlamaSystemInfo` for system capabilities and information
 21. **Model Splitting**: `SLlamaModelSplitting` for handling split model files
@@ -358,9 +358,9 @@ This document provides a comprehensive review of the llama.cpp C API from the xc
 4. **LoRA Adapters**: Complete implementation of all LoRA adapter functions including control vector support
 5. **Vocabulary Functions Discovery**: Identified that all vocabulary utility functions are already implemented in `SLlamaVocab`
 6. **Threading Control Discovery**: Identified that all threading functions are already implemented in `SLlamaInference` and `SLlamaBackend`
-7. **Backend Management Discovery**: Identified that backend functions are already implemented in `SLlamaBackend` and `SwiftyLlamaCpp`
+7. **Backend Management Discovery**: Identified that backend functions are already implemented in `SLlamaBackend` and `SLlama`
 8. **Missing Wrapper Functions**: Implemented `llama_get_model`, `llama_get_memory`, and `llama_pooling_type` as computed properties in `SLlamaContext`
-9. **Logging Control**: Added `SwiftyLlamaCpp.disableLogging()` to suppress verbose Metal initialization logs
+9. **Logging Control**: Added `SLlama.disableLogging()` to suppress verbose Metal initialization logs
 10. **Test Improvements**: Fixed all compilation warnings and improved test reliability
 11. **Enum Usage Analysis**: Identified which enums are actually used vs. only defined
 12. **Model Quantization**: Complete implementation of model quantization functions (`llama_model_quantize`, `llama_model_quantize_params`)

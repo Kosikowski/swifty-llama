@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 struct SLlamaModelTests {
     // MARK: Properties
@@ -16,10 +16,10 @@ struct SLlamaModelTests {
             return
         }
         // Disable logging to suppress verbose output
-        SwiftyLlamaCpp.disableLogging()
+        SLlama.disableLogging()
 
         // Initialize backend
-        SwiftyLlamaCpp.initialize()
+        SLlama.initialize()
 
         guard let model = SLlamaModel(modelPath: modelPath) else {
             print("Test skipped: Model could not be loaded at \(modelPath)")
@@ -58,7 +58,7 @@ struct SLlamaModelTests {
         }
 
         // Cleanup
-        SwiftyLlamaCpp.cleanup()
+        SLlama.cleanup()
     }
 
     @Test("Model metadata access")
@@ -68,10 +68,10 @@ struct SLlamaModelTests {
             return
         }
         // Disable logging to suppress verbose output
-        SwiftyLlamaCpp.disableLogging()
+        SLlama.disableLogging()
 
         // Initialize backend
-        SwiftyLlamaCpp.initialize()
+        SLlama.initialize()
 
         guard let model = SLlamaModel(modelPath: modelPath) else {
             print("Test skipped: Model could not be loaded at \(modelPath)")
@@ -99,6 +99,6 @@ struct SLlamaModelTests {
         }
 
         // Cleanup
-        SwiftyLlamaCpp.cleanup()
+        SLlama.cleanup()
     }
 }

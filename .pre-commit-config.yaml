@@ -1,4 +1,4 @@
-# Pre-commit configuration for SwiftyLlamaCpp
+# Pre-commit configuration for SLlama
 # See https://pre-commit.com for more information
 
 repos:

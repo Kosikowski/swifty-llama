@@ -1,8 +1,8 @@
 import Foundation
 import llama
 
-/// Main entry point for SwiftyLlamaCpp
-public enum SwiftyLlamaCpp {
+/// Main entry point for SLlama
+public enum SLlama {
     /// Initialize the llama backend
     public static func initialize() {
         llama_backend_init()

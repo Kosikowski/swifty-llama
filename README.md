@@ -1,4 +1,4 @@
-# SwiftyLlamaCpp
+# SLlama
 
 A Swift wrapper for the [llama.cpp](https://github.com/ggerganov/llama.cpp) library, providing a native Swift interface to run Large Language Models (LLMs) on Apple platforms.
 
@@ -22,7 +22,7 @@ A Swift wrapper for the [llama.cpp](https://github.com/ggerganov/llama.cpp) libr
 
 ### Swift Package Manager
 
-Add SwiftyLlamaCpp to your project in Xcode:
+Add SLlama to your project in Xcode:
 
 1. File → Add Package Dependencies
 2. Enter the repository URL
@@ -41,18 +41,18 @@ dependencies: [
 ### Basic Setup
 
 ```swift
-import SwiftyLlamaCpp
+import SLlama
 
 // Initialize the library
-SwiftyLlamaCpp.initialize()
+SLlama.initialize()
 
 // Get library information
-let version = SwiftyLlamaCpp.getVersion()
-let buildInfo = SwiftyLlamaCpp.getBuildInfo()
+let version = SLlama.getVersion()
+let buildInfo = SLlama.getBuildInfo()
 
 // Check Metal support
-let supportsMetal = SwiftyLlamaCpp.supportsMetal()
-let deviceCount = SwiftyLlamaCpp.getMetalDeviceCount()
+let supportsMetal = SLlama.supportsMetal()
+let deviceCount = SLlama.getMetalDeviceCount()
 ```
 
 ### Working with Models

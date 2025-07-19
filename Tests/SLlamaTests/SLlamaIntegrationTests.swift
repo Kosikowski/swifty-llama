@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import SwiftyLlamaCpp
+@testable import SLlama
 
 // MARK: - SLlamaIntegrationTests
 
