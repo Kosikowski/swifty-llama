@@ -215,7 +215,7 @@ public class SLlamaPerformance {
     /// Get performance sampler data from llama.cpp
     /// - Parameter sampler: The sampler to get performance data for
     /// - Returns: Performance sampler data, or nil if sampler is invalid
-    public func getSamplerPerformanceData(sampler: SLlamaSampler) -> SLlamaPerfSamplerData? {
+    public func getSamplerPerformanceData(sampler: PLlamaSampler) -> SLlamaPerfSamplerData? {
         guard sampler.cSampler != nil else { return nil }
 
         // Try to use llama.cpp performance functions if available
@@ -247,13 +247,9 @@ public class SLlamaPerformance {
         Omen.performance("================================")
     }
 
-    /// Reset sampler performance data with logging
-    ///
-    /// **LOGGING STRATEGY**: Sampler reset operations are logged to provide
-    /// visibility into performance monitoring lifecycle
-    ///
+    /// Reset sampler performance data in llama.cpp
     /// - Parameter sampler: The sampler to reset performance data for
-    public func resetSamplerPerformanceData(_ sampler: SLlamaSampler) {
+    public func resetSamplerPerformanceData(_ sampler: PLlamaSampler) {
         guard let samplerPtr = sampler.cSampler else {
             Omen.error(
                 OmenCategories.Core.performance,
@@ -295,10 +291,10 @@ public class SLlamaPerformance {
         )
     }
 
-    /// Get detailed performance metrics for a sampler
+    /// Get detailed sampler metrics for debugging and analysis
     /// - Parameter sampler: The sampler to analyze
-    /// - Returns: Detailed sampler metrics
-    public func getDetailedSamplerMetrics(sampler: SLlamaSampler) -> SDetailedSamplerMetrics {
+    /// - Returns: Detailed metrics structure
+    public func getDetailedSamplerMetrics(sampler: PLlamaSampler) -> SDetailedSamplerMetrics {
         // Try to get llama.cpp performance data first
         if let perfData = getSamplerPerformanceData(sampler: sampler) {
             return SDetailedSamplerMetrics(

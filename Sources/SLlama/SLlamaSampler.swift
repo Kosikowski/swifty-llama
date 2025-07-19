@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaSampler
 
 /// A wrapper for llama sampling operations
-public class SLlamaSampler {
+public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
     // MARK: Properties
 
     var sampler: SLlamaSamplerPointer?
@@ -63,7 +63,7 @@ public class SLlamaSampler {
 
     /// Clone the sampler
     /// - Returns: A new sampler instance, or nil if cloning failed
-    public func clone() -> SLlamaSampler? {
+    public func clone() -> PLlamaSampler? {
         guard let sampler else { return nil }
         guard let clonedSampler = llama_sampler_clone(sampler) else { return nil }
 
@@ -139,6 +139,22 @@ public class SLlamaSampler {
         }
 
         return SLlamaToken(maxIndex)
+    }
+
+    /// Sample a token from the provided token data array (PLlamaSampler protocol method)
+    /// - Parameter tokenDataArray: Pre-built token data array to sample from
+    /// - Returns: The sampled token ID
+    public func sample(_ tokenDataArray: SLlamaTokenDataArrayPointer) -> SLlamaToken {
+        guard let sampler else {
+            // Fallback to greedy selection if no sampler configured
+            return tokenDataArray.pointee.data[Int(tokenDataArray.pointee.selected)].id
+        }
+
+        // Apply the sampler to modify probabilities
+        llama_sampler_apply(sampler, tokenDataArray)
+
+        // Return the selected token (sampler sets the selected index)
+        return tokenDataArray.pointee.data[Int(tokenDataArray.pointee.selected)].id
     }
 
     /// Sample with temperature scaling

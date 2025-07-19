@@ -50,7 +50,7 @@ public class SLlamaSamplerChain {
 
     /// Add a sampler to the chain
     /// - Parameter sampler: The sampler to add to the chain
-    public func addSampler(_ sampler: SLlamaSampler) {
+    public func addSampler(_ sampler: PLlamaSampler) {
         guard let chain, let samplerPtr = sampler.cSampler else { return }
         llama_sampler_chain_add(chain, samplerPtr)
     }
