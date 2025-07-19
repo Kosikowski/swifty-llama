@@ -2,23 +2,16 @@ import Testing
 @testable import SLlama
 
 struct SLlamaContextTests {
-    @Test("Wrapper functions compile and work")
-    func wrapperFunctionsCompile() throws {
-        // Test that our wrapper functions are accessible and don't crash
-        // This test doesn't require loading a model, just verifies the API exists
+    @Test("Context enum types are accessible")
+    func contextEnumTypes() throws {
+        // Test that context-related enums are properly defined
+        let poolingTypes: [SLlamaPoolingType] = [.none, .mean, .cls]
+        for poolingType in poolingTypes {
+            #expect(poolingType.rawValue >= 0, "Pooling type should have valid raw value")
+        }
 
-        // Test that SLlamaPoolingType.none exists
-        let poolingType: SLlamaPoolingType = .none
-        #expect(poolingType == .none, "Pooling type should be accessible")
-
-        // Test that the wrapper functions are defined in the context
-        // We can't test them without a context, but we can verify the types exist
-        let wrapperFunctionsExist = true
-        #expect(wrapperFunctionsExist, "Wrapper functions should be accessible")
-
-        // Test that we can access the pooling type enum values
-        #expect(SLlamaPoolingType.none == .none, "Pooling type none should be accessible")
-        #expect(SLlamaPoolingType.mean == .mean, "Pooling type mean should be accessible")
-        #expect(SLlamaPoolingType.cls == .cls, "Pooling type cls should be accessible")
+        // This is a minimal test that validates enum accessibility
+        // Real context functionality requires a loaded model
+        #expect(SLlamaPoolingType.none != .mean, "Enum values should be distinct")
     }
 }
