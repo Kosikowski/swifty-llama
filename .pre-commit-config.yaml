@@ -1,0 +1,91 @@
+# Pre-commit configuration for SwiftyLlamaCpp
+# See https://pre-commit.com for more information
+
+repos:
+  # SwiftFormat - Swift code formatting
+  - repo: local
+    hooks:
+      - id: swiftformat
+        name: SwiftFormat
+        entry: swiftformat
+        language: system
+        files: \.swift$
+        args: [--config, .swiftformat]
+
+  # SwiftLint - Swift code linting (if available)
+  - repo: local
+    hooks:
+      - id: swiftlint
+        name: SwiftLint
+        entry: bash -c 'if command -v swiftlint >/dev/null 2>&1; then swiftlint --fix --quiet; else echo "SwiftLint not installed, skipping..."; fi'
+        language: system
+        files: \.swift$
+
+  # Built-in pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      # General file checks
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+        exclude: \.md$
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: destroyed-symlinks
+
+  # Swift-specific checks
+  - repo: local
+    hooks:
+      # Check for common Swift issues
+      - id: swift-build-check
+        name: Swift Build Check
+        entry: bash -c 'swift build > /dev/null 2>&1 || (echo "❌ Swift build failed! Please fix build errors before committing."; exit 1)'
+        language: system
+        files: \.swift$
+        pass_filenames: false
+
+      # Check for TODOs and FIXMEs in production code
+      - id: check-todos
+        name: Check TODOs/FIXMEs
+        entry: bash -c 'if grep -rn "TODO\|FIXME\|XXX\|HACK" Sources/ --include="*.swift" 2>/dev/null; then echo "⚠️  Found TODO/FIXME/XXX/HACK comments in Sources/. Consider addressing them."; fi'
+        language: system
+        files: \.swift$
+        pass_filenames: false
+
+      # Check for debug print statements
+      - id: check-debug-prints
+        name: Check Debug Prints
+        entry: bash -c 'if grep -rn "print(" Sources/ --include="*.swift" 2>/dev/null; then echo "⚠️  Found print() statements in Sources/. Consider using proper logging."; exit 1; fi'
+        language: system
+        files: ^Sources/.*\.swift$
+        pass_filenames: false
+
+      # Validate Package.swift
+      - id: validate-package-swift
+        name: Validate Package.swift
+        entry: bash -c 'swift package dump-package > /dev/null 2>&1 || (echo "❌ Package.swift validation failed!"; exit 1)'
+        language: system
+        files: Package\.swift$
+        pass_filenames: false
+
+  # Documentation checks
+  - repo: local
+    hooks:
+      - id: check-readme
+        name: Check README
+        entry: bash -c 'if [ ! -f README.md ]; then echo "❌ README.md not found!"; exit 1; fi'
+        language: system
+        files: README\.md$
+        pass_filenames: false
+
+# Global configuration
+fail_fast: false
+default_stages: [pre-commit]
