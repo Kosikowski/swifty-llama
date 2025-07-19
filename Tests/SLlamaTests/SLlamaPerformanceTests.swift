@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import SLlama
 
@@ -72,17 +73,35 @@ struct SLlamaPerformanceTests {
 
         // Test model loading benchmark with a small number of iterations
         let benchmarkResults = performance.benchmarkModelLoading(
-            modelPath: "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
+            modelPath: SLlamaTestUtilities.testModelPath,
             iterations: 1
         )
 
         #expect(benchmarkResults != nil, "Benchmark should return results")
         if let results = benchmarkResults {
-            #expect(results.iterations == 1, "Should have correct iteration count")
-            #expect(results.averageLoadTime >= 0, "Average load time should be non-negative")
-            #expect(results.minimumLoadTime >= 0, "Minimum load time should be non-negative")
-            #expect(results.maximumLoadTime >= 0, "Maximum load time should be non-negative")
-            #expect(results.totalLoadTime >= 0, "Total load time should be non-negative")
+            print("Benchmark results: \(results)")
+            #expect(results.averageLoadTime > 0, "Average load time should be positive")
+            #expect(results.totalLoadTime > 0, "Total load time should be positive")
+            #expect(results.iterations == 1, "Iterations should match")
         }
+    }
+
+    @Test("Performance optimization")
+    func performanceOptimization() throws {
+        let modelPath = SLlamaTestUtilities.testModelPath
+
+        guard FileManager.default.fileExists(atPath: modelPath) else {
+            print("Test skipped: Model file not found at \(modelPath)")
+            return
+        }
+
+        SLlama.initialize()
+        defer { SLlama.cleanup() }
+
+        let model = try SLlamaModel(modelPath: modelPath)
+        let context = try SLlamaContext(model: model)
+
+        // Test performance-related operations
+        #expect(context.pointer != nil, "Context should be valid for performance tests")
     }
 }

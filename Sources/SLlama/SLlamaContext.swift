@@ -132,6 +132,47 @@ public class SLlamaContext {
         }
     }
 
+    /// Create default context parameters
+    /// - Returns: Default context parameters
+    public static func defaultParams() -> SLlamaContextParams {
+        llama_context_default_params()
+    }
+
+    /// Create custom context parameters
+    /// - Parameters:
+    ///   - contextSize: Context size (default: 4096)
+    ///   - batchSize: Batch size (default: 2048)
+    ///   - physicalBatchSize: Physical batch size (default: 512)
+    ///   - maxSequences: Maximum number of sequences (default: 1)
+    ///   - threads: Number of threads for inference (default: 0 = auto)
+    ///   - batchThreads: Number of threads for batch processing (default: 0 = auto)
+    ///   - enableEmbeddings: Whether to enable embeddings mode (default: false)
+    ///   - enableOffloading: Whether to enable GPU offloading (default: true)
+    /// - Returns: Configured context parameters
+    public static func createParams(
+        contextSize: UInt32 = 4096,
+        batchSize: UInt32 = 2048,
+        physicalBatchSize: UInt32 = 512,
+        maxSequences: UInt32 = 1,
+        threads: Int32 = 0,
+        batchThreads: Int32 = 0,
+        enableEmbeddings: Bool = false,
+        enableOffloading: Bool = true
+    )
+        -> SLlamaContextParams
+    {
+        var params = llama_context_default_params()
+        params.n_ctx = contextSize
+        params.n_batch = batchSize
+        params.n_ubatch = physicalBatchSize
+        params.n_seq_max = maxSequences
+        params.n_threads = threads
+        params.n_threads_batch = batchThreads
+        params.embeddings = enableEmbeddings
+        params.offload_kqv = enableOffloading
+        return params
+    }
+
     // MARK: Functions
 
     // MARK: - System Configuration

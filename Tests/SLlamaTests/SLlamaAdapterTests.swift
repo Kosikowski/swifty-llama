@@ -5,26 +5,7 @@ import Testing
 struct SLlamaAdapterTests {
     @Test("Adapter initialization with invalid path throws error")
     func sLlamaAdapterInitialization() throws {
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-
-        guard FileManager.default.fileExists(atPath: modelPath) else {
-            print("Test skipped: Model file not found at \(modelPath)")
-            return
-        }
-
-        SLlama.initialize()
-
-        let model = try SLlamaModel(modelPath: modelPath)
-
-        // Create adapter with invalid path should throw
-        #expect(throws: SLlamaError.self) {
-            try SLlamaAdapter(model: model, path: "/invalid/path/to/lora.adapter")
-        }
-    }
-
-    @Test("Context LoRA adapter operations")
-    func sLlamaContextLoRAOperations() throws {
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
+        let modelPath = SLlamaTestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -47,9 +28,9 @@ struct SLlamaAdapterTests {
         context.clearLoRAAdapters()
     }
 
-    @Test("Context control vector operations")
-    func sLlamaContextControlVectorOperations() throws {
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
+    @Test("Context LoRA adapter operations")
+    func sLlamaContextLoRAOperations() throws {
+        let modelPath = SLlamaTestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -62,15 +43,53 @@ struct SLlamaAdapterTests {
         let model = try SLlamaModel(modelPath: modelPath)
         let context = try SLlamaContext(model: model)
 
-        // Create dummy control vector data
-        let dummyVector: [Float] = Array(repeating: 0.1, count: 100)
+        // Test basic LoRA operations (without actual adapter files)
+        // Clear adapters (should not throw even if none loaded)
+        context.clearLoRAAdapters()
+
+        // Test that loading non-existent adapter throws
+        #expect(throws: SLlamaError.self) {
+            try context.loadLoRAAdapter(from: "/invalid/path/to/lora.adapter")
+        }
+
+        // The context operations should complete without crashing
+        // Clear any adapters (should not throw)
+        context.clearLoRAAdapters()
+    }
+
+    @Test("Context control vector operations")
+    func sLlamaContextControlVectorOperations() throws {
+        let modelPath = SLlamaTestUtilities.testModelPath
+
+        guard FileManager.default.fileExists(atPath: modelPath) else {
+            print("Test skipped: Model file not found at \(modelPath)")
+            return
+        }
+
+        SLlama.initialize()
+        defer { SLlama.cleanup() }
+
+        let model = try SLlamaModel(modelPath: modelPath)
+        let context = try SLlamaContext(model: model)
+
+        // Get the actual embedding dimensions from the model
+        let embeddingDim = model.embeddingDimensions
+        guard embeddingDim > 0 else {
+            print("Test skipped: Model has invalid embedding dimensions: \(embeddingDim)")
+            return
+        }
+
+        // Create control vector data with correct size (embeddingDim per layer)
+        let numLayers = 2 // layerEnd - layerStart
+        let vectorSize = Int(embeddingDim * Int32(numLayers))
+        let dummyVector: [Float] = Array(repeating: 0.1, count: vectorSize)
 
         // Apply control vector (test that it doesn't crash)
         try dummyVector.withUnsafeBufferPointer { buffer in
             try context.applyControlVector(
                 data: buffer.baseAddress!,
                 length: buffer.count,
-                embeddingDimensions: 10,
+                embeddingDimensions: embeddingDim,
                 layerStart: 0,
                 layerEnd: 2
             )
@@ -79,7 +98,7 @@ struct SLlamaAdapterTests {
         // Clear control vector (should not throw)
         try context.clearControlVector()
 
-        // The operations should complete without crashing
+        // Test that operations complete without crashing
         #expect(Bool(true), "Control vector operations completed successfully")
     }
 

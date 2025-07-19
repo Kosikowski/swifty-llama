@@ -62,6 +62,14 @@ repos:
         files: ^Sources/.*\.swift$
         pass_filenames: false
 
+      # Check that import llama is only used in Sources/SLlama
+      - id: check-llama-imports
+        name: Check LLAMA Imports
+        entry: bash -c 'violated_files=$(grep -rl "import llama" . --include="*.swift" | grep -v "Sources/SLlama/" | grep -v "\.build/" || true); if [ -n "$violated_files" ]; then echo "❌ Found \"import llama\" statements outside Sources/SLlama/:"; echo "$violated_files"; echo ""; echo "Low-level llama imports should only be used in Sources/SLlama/."; echo "Use the Swift wrapper APIs instead."; exit 1; fi'
+        language: system
+        files: \.swift$
+        pass_filenames: false
+
       # Validate Package.swift
       - id: validate-package-swift
         name: Validate Package.swift
