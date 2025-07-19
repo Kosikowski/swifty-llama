@@ -5,62 +5,61 @@ import Foundation
 public enum SLlamaTestUtilities {
     // MARK: Static Properties
 
-    /// Default model path for tests - resolved to absolute path
+    /// Default model path for tests - resolved from bundle resources
     public static let testModelPath: String = {
-        // Try different possible locations for the model file
-        let possiblePaths = [
+        // Try to get the model from bundle resources first
+        if let bundleURL = Bundle.module.url(forResource: "tinystories-gpt-0.1-3m.fp16", withExtension: "gguf") {
+            return bundleURL.path
+        }
+        
+        // Fallback to bundle path method
+        if let bundlePath = Bundle.module.path(forResource: "tinystories-gpt-0.1-3m.fp16", ofType: "gguf") {
+            return bundlePath
+        }
+        
+        // Final fallback: try relative paths (for development/debugging)
+        let fallbackPaths = [
             "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
             "./Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
             "../Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-            "../../Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
+            "../../Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
         ]
-
-        // Also try to find it relative to the source file location
-        let currentFile = #file
-        let currentDir = URL(fileURLWithPath: currentFile).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let bundlePath = currentDir.appendingPathComponent("Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf").path
-
-        let allPaths = possiblePaths + [bundlePath]
-
-        for path in allPaths {
+        
+        for path in fallbackPaths {
             if FileManager.default.fileExists(atPath: path) {
                 return path
             }
         }
-
-        // Fallback to original relative path
-        return "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
+        
+        // If nothing works, return the first fallback path and let the test handle the missing file
+        return fallbackPaths[0]
     }()
-
-    // MARK: Static Computed Properties
-
-    /// Check if test model exists
-    public static var testModelExists: Bool {
-        FileManager.default.fileExists(atPath: testModelPath)
+    
+    // MARK: Utility Methods
+    
+    /// Check if the test model is available
+    /// - Returns: True if the test model file exists and is readable
+    public static func isTestModelAvailable() -> Bool {
+        return FileManager.default.fileExists(atPath: testModelPath) && 
+               FileManager.default.isReadableFile(atPath: testModelPath)
     }
-
-    // MARK: Static Functions
-
-    /// Initialize SLlama backend for testing
-    public static func setupSLlama() {
-        SLlama.initialize()
+    
+    /// Get the test model file size
+    /// - Returns: Size in bytes, or nil if file doesn't exist
+    public static func getTestModelSize() -> Int64? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: testModelPath),
+              let size = attributes[.size] as? Int64 else {
+            return nil
+        }
+        return size
     }
-
-    /// Cleanup SLlama backend after testing
-    public static func teardownSLlama() {
-        SLlama.cleanup()
-    }
-
-    /// Run a test with proper SLlama setup and teardown
-    public static func withSLlamaSetup<T>(_ test: () throws -> T) throws -> T {
-        setupSLlama()
-        defer { teardownSLlama() }
-        return try test()
-    }
-
-    /// Skip test if model doesn't exist
-    public static func skipIfModelMissing() {
-        guard !testModelExists else { return }
-        print("Test skipped: Model file not found at \(testModelPath)")
+    
+    /// Skip test with message if model is not available
+    /// - Parameter testName: Name of the test being skipped
+    public static func skipIfModelUnavailable(testName: String = #function) {
+        guard isTestModelAvailable() else {
+            print("⚠️ Test '\(testName)' skipped: Model file not found at \(testModelPath)")
+            return
+        }
     }
 }

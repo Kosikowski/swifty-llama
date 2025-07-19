@@ -35,6 +35,9 @@ let package = Package(
             name: "SLlamaTests",
             dependencies: ["SLlama"],
             path: "Tests/SLlamaTests",
+            resources: [
+                .copy("../Models/tinystories-gpt-0.1-3m.fp16.gguf")
+            ],
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
             ]
