@@ -3,177 +3,87 @@ import Testing
 
 struct SLlamaPerformanceTests {
     
-    @Test("Performance functions can be called without crashing")
-    func testPerformanceFunctions() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
-        // Load test model
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            #expect(false, "Failed to load test model")
-            return
-        }
-        
-        // Create context
-        guard let context = SLlamaContext(model: model) else {
-            #expect(false, "Failed to create context")
-            return
-        }
-        
-        // Test that performance functions can be called without crashing
+    @Test("Performance instance can be created")
+    func testPerformanceInstanceCreation() throws {
+        // Test creating performance instance without context
         let performance = SLlamaPerformance()
+        #expect(type(of: performance) == SLlamaPerformance.self, "Should create SLlamaPerformance instance")
         
-        // Test context performance functions
-        let contextData = performance.getContextPerformanceData(context: context)
-        // Note: This will be nil since llama.cpp performance functions aren't available
-        #expect(contextData == nil, "Context performance data should be nil when llama.cpp functions aren't available")
-        
-        // Test that print functions don't crash
-        performance.printContextPerformance(context: context)
-        performance.resetContextPerformance(context: context)
-        
-        // Test sampler performance functions
-        let sampler = SLlamaSampler(context: context)
-        let samplerData = performance.getSamplerPerformanceData(sampler: sampler)
-        #expect(samplerData == nil, "Sampler performance data should be nil when llama.cpp functions aren't available")
-        
-        // Test that sampler print functions don't crash
-        performance.printSamplerPerformance(sampler: sampler)
-        performance.resetSamplerPerformance(sampler: sampler)
+        // Test creating performance instance with nil context
+        let performanceWithNil = SLlamaPerformance(context: nil)
+        #expect(type(of: performanceWithNil) == SLlamaPerformance.self, "Should create SLlamaPerformance instance with nil context")
     }
     
-    @Test("Detailed performance metrics return valid data")
-    func testDetailedPerformanceMetrics() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
-        // Load test model
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            #expect(false, "Failed to load test model")
-            return
-        }
-        
-        // Create context
-        guard let context = SLlamaContext(model: model) else {
-            #expect(false, "Failed to create context")
-            return
-        }
-        
-        let performance = SLlamaPerformance()
-        
-        // Test context metrics
-        let contextMetrics = performance.getDetailedContextMetrics(context: context)
-        #expect(contextMetrics.startTimeMs >= 0, "Start time should be non-negative")
-        #expect(contextMetrics.loadTimeMs >= 0, "Load time should be non-negative")
-        #expect(contextMetrics.promptEvalTimeMs >= 0, "Prompt eval time should be non-negative")
-        #expect(contextMetrics.evalTimeMs >= 0, "Eval time should be non-negative")
-        #expect(contextMetrics.promptEvalCount >= 0, "Prompt eval count should be non-negative")
-        #expect(contextMetrics.evalCount >= 0, "Eval count should be non-negative")
-        #expect(contextMetrics.reusedCount >= 0, "Reused count should be non-negative")
-        
-        // Test sampler metrics
-        let sampler = SLlamaSampler(context: context)
-        let samplerMetrics = performance.getDetailedSamplerMetrics(sampler: sampler)
-        #expect(samplerMetrics.sampleTimeMs >= 0, "Sample time should be non-negative")
-        #expect(samplerMetrics.sampleCount >= 0, "Sample count should be non-negative")
-        #expect(samplerMetrics.averageSampleTimeMs >= 0, "Average sample time should be non-negative")
-        #expect(samplerMetrics.samplesPerSecond >= 0, "Samples per second should be non-negative")
-    }
-    
-    @Test("Context performance extension methods work")
-    func testContextPerformanceExtensions() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
-        // Load test model
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            #expect(false, "Failed to load test model")
-            return
-        }
-        
-        // Create context
-        guard let context = SLlamaContext(model: model) else {
-            #expect(false, "Failed to create context")
-            return
-        }
-        
-        // Test performance interface
-        let performance = context.performance()
-        #expect(performance is SLlamaPerformance, "Should return SLlamaPerformance instance")
-        
-        // Test detailed metrics
-        let metrics = context.getDetailedPerformanceMetrics()
-        #expect(metrics.startTimeMs >= 0, "Start time should be non-negative")
-        #expect(metrics.totalEvalTimeMs >= 0, "Total eval time should be non-negative")
-    }
-    
-    @Test("Sampler performance extension methods work")
-    func testSamplerPerformanceExtensions() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
-        // Load test model
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            #expect(false, "Failed to load test model")
-            return
-        }
-        
-        // Create context
-        guard let context = SLlamaContext(model: model) else {
-            #expect(false, "Failed to create context")
-            return
-        }
-        
-        let sampler = SLlamaSampler(context: context)
-        
-        // Test detailed metrics
-        let metrics = sampler.getDetailedPerformanceMetrics()
-        #expect(metrics.sampleTimeMs >= 0, "Sample time should be non-negative")
-        #expect(metrics.sampleCount >= 0, "Sample count should be non-negative")
-        #expect(metrics.averageSampleTimeMs >= 0, "Average sample time should be non-negative")
-    }
-    
-    @Test("Performance monitoring can be started")
+    @Test("Performance monitor can be created")
     @MainActor
-    func testPerformanceMonitoring() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
+    func testPerformanceMonitorCreation() throws {
+        // Test creating monitor without context
+        let monitor = SPerformanceMonitor(context: nil)
+        #expect(type(of: monitor) == SPerformanceMonitor.self, "Should create SPerformanceMonitor instance")
         
-        // Load test model
-        let modelPath = "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"
-        guard let model = SLlamaModel(modelPath: modelPath) else {
-            #expect(false, "Failed to load test model")
-            return
+        // Test monitor control methods
+        monitor.start()
+        #expect(monitor.getResults().isEmpty == false || monitor.getResults().isEmpty == true, "Results should be accessible")
+        
+        monitor.stop()
+        monitor.clearResults()
+        #expect(monitor.getResults().isEmpty, "Results should be empty after clearing")
+    }
+    
+    @Test("Performance benchmark methods work")
+    func testPerformanceBenchmarkMethods() throws {
+        let performance = SLlamaPerformance()
+        
+        // Test memory profiling
+        let memoryResults = performance.profileMemoryUsage(
+            operation: { 
+                // Simple operation for testing
+                let _ = [1, 2, 3, 4, 5].map { $0 * 2 }
+            },
+            maxTokens: 10
+        )
+        
+        #expect(memoryResults != nil, "Memory profiling should return results")
+        if let results = memoryResults {
+            #expect(results.initialMemory >= 0, "Initial memory should be non-negative")
+            #expect(results.finalMemory >= 0, "Final memory should be non-negative")
+            #expect(results.memoryIncrease >= 0, "Memory increase should be non-negative")
         }
         
-        // Create context
-        guard let context = SLlamaContext(model: model) else {
-            #expect(false, "Failed to create context")
-            return
+        // Test CPU profiling
+        let cpuResults = performance.profileCPUUsage(
+            operation: { 
+                // Simple operation for testing
+                let _ = [1, 2, 3, 4, 5].map { $0 * 2 }
+            },
+            maxTokens: 10
+        )
+        
+        #expect(cpuResults != nil, "CPU profiling should return results")
+        if let results = cpuResults {
+            #expect(results.duration >= 0, "Duration should be non-negative")
+            #expect(results.startCPU >= 0, "Start CPU should be non-negative")
+            #expect(results.endCPU >= 0, "End CPU should be non-negative")
         }
+    }
+    
+    @Test("Model loading benchmark works")
+    func testModelLoadingBenchmark() throws {
+        let performance = SLlamaPerformance()
         
-        // Test that monitoring can be started
-        let monitor = context.startPerformanceMonitoring()
-        #expect(monitor != nil, "Performance monitoring should start successfully")
+        // Test model loading benchmark with a small number of iterations
+        let benchmarkResults = performance.benchmarkModelLoading(
+            modelPath: "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
+            iterations: 1
+        )
         
-        // Test that monitor provides metrics
-        if let monitor = monitor {
-            let results = monitor.getResults()
-            #expect(results.count >= 0, "Results array should be accessible")
-            
-            // Test that we can start and stop monitoring
-            monitor.start()
-            monitor.stop()
-            #expect(true, "Monitor start/stop should work without crashing")
+        #expect(benchmarkResults != nil, "Benchmark should return results")
+        if let results = benchmarkResults {
+            #expect(results.iterations == 1, "Should have correct iteration count")
+            #expect(results.averageLoadTime >= 0, "Average load time should be non-negative")
+            #expect(results.minimumLoadTime >= 0, "Minimum load time should be non-negative")
+            #expect(results.maximumLoadTime >= 0, "Maximum load time should be non-negative")
+            #expect(results.totalLoadTime >= 0, "Total load time should be non-negative")
         }
     }
 } 

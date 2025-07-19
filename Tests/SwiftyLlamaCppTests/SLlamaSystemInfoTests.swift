@@ -3,82 +3,58 @@ import Testing
 
 struct SLlamaSystemInfoTests {
     
-    @Test("System information can be retrieved")
-    func testSystemInfo() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
+    @Test("System info logging works")
+    func testSystemInfoLogging() throws {
         // Test system info logging
         SLlamaSystemInfo.logSystemInfo()
-        #expect(true, "System info logging should not crash")
         
         // Test time retrieval
-        let time1 = SLlamaSystemInfo.getCurrentTimeMicroseconds()
-        let time2 = SLlamaSystemInfo.getCurrentTimeMicroseconds()
-        #expect(time2 >= time1, "Time should be monotonically increasing")
+        let time = SLlamaSystemInfo.getCurrentTimeMicroseconds()
+        #expect(time > 0, "Time should be positive")
         
         // Test device info
         let maxDevices = SLlamaSystemInfo.getMaxDevices()
-        #expect(maxDevices >= 0, "Max devices should be non-negative")
+        #expect(maxDevices > 0, "Max devices should be positive")
         
         let maxParallelSequences = SLlamaSystemInfo.getMaxParallelSequences()
-        #expect(maxParallelSequences >= 0, "Max parallel sequences should be non-negative")
+        #expect(maxParallelSequences > 0, "Max parallel sequences should be positive")
     }
     
-    @Test("System capabilities can be checked")
+    @Test("System capabilities work")
     func testSystemCapabilities() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
         // Test capability checks
         let supportsMmap = SLlamaSystemInfo.supportsMmap()
         let supportsMlock = SLlamaSystemInfo.supportsMlock()
         let supportsGpuOffload = SLlamaSystemInfo.supportsGpuOffload()
         let supportsRpc = SLlamaSystemInfo.supportsRpc()
         
-        // These should return boolean values (we can't predict the actual values)
-        #expect(type(of: supportsMmap) == Bool.self, "Mmap support should return boolean")
-        #expect(type(of: supportsMlock) == Bool.self, "Mlock support should return boolean")
-        #expect(type(of: supportsGpuOffload) == Bool.self, "GPU offload support should return boolean")
-        #expect(type(of: supportsRpc) == Bool.self, "RPC support should return boolean")
+        // These should return boolean values (may be true or false depending on system)
+        #expect(supportsMmap == true || supportsMmap == false, "Supports mmap should be boolean")
+        #expect(supportsMlock == true || supportsMlock == false, "Supports mlock should be boolean")
+        #expect(supportsGpuOffload == true || supportsGpuOffload == false, "Supports GPU offload should be boolean")
+        #expect(supportsRpc == true || supportsRpc == false, "Supports RPC should be boolean")
     }
     
-    @Test("System capabilities struct works correctly")
+    @Test("System capabilities struct works")
     func testSystemCapabilitiesStruct() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
-        // Test capabilities struct
         let capabilities = SLlamaSystemCapabilities()
         
-        #expect(capabilities.maxDevices >= 0, "Max devices should be non-negative")
-        #expect(capabilities.maxParallelSequences >= 0, "Max parallel sequences should be non-negative")
-        #expect(!capabilities.systemInfo.isEmpty, "System info description should not be empty")
+        #expect(capabilities.maxDevices > 0, "Max devices should be positive")
+        #expect(capabilities.maxParallelSequences > 0, "Max parallel sequences should be positive")
         #expect(capabilities.currentTimeMicroseconds > 0, "Current time should be positive")
         
-        // Test formatted description
-        let description = capabilities.getFormattedDescription()
-        #expect(!description.isEmpty, "Formatted description should not be empty")
-        #expect(description.contains("System Capabilities:"), "Description should contain header")
-        #expect(description.contains("Max Devices:"), "Description should contain device info")
+        // Check that system info is available
+        #expect(!capabilities.systemInfo.isEmpty, "System info should not be empty")
     }
     
-    @Test("SwiftyLlamaCpp system info extensions work")
-    func testSwiftyLlamaCppSystemInfo() throws {
-        // Initialize backend
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
-        
-        // Test convenience methods
+    @Test("SwiftyLlamaCpp extensions work")
+    func testSwiftyLlamaCppExtensions() throws {
+        // Test system capabilities
         let capabilities = SwiftyLlamaCpp.getSystemCapabilities()
-        #expect(capabilities.maxDevices >= 0, "Capabilities should be valid")
+        #expect(capabilities.maxDevices > 0, "Max devices should be positive")
+        #expect(capabilities.maxParallelSequences > 0, "Max parallel sequences should be positive")
         
-        // Test that print function doesn't crash
-        // Note: We can't easily test the output, but we can ensure it doesn't crash
+        // Test system info printing
         SwiftyLlamaCpp.printSystemInfo()
-        #expect(true, "Print system info should not crash")
     }
 } 

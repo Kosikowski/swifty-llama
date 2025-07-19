@@ -81,8 +81,10 @@ public class SLlamaInference {
     ///   - userData: User data passed to the callback
     public func setAbortCallback(_ callback: @escaping () -> Bool, userData: SLlamaRawPointer? = nil) {
         guard let ctx = context.pointer else { return }
-        // Note: This is a simplified version that doesn't capture context
-        // For a full implementation, you'd need to use a global callback or pass userData
+        
+        // Note: This is a simplified implementation that doesn't capture the callback
+        // In a production implementation, you would need a more sophisticated callback management system
+        // For now, we'll just pass nil to avoid concurrency issues
         llama_set_abort_callback(ctx, nil, userData)
     }
     

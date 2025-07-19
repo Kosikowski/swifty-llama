@@ -26,6 +26,7 @@ struct SLlamaQuantizationTests {
     }
     
     @Test("Quantization functions can be called without crashing")
+    @MainActor
     func testQuantizationFunctions() throws {
         // Initialize backend
         SLlamaBackend.initialize()
@@ -33,7 +34,8 @@ struct SLlamaQuantizationTests {
         
         // Test that quantization functions exist and can be called
         // Note: We can't actually test quantization without a real model file
-        // This test just ensures the functions are available
+        // This test just ensures the functions are available and parameters are valid
+        // In a real-world scenario, you would need a test model file to verify quantization
         
         let defaultParams = SLlamaQuantization.defaultParams()
         #expect(defaultParams.nthread >= 0, "Default parameters should be valid")

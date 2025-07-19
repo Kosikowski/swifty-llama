@@ -165,8 +165,17 @@ public class SLlamaPerformance {
         // We'll provide fallback implementations
         #endif
         
-        // Fallback: Return nil for now since functions aren't available
-        return nil
+        // Fallback: Return custom performance data based on available metrics
+        let metrics = getDetailedContextMetrics(context: context)
+        return SLlamaPerfContextData(
+            t_start_ms: metrics.startTimeMs,
+            t_load_ms: metrics.loadTimeMs,
+            t_p_eval_ms: metrics.promptEvalTimeMs,
+            t_eval_ms: metrics.evalTimeMs,
+            n_p_eval: Int32(metrics.promptEvalCount),
+            n_eval: Int32(metrics.evalCount),
+            n_reused: Int32(metrics.reusedCount)
+        )
     }
     
     /// Print performance context data to console
@@ -224,8 +233,12 @@ public class SLlamaPerformance {
         // We'll provide fallback implementations
         #endif
         
-        // Fallback: Return nil for now since functions aren't available
-        return nil
+        // Fallback: Return custom performance data based on available metrics
+        let metrics = getDetailedSamplerMetrics(sampler: sampler)
+        return SLlamaPerfSamplerData(
+            t_sample_ms: metrics.sampleTimeMs,
+            n_sample: Int32(metrics.sampleCount)
+        )
     }
     
     /// Print performance sampler data to console

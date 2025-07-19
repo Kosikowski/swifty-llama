@@ -59,7 +59,8 @@ struct SLlamaIntegrationTests {
             // Test basic sampling
             let sampler = SLlamaSampler(context: context)
             let _ = sampler.sample()
-            // Note: token might be nil for empty context, which is expected
+            // Note: token might be nil for empty context, which is expected behavior
+            // The sampler needs tokens in the context to produce meaningful output
             
         } catch {
             throw error

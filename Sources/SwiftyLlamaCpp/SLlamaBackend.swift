@@ -4,24 +4,33 @@ import llama
 /// A wrapper for llama backend management and performance optimization
 public class SLlamaBackend {
     
+    @MainActor private static var _isInitialized = false
+    
     /// Initialize the llama backend
     /// This should be called before any other llama operations
+    @MainActor
     public static func initialize() {
-        llama_backend_init()
+        if !_isInitialized {
+            llama_backend_init()
+            _isInitialized = true
+        }
     }
     
     /// Free the llama backend
     /// This should be called when the application is shutting down
+    @MainActor
     public static func free() {
-        llama_backend_free()
+        if _isInitialized {
+            llama_backend_free()
+            _isInitialized = false
+        }
     }
     
     /// Check if the backend is initialized
     /// - Returns: true if the backend is initialized, false otherwise
+    @MainActor
     public static var isInitialized: Bool {
-        // Note: This is a placeholder implementation
-        // In a real implementation, you might track initialization state
-        return true
+        return _isInitialized
     }
 }
 
