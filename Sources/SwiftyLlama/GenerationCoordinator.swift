@@ -4,6 +4,19 @@ import SLlama
 
 public typealias SwiftyLlamaActor = SLlamaActor
 
+/// Protocol for generation core functionality
+@SLlamaActor
+public protocol GenerationCore: Sendable {
+    func generate(
+        id: GenerationID,
+        prompt: String,
+        params: GenerationParams
+    ) async throws
+        -> AsyncThrowingStream<String, Error>
+
+    func cancel(id: GenerationID)
+}
+
 /// Opaque handle returned to UI so it can update or cancel a running stream.
 public struct GenerationID: Hashable, Sendable {
     private let raw = UUID()
@@ -85,12 +98,12 @@ public class GenerationCoordinator {
     }
 
     private var live: [GenerationID: Live] = [:]
-    private let core: SwiftyLlamaCore // injected
+    private let core: GenerationCore // injected
     private let buffer = 64 // token buffer size
 
     // MARK: - life-cycle
 
-    public init(core: SwiftyLlamaCore) {
+    public init(core: GenerationCore) {
         self.core = core
     }
 
@@ -156,8 +169,8 @@ public class GenerationCoordinator {
     /// Cancel a running generation.
     public func cancel(_ id: GenerationID) async {
         guard let _ = live[id] else { return }
-        await core.cancel(id: id)
-        finish(id)
+        core.cancel(id: id)
+        await finish(id)
     }
 
     /// Get information about a running generation.
@@ -181,7 +194,7 @@ public class GenerationCoordinator {
 
     // MARK: - helpers
 
-    private func finish(_ id: GenerationID) {
+    private func finish(_ id: GenerationID) async {
         live[id]?.continuation.finish()
         live.removeValue(forKey: id)
     }

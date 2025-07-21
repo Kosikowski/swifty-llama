@@ -105,10 +105,13 @@ public class SLlamaPerformance: @unchecked Sendable {
 
         let finalMemory = getCurrentMemoryUsage()
 
+        // Calculate memory increase as signed value to handle both increases and decreases
+        let memoryIncrease = Int64(finalMemory) - Int64(initialMemory)
+
         return SMemoryProfileResults(
             initialMemory: initialMemory,
             finalMemory: finalMemory,
-            memoryIncrease: finalMemory - initialMemory,
+            memoryIncrease: memoryIncrease,
             tokenCount: maxTokens,
             memorySnapshots: []
         )
@@ -582,14 +585,14 @@ public struct SLoadingBenchmarkResults {
 public struct SMemoryProfileResults {
     public let initialMemory: UInt64
     public let finalMemory: UInt64
-    public let memoryIncrease: UInt64
+    public let memoryIncrease: Int64 // Changed from UInt64 to Int64
     public let tokenCount: Int
     public let memorySnapshots: [SMemorySnapshot]
 
     public init(
         initialMemory: UInt64,
         finalMemory: UInt64,
-        memoryIncrease: UInt64,
+        memoryIncrease: Int64, // Changed from UInt64 to Int64
         tokenCount: Int,
         memorySnapshots: [SMemorySnapshot]
     ) {

@@ -5,7 +5,7 @@ import XCTest
 @testable import SwiftyLlama
 
 @SwiftyLlamaActor
-final class GenerationCoordinatorTests: XCTestCase {
+final class GenerationCoordinatorTests: XCTestCase, @unchecked Sendable {
     // MARK: - Test Properties
 
     private var coordinator: GenerationCoordinator?
@@ -16,9 +16,8 @@ final class GenerationCoordinatorTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
 
-        let modelPath = TestUtilities.testModelPath
-        // Create mock core and coordinator
-        mockCore = try MockSwiftyLlamaCore(modelPath: modelPath) // TODO: Use the test model
+        // Create mock core and coordinator without loading real model
+        mockCore = try MockSwiftyLlamaCore()
         coordinator = GenerationCoordinator(core: mockCore!)
     }
 
@@ -30,7 +29,7 @@ final class GenerationCoordinatorTests: XCTestCase {
 
     // MARK: - Initialization Tests
 
-    func testInitialization() {
+    func testInitialization() async {
         XCTAssertNotNil(coordinator)
         XCTAssertNotNil(mockCore)
     }
@@ -54,6 +53,9 @@ final class GenerationCoordinatorTests: XCTestCase {
         XCTAssertNotNil(stream.id)
         XCTAssertNotNil(stream.stream)
 
+        // Wait a bit for the detached task to execute
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
+
         // Verify generation was started in core
         XCTAssertEqual(mockCore?.startedGenerations.count, 1)
         XCTAssertEqual(mockCore?.startedGenerations.first?.prompt, prompt)
@@ -76,6 +78,9 @@ final class GenerationCoordinatorTests: XCTestCase {
             let stream = coordinator.start(prompt: prompt, params: params)
             streams.append(stream)
         }
+
+        // Wait a bit for the detached tasks to execute
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
 
         // Verify all generations were started
         XCTAssertEqual(streams.count, 3)
@@ -334,8 +339,8 @@ final class GenerationCoordinatorTests: XCTestCase {
         }
 
         let extremeParams = [
-            GenerationParams(seed: 1, topK: 1, topP: 0.1, temperature: 0.0),
-            GenerationParams(seed: 2, topK: 100, topP: 1.0, temperature: 2.0),
+            GenerationParams(seed: 1, topK: 1, topP: 0.1, temperature: 0.0), // Very deterministic
+            GenerationParams(seed: 2, topK: 100, topP: 1.0, temperature: 2.0), // Very random
             GenerationParams(
                 seed: 3,
                 topK: 40,
@@ -343,7 +348,7 @@ final class GenerationCoordinatorTests: XCTestCase {
                 temperature: 0.7,
                 repeatPenalty: 2.0,
                 repetitionLookback: 128
-            ),
+            ), // High repetition penalty
         ]
 
         for params in extremeParams {
@@ -399,7 +404,8 @@ final class GenerationCoordinatorTests: XCTestCase {
 
 // MARK: - Mock SLlamaActor
 
-private class MockSwiftyLlamaCore: SwiftyLlamaCore {
+@SwiftyLlamaActor
+private class MockSwiftyLlamaCore: GenerationCore {
     var startedGenerations: [(id: GenerationID, prompt: String, params: GenerationParams)] = []
     var cancelledGenerations: [GenerationID] = []
     var shouldCompleteSuccessfully = false
@@ -408,7 +414,12 @@ private class MockSwiftyLlamaCore: SwiftyLlamaCore {
     var mockTokens: [String] = []
     var mockError: Error?
 
-    override func generate(
+    // Simple mock init that doesn't require model loading
+    init() throws {
+        // No real initialization needed for mock
+    }
+
+    func generate(
         id: GenerationID,
         prompt: String,
         params: GenerationParams
@@ -444,7 +455,7 @@ private class MockSwiftyLlamaCore: SwiftyLlamaCore {
         }
     }
 
-    override func cancel(id: GenerationID) {
+    func cancel(id: GenerationID) {
         cancelledGenerations.append(id)
     }
 }

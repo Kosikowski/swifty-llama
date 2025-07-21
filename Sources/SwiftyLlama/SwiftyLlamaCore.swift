@@ -3,7 +3,7 @@ import Foundation
 import SLlama
 
 @SLlamaActor
-public class SwiftyLlamaCore {
+public class SwiftyLlamaCore: GenerationCore {
     private struct Session {
         let id: GenerationID
         let task: Task<Void, Never>
@@ -12,39 +12,19 @@ public class SwiftyLlamaCore {
     // MARK: - state
 
     private let model: SLlamaModel
-    private let context: SLlamaContext
-    private let core: PLlamaCore
     private let vocab: SLlamaVocab
     private var sessions: [GenerationID: Session] = [:]
 
     // MARK: - init / deinit
 
     /// Pass in the *already loaded* model context (one per actor).
-    public init(modelPath: String, maxCtx: Int32 = 2048) throws {
+    public init(modelPath: String, maxCtx _: Int32 = 2048) throws {
         // Initialize SLlama backend
         SLlama.initialize()
 
         // Load model
         model = try SLlamaModel(modelPath: modelPath)
-
-        // Create context with custom parameters using the Swift API
-        let contextParams = SLlamaContext.createParams(
-            contextSize: UInt32(maxCtx),
-            batchSize: 512,
-            physicalBatchSize: 512,
-            maxSequences: 1,
-            threads: 8,
-            batchThreads: 8
-        )
-
-        context = try SLlamaContext(model: model, contextParams: contextParams)
-        core = context.core()
         vocab = SLlamaVocab(vocab: model.vocab)
-
-        // Configure context for generation
-        context.setThreads(nThreads: 8, nThreadsBatch: 8)
-        context.setEmbeddings(false)
-        context.setCausalAttention(true)
     }
 
     deinit {
@@ -67,15 +47,12 @@ public class SwiftyLlamaCore {
             bufferingPolicy: .unbounded
         )
 
-        // Create sampler with current parameters
-        let sampler = createSampler(with: params)
-
         // Start generation in a detached task
         let t = Task.detached(priority: .userInitiated) {
             await self.performGeneration(
                 id: id,
                 prompt: prompt,
-                sampler: sampler,
+                params: params,
                 continuation: cont
             )
         }
@@ -96,10 +73,31 @@ public class SwiftyLlamaCore {
     private func performGeneration(
         id _: GenerationID,
         prompt: String,
-        sampler: SLlamaSampler,
+        params: GenerationParams,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async {
         do {
+            // Create a fresh context for this generation to avoid state conflicts
+            let contextParams = SLlamaContext.createParams(
+                contextSize: 512, // Use a reasonable context size
+                batchSize: 512, // Large enough to handle prompt tokens
+                physicalBatchSize: 512,
+                maxSequences: 1,
+                threads: 8,
+                batchThreads: 8
+            )
+
+            let context = try SLlamaContext(model: model, contextParams: contextParams)
+            let core = context.core()
+
+            // Configure the context
+            context.setThreads(nThreads: 8, nThreadsBatch: 8)
+            context.setEmbeddings(false)
+            context.setCausalAttention(true)
+
+            // Create sampler for this context
+            let sampler = createSampler(with: params, context: context)
+
             // Tokenize the prompt
             let promptTokens = try SLlamaTokenizer.tokenize(
                 text: prompt,
@@ -108,27 +106,38 @@ public class SwiftyLlamaCore {
                 parseSpecial: true
             )
 
-            // Create batch for initial prompt processing
-            let batch = SLlamaBatch(nTokens: Int32(promptTokens.count), nSeqMax: 1)
+            // Process prompt tokens in chunks to avoid exceeding batch size
+            let maxBatchSize = 512
+            var position = 0
 
-            // Add prompt tokens to batch
-            for (index, token) in promptTokens.enumerated() {
-                batch.addToken(
-                    token,
-                    position: Int32(index),
-                    sequenceIds: [0],
-                    logits: index == promptTokens.count - 1 // Only last token needs logits
-                )
+            for batchStart in stride(from: 0, to: promptTokens.count, by: maxBatchSize) {
+                let batchEnd = min(batchStart + maxBatchSize, promptTokens.count)
+                let currentBatchSize = batchEnd - batchStart
+
+                let batch = SLlamaBatch(nTokens: Int32(currentBatchSize), nSeqMax: 1)
+
+                // Add tokens for this batch
+                for (localIndex, token) in promptTokens[batchStart ..< batchEnd].enumerated() {
+                    let globalIndex = batchStart + localIndex
+                    batch.addToken(
+                        token,
+                        position: Int32(position + localIndex),
+                        sequenceIds: [0],
+                        logits: globalIndex == promptTokens.count - 1 // Only last token needs logits
+                    )
+                }
+
+                // Process this batch
+                try core.decode(batch)
+                position += currentBatchSize
             }
-
-            // Process the prompt
-            try core.decode(batch)
 
             // Generate tokens
             var generatedTokens: [SLlamaToken] = []
             let maxTokens = 1000 // Safety limit
+            var currentPosition = promptTokens.count // Start from where we left off
 
-            for position in promptTokens.count ..< (promptTokens.count + maxTokens) {
+            for _ in 0 ..< maxTokens {
                 // Check for cancellation
                 if Task.isCancelled { break }
 
@@ -157,13 +166,14 @@ public class SwiftyLlamaCore {
                 sampler.accept(nextToken)
 
                 // Prepare next batch with single token
-                batch.clear()
-                batch.addToken(nextToken, position: Int32(position), sequenceIds: [0], logits: true)
+                let generationBatch = SLlamaBatch(nTokens: 1, nSeqMax: 1)
+                generationBatch.addToken(nextToken, position: Int32(currentPosition), sequenceIds: [0], logits: true)
 
                 // Decode the new token
-                try core.decode(batch)
+                try core.decode(generationBatch)
 
                 generatedTokens.append(nextToken)
+                currentPosition += 1
             }
 
             continuation.finish()
@@ -177,7 +187,7 @@ public class SwiftyLlamaCore {
     }
 
     /// Create a sampler with the given generation parameters
-    private func createSampler(with params: GenerationParams) -> SLlamaSampler {
+    private func createSampler(with params: GenerationParams, context: SLlamaContext) -> SLlamaSampler {
         // Create a simple temperature sampler for now
         // In a real implementation, you'd want to create a more sophisticated sampler chain
         guard let sampler = SLlamaSampler.temperature(
