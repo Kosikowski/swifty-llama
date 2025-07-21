@@ -1,5 +1,6 @@
 import Foundation
 import SLlama
+import TestUtilities
 import XCTest
 @testable import SwiftyLlama
 
@@ -15,7 +16,7 @@ final class GenerationCoordinatorTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
 
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
         // Create mock core and coordinator
         mockCore = try MockSwiftyLlamaCore(modelPath: modelPath) // TODO: Use the test model
         coordinator = GenerationCoordinator(core: mockCore!)

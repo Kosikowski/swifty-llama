@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TestUtilities
 @testable import SLlama
 
 // MARK: - SLlamaIntegrationTests
@@ -7,7 +8,7 @@ import Testing
 struct SLlamaIntegrationTests {
     @Test("Basic model loading integration test")
     func basicModelLoadingIntegrationTest() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         // Check if test model exists
         guard FileManager.default.fileExists(atPath: modelPath) else {

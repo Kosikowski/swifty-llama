@@ -1,11 +1,12 @@
 import Foundation
 import Testing
+import TestUtilities
 @testable import SLlama
 
 struct SLlamaAdapterTests {
     @Test("Adapter initialization with invalid path throws error")
     func sLlamaAdapterInitialization() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -30,7 +31,7 @@ struct SLlamaAdapterTests {
 
     @Test("Context LoRA adapter operations")
     func sLlamaContextLoRAOperations() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -59,7 +60,7 @@ struct SLlamaAdapterTests {
 
     @Test("Context control vector operations")
     func sLlamaContextControlVectorOperations() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")

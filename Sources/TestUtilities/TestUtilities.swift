@@ -1,32 +1,12 @@
 import Foundation
-@testable import SLlama
 
-/// Test utilities for SLlama tests
-public enum SLlamaTestUtilities {
+/// Shared test utilities for both SLlama and SwiftyLlama tests
+public enum TestUtilities {
     // MARK: Static Properties
 
-    /// Default model path for tests - resolved from bundle resources
+    /// Default model path for tests - using direct file paths
     public static let testModelPath: String = {
-        // Try to get the model from bundle resources first
-        if let bundleURL = Bundle.module.url(forResource: "tinystories-gpt-0.1-3m.fp16", withExtension: "gguf") {
-            return bundleURL.path
-        }
-
-        // Fallback to bundle path method
-        if let bundlePath = Bundle.module.path(forResource: "tinystories-gpt-0.1-3m.fp16", ofType: "gguf") {
-            return bundlePath
-        }
-
-        // Try to copy the model file to the bundle if it doesn't exist
-        let bundlePath = Bundle.module.bundlePath
-        let targetPath = "\(bundlePath)/tinystories-gpt-0.1-3m.fp16.gguf"
-
-        // Check if the model already exists in the bundle
-        if FileManager.default.fileExists(atPath: targetPath) {
-            return targetPath
-        }
-
-        // Try to copy from the source location
+        // Try to find the model in common locations
         let sourcePaths = [
             "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
             "./Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
@@ -36,13 +16,7 @@ public enum SLlamaTestUtilities {
 
         for sourcePath in sourcePaths {
             if FileManager.default.fileExists(atPath: sourcePath) {
-                do {
-                    try FileManager.default.copyItem(atPath: sourcePath, toPath: targetPath)
-                    return targetPath
-                } catch {
-                    // Continue to next path if copy fails
-                    continue
-                }
+                return sourcePath
             }
         }
 
@@ -72,44 +46,37 @@ public enum SLlamaTestUtilities {
 
     /// Skip test with message if model is not available
     /// - Parameter testName: Name of the test being skipped
-    public static func skipIfModelUnavailable(testName: String = #function) {
+    public static func skipIfModelUnavailable(testName _: String = #function) {
         guard isTestModelAvailable() else {
-            print("⚠️ Test '\(testName)' skipped: Model file not found at \(testModelPath)")
+            // Test skipped due to missing model file
             return
         }
     }
 
     /// Check if we're running in iOS Simulator and skip model tests if needed
     /// - Parameter testName: Name of the test being skipped
-    public static func skipIfIOSSimulator(testName: String = #function) {
+    public static func skipIfIOSSimulator(testName _: String = #function) {
         #if targetEnvironment(simulator)
-            print("⚠️ Test '\(testName)' skipped: Model loading not supported in iOS Simulator")
+            // Test skipped due to iOS Simulator environment
             return
         #endif
     }
 
-    /// Try to load the model and return success status
+    /// Try to load the model and return success status (SLlama specific)
     /// - Returns: True if model loads successfully, false otherwise
     public static func canLoadModel() -> Bool {
         guard isTestModelAvailable() else { return false }
 
-        do {
-            SLlama.initialize()
-            defer { SLlama.cleanup() }
-
-            let _ = try SLlamaModel(modelPath: testModelPath)
-            return true
-        } catch {
-            print("❌ Model loading failed: \(error)")
-            return false
-        }
+        // This function requires SLlama to be available
+        // It will be implemented in the specific test utilities that import SLlama
+        return false
     }
 
     /// Skip test if model cannot be loaded (useful for iOS Simulator)
     /// - Parameter testName: Name of the test being skipped
-    public static func skipIfModelCannotLoad(testName: String = #function) {
+    public static func skipIfModelCannotLoad(testName _: String = #function) {
         guard canLoadModel() else {
-            print("⚠️ Test '\(testName)' skipped: Model cannot be loaded at \(testModelPath)")
+            // Test skipped due to model loading failure
             return
         }
     }

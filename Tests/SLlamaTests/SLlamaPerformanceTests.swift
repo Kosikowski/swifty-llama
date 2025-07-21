@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TestUtilities
 @testable import SLlama
 
 struct SLlamaPerformanceTests {
@@ -79,7 +80,7 @@ struct SLlamaPerformanceTests {
 
         // Test model loading benchmark with a small number of iterations
         let benchmarkResults = performance.benchmarkModelLoading(
-            modelPath: SLlamaTestUtilities.testModelPath,
+            modelPath: TestUtilities.testModelPath,
             iterations: 1
         )
 
@@ -94,7 +95,7 @@ struct SLlamaPerformanceTests {
 
     @Test("Performance optimization")
     func performanceOptimization() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")

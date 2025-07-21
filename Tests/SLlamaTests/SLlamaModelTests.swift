@@ -1,11 +1,12 @@
 import Foundation
 import Testing
+import TestUtilities
 @testable import SLlama
 
 struct SLlamaModelTests {
     @Test("Model loading")
     func modelLoading() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -46,7 +47,7 @@ struct SLlamaModelTests {
 
     @Test("Model properties access")
     func modelProperties() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -72,7 +73,7 @@ struct SLlamaModelTests {
 
     @Test("Model advanced properties")
     func modelAdvancedProperties() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")

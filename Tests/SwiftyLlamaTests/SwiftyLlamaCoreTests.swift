@@ -1,4 +1,5 @@
 import Foundation
+import TestUtilities
 import XCTest
 @testable import SLlama
 @testable import SwiftyLlama
@@ -8,7 +9,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
     // MARK: - Test Properties
 
     private var core: SwiftyLlamaCore?
-    private let testModelPath = SLlamaTestUtilities.testModelPath
+    private let testModelPath = TestUtilities.testModelPath
 
     // MARK: - Setup and Teardown
 
@@ -16,11 +17,11 @@ final class SwiftyLlamaCoreTests: XCTestCase {
         try await super.setUp()
 
         // Skip tests if model is not available
-        SLlamaTestUtilities.skipIfModelUnavailable(testName: #function)
-        SLlamaTestUtilities.skipIfIOSSimulator(testName: #function)
+        TestUtilities.skipIfModelUnavailable(testName: #function)
+        TestUtilities.skipIfIOSSimulator(testName: #function)
 
         // Only initialize core if model is available
-        if SLlamaTestUtilities.isTestModelAvailable() {
+        if TestUtilities.isTestModelAvailable() {
             core = try SwiftyLlamaCore(modelPath: testModelPath, maxCtx: 512)
         }
     }
@@ -34,7 +35,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testInitializationWithValidModel() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable() else {
+        guard TestUtilities.isTestModelAvailable() else {
             throw XCTSkip("Test model not available")
         }
 
@@ -55,7 +56,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testInitializationWithCustomContextSize() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable() else {
+        guard TestUtilities.isTestModelAvailable() else {
             throw XCTSkip("Test model not available")
         }
 
@@ -68,7 +69,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testBasicGeneration() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -102,7 +103,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testGenerationWithDifferentPrompts() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -126,7 +127,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testGenerationWithDifferentParameters() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -157,7 +158,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testGenerationCancellation() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -191,7 +192,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testMultipleGenerationsCancellation() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -229,7 +230,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testGenerationWithEmptyPrompt() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -253,7 +254,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testGenerationWithVeryLongPrompt() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -279,7 +280,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testGenerationWithExtremeParameters() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")
@@ -318,7 +319,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     func testConcurrentGenerations() async throws {
         // Skip if model not available
-        guard SLlamaTestUtilities.isTestModelAvailable(),
+        guard TestUtilities.isTestModelAvailable(),
               let core
         else {
             throw XCTSkip("Test model not available")

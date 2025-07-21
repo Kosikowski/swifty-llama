@@ -38,6 +38,13 @@ let package = Package(
             path: "Sources/SLlama"
         ),
         .target(
+            name: "TestUtilities",
+            path: "Sources/TestUtilities",
+            resources: [
+                .copy("../../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+            ]
+        ),
+        .target(
             name: "SwiftyLlama",
             dependencies: ["SLlama", "Omen", .product(name: "Atomics", package: "swift-atomics")],
             path: "Sources/SwiftyLlama"
@@ -48,22 +55,22 @@ let package = Package(
         ),
         .testTarget(
             name: "SLlamaTests",
-            dependencies: ["SLlama"],
+            dependencies: ["SLlama", "TestUtilities"],
             path: "Tests/SLlamaTests",
-            resources: [
-                .copy("../../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
-            ],
+//            resources: [
+//                .copy("../../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+//            ],
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
             ]
         ),
         .testTarget(
             name: "SwiftyLlamaTests",
-            dependencies: ["SwiftyLlama"],
+            dependencies: ["SwiftyLlama", "SLlama", "TestUtilities"],
             path: "Tests/SwiftyLlamaTests",
-            resources: [
-                .copy("../../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
-            ],
+//            resources: [
+//                .copy("../../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+//            ],
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
             ]

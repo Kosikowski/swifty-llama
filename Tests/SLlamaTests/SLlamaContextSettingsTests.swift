@@ -1,11 +1,12 @@
 import Foundation
 import Testing
+import TestUtilities
 @testable import SLlama
 
 struct SLlamaContextSettingsTests {
     @Test("Context settings with default parameters")
     func contextSettings() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -25,7 +26,7 @@ struct SLlamaContextSettingsTests {
 
     @Test("Context settings with custom parameters")
     func contextSettingsWithCustomParams() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")
@@ -58,7 +59,7 @@ struct SLlamaContextSettingsTests {
 
     @Test("Context settings validation")
     func contextSettingsValidation() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Test skipped: Model file not found at \(modelPath)")

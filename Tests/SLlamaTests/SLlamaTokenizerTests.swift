@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TestUtilities
 @testable import SLlama
 
 struct SLlamaTokenizerTests {
@@ -73,7 +74,7 @@ struct SLlamaTokenizerTests {
 
     @Test("Real model tokenization integration test")
     func realModelTokenizationIntegrationTest() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         // Check if test model exists
         guard FileManager.default.fileExists(atPath: modelPath) else {
@@ -108,7 +109,7 @@ struct SLlamaTokenizerTests {
 
     @Test("Round-trip tokenization test")
     func roundTripTokenizationTest() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Round-trip test skipped: Model file not found at \(modelPath)")
@@ -155,7 +156,7 @@ struct SLlamaTokenizerTests {
 
     @Test("Vocab-based tokenization convenience methods")
     func vocabBasedTokenizationTest() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Vocab test skipped: Model file not found at \(modelPath)")
@@ -194,7 +195,7 @@ struct SLlamaTokenizerTests {
 
     @Test("Protocol methods integration test")
     func protocolMethodsIntegrationTest() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Protocol test skipped: Model file not found at \(modelPath)")
@@ -254,7 +255,7 @@ struct SLlamaTokenizerTests {
 
     @Test("Multiple token analysis test")
     func multipleTokenAnalysisTest() throws {
-        let modelPath = SLlamaTestUtilities.testModelPath
+        let modelPath = TestUtilities.testModelPath
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             print("Token analysis test skipped: Model file not found at \(modelPath)")
