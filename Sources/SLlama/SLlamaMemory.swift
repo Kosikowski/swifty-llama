@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaMemoryManager
 
 /// A wrapper for llama memory operations
-public class SLlamaMemoryManager {
+public class SLlamaMemoryManager: @unchecked Sendable {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

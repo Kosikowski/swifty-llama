@@ -3,8 +3,8 @@ import llama
 
 // MARK: - SLlamaQuantization
 
-/// A wrapper for llama.cpp model quantization functionality
-public class SLlamaQuantization {
+/// A wrapper for llama quantization operations
+public class SLlamaQuantization: @unchecked Sendable {
     /// Quantize a model to reduce its size and memory usage
     /// - Parameters:
     ///   - inputPath: Path to the input model file

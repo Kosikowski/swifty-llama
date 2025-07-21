@@ -16,7 +16,7 @@ public typealias SSamplerPerformanceMetrics = SDetailedSamplerMetrics
 ///
 /// **ARCHITECTURAL DECISION**: Using structured logging instead of print statements
 /// for performance metrics provides better observability and integration with system tools.
-public class SLlamaPerformance {
+public class SLlamaPerformance: @unchecked Sendable {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -151,7 +151,7 @@ public class SLlamaPerformance {
 
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
-    @MainActor
+    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -428,7 +428,7 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     // MARK: Functions
 
     /// Start monitoring
-    @MainActor
+    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -437,14 +437,14 @@ public final class SPerformanceMonitor: @unchecked Sendable {
 
         isMonitoring = true
         monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            Task { @MainActor in
+            Task { @SLlamaActor in
                 self.recordMetrics()
             }
         }
     }
 
     /// Stop monitoring
-    @MainActor
+    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -456,7 +456,7 @@ public final class SPerformanceMonitor: @unchecked Sendable {
 
     /// Get monitoring results
     /// - Returns: Array of recorded performance metrics
-    @MainActor
+    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -465,7 +465,7 @@ public final class SPerformanceMonitor: @unchecked Sendable {
     }
 
     /// Clear monitoring results
-    @MainActor
+    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -754,7 +754,7 @@ public extension SLlamaContext {
 
     /// Start performance monitoring
     /// - Returns: Performance monitor instance, or nil if monitoring failed
-    @MainActor
+    @SLlamaActor
     func startPerformanceMonitoring() -> SPerformanceMonitor? {
         performance().startMonitoring()
     }

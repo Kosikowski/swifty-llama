@@ -2,7 +2,7 @@ import Foundation
 import llama
 
 /// A wrapper for llama vocabulary
-public class SLlamaVocab {
+public class SLlamaVocab: @unchecked Sendable {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

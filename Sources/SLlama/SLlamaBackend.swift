@@ -3,8 +3,8 @@ import llama
 
 // MARK: - SLlamaBackend
 
-/// A wrapper for llama backend management and performance optimization
-public class SLlamaBackend {
+/// A wrapper for llama backend operations
+public class SLlamaBackend: @unchecked Sendable {
     // MARK: Static Properties
 
     #if SLLAMA_INLINE_ALL

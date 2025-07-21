@@ -18,7 +18,7 @@ struct SLlamaPerformanceTests {
     }
 
     @Test("Performance monitor can be created")
-    @MainActor
+    @SLlamaActor
     func performanceMonitorCreation() throws {
         // Test creating monitor without context
         let monitor = SPerformanceMonitor(context: nil)

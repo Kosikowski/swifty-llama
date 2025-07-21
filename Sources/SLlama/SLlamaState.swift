@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaState
 
 /// A wrapper for llama state operations
-public class SLlamaState {
+public class SLlamaState: @unchecked Sendable {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

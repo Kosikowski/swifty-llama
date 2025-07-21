@@ -3,7 +3,7 @@ import Foundation
 // MARK: - SLlamaModelAdvanced
 
 /// Advanced model features and utilities
-public class SLlamaModelAdvanced {
+public class SLlamaModelAdvanced: @unchecked Sendable {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

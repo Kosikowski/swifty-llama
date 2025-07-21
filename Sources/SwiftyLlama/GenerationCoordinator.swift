@@ -1,5 +1,5 @@
-import Foundation
 import Atomics
+import Foundation
 import SLlama
 
 /// Opaque handle returned to UI so it can update or cancel a running stream.
@@ -15,7 +15,7 @@ public struct GenerationParams: Sendable, Equatable {
     public var temperature: Float
     public var repeatPenalty: Float
     public var repetitionLookback: Int32
-    
+
     public init(
         seed: UInt32 = 42,
         topK: Int32 = 40,
@@ -48,31 +48,30 @@ public enum GenerationError: Error, LocalizedError {
     case tokenizationFailed(String)
     case samplingFailed(String)
     case invalidParameters(String)
-    
+
     public var errorDescription: String? {
         switch self {
-        case .abortedByUser:
-            return "Generation was aborted by user"
-        case .internalFailure(let message):
-            return "Internal failure: \(message)"
-        case .modelLoadFailed(let message):
-            return "Model load failed: \(message)"
-        case .contextCreationFailed(let message):
-            return "Context creation failed: \(message)"
-        case .tokenizationFailed(let message):
-            return "Tokenization failed: \(message)"
-        case .samplingFailed(let message):
-            return "Sampling failed: \(message)"
-        case .invalidParameters(let message):
-            return "Invalid parameters: \(message)"
+            case .abortedByUser:
+                "Generation was aborted by user"
+            case let .internalFailure(message):
+                "Internal failure: \(message)"
+            case let .modelLoadFailed(message):
+                "Model load failed: \(message)"
+            case let .contextCreationFailed(message):
+                "Context creation failed: \(message)"
+            case let .tokenizationFailed(message):
+                "Tokenization failed: \(message)"
+            case let .samplingFailed(message):
+                "Sampling failed: \(message)"
+            case let .invalidParameters(message):
+                "Invalid parameters: \(message)"
         }
     }
 }
 
-/// The coordinator is a thin book-keeper.  
+/// The coordinator is a thin book-keeper.
 /// *It never touches llama.cpp directly* — that is done by `LlamaCoreActor`.
 public actor GenerationCoordinator {
-
     // MARK: - private data
 
     private struct Live {
@@ -83,12 +82,12 @@ public actor GenerationCoordinator {
     }
 
     private var live: [GenerationID: Live] = [:]
-    private let core: LlamaCoreActor            // injected
-    private let buffer = 64                     // token buffer size
+    private let core: SwiftyLlamaCore // injected
+    private let buffer = 64 // token buffer size
 
     // MARK: - life-cycle
 
-    public init(core: LlamaCoreActor) {
+    public init(core: SwiftyLlamaCore) {
         self.core = core
     }
 
@@ -96,9 +95,12 @@ public actor GenerationCoordinator {
 
     /// Begin a new generation and immediately obtain a **token stream**.
     @discardableResult
-    public func start(prompt: String,
-                      params: GenerationParams) -> GenerationStream {
-
+    public func start(
+        prompt: String,
+        params: GenerationParams
+    )
+        -> GenerationStream
+    {
         let id = GenerationID()
 
         let (stream, cont) = AsyncThrowingStream<String, Error>.makeStream(
@@ -139,8 +141,10 @@ public actor GenerationCoordinator {
     }
 
     /// Live-edit the sampling parameters of a running generation.
-    public func update(id: GenerationID,
-                       _ new: GenerationParams) {
+    public func update(
+        id: GenerationID,
+        _ new: GenerationParams
+    ) {
         guard var live = live[id] else { return }
         live.params = new
         self.live[id] = live
@@ -152,18 +156,18 @@ public actor GenerationCoordinator {
         await core.cancel(id: id)
         finish(id)
     }
-    
+
     /// Get information about a running generation.
     public func getGenerationInfo(_ id: GenerationID) -> (params: GenerationParams, startTime: Date)? {
         guard let live = live[id] else { return nil }
         return (live.params, live.startTime)
     }
-    
+
     /// Get all active generation IDs.
     public func getActiveGenerationIDs() -> [GenerationID] {
-        return Array(live.keys)
+        Array(live.keys)
     }
-    
+
     /// Cancel all running generations.
     public func cancelAll() async {
         let ids = Array(live.keys)

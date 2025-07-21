@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaSamplerChain
 
 /// A wrapper for llama sampler chain operations
-public class SLlamaSamplerChain {
+public class SLlamaSamplerChain: @unchecked Sendable {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

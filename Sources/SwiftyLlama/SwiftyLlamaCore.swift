@@ -1,12 +1,9 @@
-import Foundation
 import Atomics
+import Foundation
 import SLlama
 
-// MARK: - Core actor
-
-public actor LlamaCoreActor {
-
-    // MARK: - inner "streaming session" object
+@SLlamaActor
+public class SwiftyLlamaCore {
     private struct Session {
         let id: GenerationID
         let task: Task<Void, Never>
@@ -26,10 +23,10 @@ public actor LlamaCoreActor {
     public init(modelPath: String, maxCtx: Int32 = 2048) throws {
         // Initialize SLlama backend
         SLlama.initialize()
-        
+
         // Load model
-        self.model = try SLlamaModel(modelPath: modelPath)
-        
+        model = try SLlamaModel(modelPath: modelPath)
+
         // Create context with custom parameters using the Swift API
         let contextParams = SLlamaContext.createParams(
             contextSize: UInt32(maxCtx),
@@ -39,18 +36,18 @@ public actor LlamaCoreActor {
             threads: 8,
             batchThreads: 8
         )
-        
-        self.context = try SLlamaContext(model: model, contextParams: contextParams)
-        self.core = context.core()
-        self.vocab = SLlamaVocab(vocab: model.vocab)
-        
+
+        context = try SLlamaContext(model: model, contextParams: contextParams)
+        core = context.core()
+        vocab = SLlamaVocab(vocab: model.vocab)
+
         // Configure context for generation
         context.setThreads(nThreads: 8, nThreadsBatch: 8)
         context.setEmbeddings(false)
         context.setCausalAttention(true)
     }
 
-    deinit { 
+    deinit {
         // SLlama cleanup is handled automatically by the context and model deinit
     }
 
@@ -59,9 +56,11 @@ public actor LlamaCoreActor {
     /// Start generating tokens *immediately*.
     ///
     /// * The returned stream never throws directly – errors are reported by its yield.
-    public func generate(id: GenerationID,
-                         prompt: String,
-                         params: GenerationParams)
+    public func generate(
+        id: GenerationID,
+        prompt: String,
+        params: GenerationParams
+    )
         async throws -> AsyncThrowingStream<String, Error>
     {
         let (stream, cont) = AsyncThrowingStream<String, Error>.makeStream(
@@ -95,7 +94,7 @@ public actor LlamaCoreActor {
 
     /// Perform the actual generation within the actor context
     private func performGeneration(
-        id: GenerationID,
+        id _: GenerationID,
         prompt: String,
         sampler: SLlamaSampler,
         continuation: AsyncThrowingStream<String, Error>.Continuation
@@ -108,10 +107,10 @@ public actor LlamaCoreActor {
                 addSpecial: true,
                 parseSpecial: true
             )
-            
+
             // Create batch for initial prompt processing
             let batch = SLlamaBatch(nTokens: Int32(promptTokens.count), nSeqMax: 1)
-            
+
             // Add prompt tokens to batch
             for (index, token) in promptTokens.enumerated() {
                 batch.addToken(
@@ -121,29 +120,29 @@ public actor LlamaCoreActor {
                     logits: index == promptTokens.count - 1 // Only last token needs logits
                 )
             }
-            
+
             // Process the prompt
             try core.decode(batch)
-            
+
             // Generate tokens
             var generatedTokens: [SLlamaToken] = []
             let maxTokens = 1000 // Safety limit
-            
-            for position in promptTokens.count..<(promptTokens.count + maxTokens) {
+
+            for position in promptTokens.count ..< (promptTokens.count + maxTokens) {
                 // Check for cancellation
                 if Task.isCancelled { break }
-                
+
                 // Sample next token
                 guard let nextToken = sampler.sample() else {
                     continuation.finish(throwing: GenerationError.internalFailure("Sampling failed"))
                     break
                 }
-                
+
                 // Check for end of generation
                 if nextToken == vocab.eosToken {
                     break
                 }
-                
+
                 // Convert token to text and yield
                 if let tokenText = try? SLlamaTokenizer.tokenToPiece(
                     token: nextToken,
@@ -153,20 +152,20 @@ public actor LlamaCoreActor {
                 ) {
                     continuation.yield(tokenText)
                 }
-                
+
                 // Accept token for sampler state
                 sampler.accept(nextToken)
-                
+
                 // Prepare next batch with single token
                 batch.clear()
                 batch.addToken(nextToken, position: Int32(position), sequenceIds: [0], logits: true)
-                
+
                 // Decode the new token
                 try core.decode(batch)
-                
+
                 generatedTokens.append(nextToken)
             }
-            
+
             continuation.finish()
 
         } catch is CancellationError {
@@ -188,7 +187,7 @@ public actor LlamaCoreActor {
             // Fallback to greedy sampler
             return SLlamaSampler.greedy(context: context) ?? SLlamaSampler(context: context)
         }
-        
+
         return sampler
     }
 }

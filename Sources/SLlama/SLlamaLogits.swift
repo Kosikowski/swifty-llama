@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaLogits
 
 /// A wrapper for llama logits and embeddings access
-public class SLlamaLogits {
+public class SLlamaLogits: @unchecked Sendable {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

@@ -3,8 +3,8 @@ import llama
 
 // MARK: - SLlamaModelSplitting
 
-/// A wrapper for llama.cpp model splitting functionality
-public class SLlamaModelSplitting {
+/// A wrapper for llama model splitting operations
+public class SLlamaModelSplitting: @unchecked Sendable {
     /// Build a split model file path
     /// - Parameters:
     ///   - pathPrefix: Base path for the model files

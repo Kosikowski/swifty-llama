@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaTokenizer
 
 /// A wrapper for llama tokenization functions
-public class SLlamaTokenizer: PLlamaTokenizer {
+public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     /// Tokenize text into tokens
     /// - Parameters:
     ///   - text: The text to tokenize
