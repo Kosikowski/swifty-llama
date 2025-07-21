@@ -23,7 +23,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // Add any dependencies here if needed
+        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.2.0"),
     ],
     targets: [
         .target(
@@ -39,7 +39,7 @@ let package = Package(
         ),
         .target(
             name: "SwiftyLlama",
-            dependencies: ["SLlama", "Omen"],
+            dependencies: ["SLlama", "Omen", .product(name: "Atomics", package: "swift-atomics")],
             path: "Sources/SwiftyLlama"
         ),
         .binaryTarget(
@@ -51,7 +51,7 @@ let package = Package(
             dependencies: ["SLlama"],
             path: "Tests/SLlamaTests",
             resources: [
-                .copy("../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+                .copy("Models/tinystories-gpt-0.1-3m.fp16.gguf"),
             ],
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
@@ -62,7 +62,7 @@ let package = Package(
             dependencies: ["SwiftyLlama"],
             path: "Tests/SwiftyLlamaTests",
             resources: [
-                .copy("../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+                .copy("Models/tinystories-gpt-0.1-3m.fp16.gguf"),
             ],
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
