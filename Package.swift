@@ -51,7 +51,7 @@ let package = Package(
             dependencies: ["SLlama"],
             path: "Tests/SLlamaTests",
             resources: [
-                .copy("Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+                .copy("Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"),
             ],
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
@@ -62,7 +62,7 @@ let package = Package(
             dependencies: ["SwiftyLlama"],
             path: "Tests/SwiftyLlamaTests",
             resources: [
-                .copy("Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+                .copy("Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf"),
             ],
             cSettings: [
                 .define("LLAMA_LOG_LEVEL", to: "0"),
