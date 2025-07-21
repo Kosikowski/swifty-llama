@@ -2,6 +2,8 @@ import Atomics
 import Foundation
 import SLlama
 
+public typealias SwiftyLlamaActor = SLlamaActor
+
 /// Opaque handle returned to UI so it can update or cancel a running stream.
 public struct GenerationID: Hashable, Sendable {
     private let raw = UUID()
@@ -34,7 +36,7 @@ public struct GenerationParams: Sendable, Equatable {
 }
 
 /// What the UI gets back from `start()`
-public struct GenerationStream {
+public struct GenerationStream: Sendable {
     public let id: GenerationID
     public let stream: AsyncThrowingStream<String, Error>
 }
@@ -70,8 +72,9 @@ public enum GenerationError: Error, LocalizedError {
 }
 
 /// The coordinator is a thin book-keeper.
-/// *It never touches llama.cpp directly* — that is done by `LlamaCoreActor`.
-public actor GenerationCoordinator {
+/// *It never touches llama.cpp directly* — that is done by `SLlamaActor`.
+@SwiftyLlamaActor
+public class GenerationCoordinator {
     // MARK: - private data
 
     private struct Live {

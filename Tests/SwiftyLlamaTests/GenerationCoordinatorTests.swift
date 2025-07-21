@@ -1,21 +1,23 @@
 import Foundation
+import SLlama
 import XCTest
 @testable import SwiftyLlama
 
-@SwiftyLlamaCore
+@SwiftyLlamaActor
 final class GenerationCoordinatorTests: XCTestCase {
     // MARK: - Test Properties
 
     private var coordinator: GenerationCoordinator?
-    private var mockCore: MockLlamaCoreActor?
+    private var mockCore: MockSwiftyLlamaCore?
 
     // MARK: - Setup and Teardown
 
     override func setUp() async throws {
         try await super.setUp()
 
+        let modelPath = SLlamaTestUtilities.testModelPath
         // Create mock core and coordinator
-        mockCore = MockLlamaCoreActor()
+        mockCore = try MockSwiftyLlamaCore(modelPath: modelPath) // TODO: Use the test model
         coordinator = GenerationCoordinator(core: mockCore!)
     }
 
@@ -44,7 +46,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         let params = GenerationParams(temperature: 0.7)
 
         // Start generation
-        let stream = await coordinator.start(prompt: prompt, params: params)
+        let stream = coordinator.start(prompt: prompt, params: params)
 
         // Verify stream was created
         XCTAssertNotNil(stream)
@@ -70,7 +72,7 @@ final class GenerationCoordinatorTests: XCTestCase {
 
         // Start multiple generations
         for prompt in prompts {
-            let stream = await coordinator.start(prompt: prompt, params: params)
+            let stream = coordinator.start(prompt: prompt, params: params)
             streams.append(stream)
         }
 
@@ -91,8 +93,8 @@ final class GenerationCoordinatorTests: XCTestCase {
             return
         }
 
-        let initialParams = GenerationParams(temperature: 0.5, topK: 20)
-        let updatedParams = GenerationParams(temperature: 0.8, topK: 40)
+        let initialParams = GenerationParams(seed: 1, topK: 20, temperature: 0.5)
+        let updatedParams = GenerationParams(seed: 2, topK: 40, temperature: 0.8)
 
         // Start generation
         let stream = coordinator.start(prompt: "Test", params: initialParams)
@@ -116,10 +118,10 @@ final class GenerationCoordinatorTests: XCTestCase {
         let newParams = GenerationParams(temperature: 0.9)
 
         // Should not crash when updating non-existent generation
-        await coordinator.update(id: nonExistentID, newParams)
+        coordinator.update(id: nonExistentID, newParams)
 
         // Verify no generation info exists
-        let info = await coordinator.getGenerationInfo(nonExistentID)
+        let info = coordinator.getGenerationInfo(nonExistentID)
         XCTAssertNil(info)
     }
 
@@ -131,7 +133,7 @@ final class GenerationCoordinatorTests: XCTestCase {
             return
         }
 
-        let stream = await coordinator.start(prompt: "Test", params: GenerationParams())
+        let stream = coordinator.start(prompt: "Test", params: GenerationParams())
 
         // Cancel the generation
         await coordinator.cancel(stream.id)
@@ -141,7 +143,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockCore?.cancelledGenerations.first, stream.id)
 
         // Verify generation info is removed
-        let info = await coordinator.getGenerationInfo(stream.id)
+        let info = coordinator.getGenerationInfo(stream.id)
         XCTAssertNil(info)
     }
 
@@ -167,9 +169,9 @@ final class GenerationCoordinatorTests: XCTestCase {
         }
 
         // Start multiple generations
-        let stream1 = await coordinator.start(prompt: "First", params: GenerationParams())
-        let stream2 = await coordinator.start(prompt: "Second", params: GenerationParams())
-        let stream3 = await coordinator.start(prompt: "Third", params: GenerationParams())
+        let stream1 = coordinator.start(prompt: "First", params: GenerationParams())
+        let stream2 = coordinator.start(prompt: "Second", params: GenerationParams())
+        let stream3 = coordinator.start(prompt: "Third", params: GenerationParams())
 
         // Cancel all
         await coordinator.cancelAll()
@@ -194,7 +196,7 @@ final class GenerationCoordinatorTests: XCTestCase {
             return
         }
 
-        let params = GenerationParams(temperature: 0.6, topK: 30)
+        let params = GenerationParams(seed: 123, topK: 30, temperature: 0.6)
         let stream = coordinator.start(prompt: "Test", params: params)
 
         // Get generation info
@@ -222,7 +224,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         let stream3 = coordinator.start(prompt: "Third", params: GenerationParams())
 
         // Get active IDs
-        let activeIDs = await coordinator.getActiveGenerationIDs()
+        let activeIDs = coordinator.getActiveGenerationIDs()
 
         // Verify all IDs are present
         XCTAssertEqual(activeIDs.count, 3)
@@ -234,7 +236,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         await coordinator.cancel(stream2.id)
 
         // Verify only 2 remain active
-        let remainingIDs = await coordinator.getActiveGenerationIDs()
+        let remainingIDs = coordinator.getActiveGenerationIDs()
         XCTAssertEqual(remainingIDs.count, 2)
         XCTAssertTrue(remainingIDs.contains(stream1.id))
         XCTAssertTrue(remainingIDs.contains(stream3.id))
@@ -253,7 +255,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         mockCore?.shouldCompleteSuccessfully = true
         mockCore?.mockTokens = ["Hello", " world", "!"]
 
-        let stream = await coordinator.start(prompt: "Test", params: GenerationParams())
+        let stream = coordinator.start(prompt: "Test", params: GenerationParams())
 
         // Collect tokens
         var tokens: [String] = []
@@ -265,7 +267,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         XCTAssertEqual(tokens, ["Hello", " world", "!"])
 
         // Verify generation info is cleaned up
-        let info = await coordinator.getGenerationInfo(stream.id)
+        let info = coordinator.getGenerationInfo(stream.id)
         XCTAssertNil(info)
     }
 
@@ -279,7 +281,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         mockCore?.shouldThrowError = true
         mockCore?.mockError = GenerationError.internalFailure("Test error")
 
-        let stream = await coordinator.start(prompt: "Test", params: GenerationParams())
+        let stream = coordinator.start(prompt: "Test", params: GenerationParams())
 
         // Verify error is propagated
         do {
@@ -293,7 +295,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         }
 
         // Verify generation info is cleaned up
-        let info = await coordinator.getGenerationInfo(stream.id)
+        let info = coordinator.getGenerationInfo(stream.id)
         XCTAssertNil(info)
     }
 
@@ -306,7 +308,7 @@ final class GenerationCoordinatorTests: XCTestCase {
         // Configure mock to be cancellable
         mockCore?.shouldBeCancellable = true
 
-        let stream = await coordinator.start(prompt: "Test", params: GenerationParams())
+        let stream = coordinator.start(prompt: "Test", params: GenerationParams())
 
         // Cancel immediately
         await coordinator.cancel(stream.id)
@@ -331,9 +333,16 @@ final class GenerationCoordinatorTests: XCTestCase {
         }
 
         let extremeParams = [
-            GenerationParams(temperature: 0.0, topK: 1, topP: 0.1),
-            GenerationParams(temperature: 2.0, topK: 100, topP: 1.0),
-            GenerationParams(repeatPenalty: 2.0, repetitionLookback: 128),
+            GenerationParams(seed: 1, topK: 1, topP: 0.1, temperature: 0.0),
+            GenerationParams(seed: 2, topK: 100, topP: 1.0, temperature: 2.0),
+            GenerationParams(
+                seed: 3,
+                topK: 40,
+                topP: 0.9,
+                temperature: 0.7,
+                repeatPenalty: 2.0,
+                repetitionLookback: 128
+            ),
         ]
 
         for params in extremeParams {
@@ -376,7 +385,7 @@ final class GenerationCoordinatorTests: XCTestCase {
     // MARK: - Helper Methods
 
     private func startAndCollect(coordinator: GenerationCoordinator, prompt: String) async throws -> [String] {
-        let stream = await coordinator.start(prompt: prompt, params: GenerationParams())
+        let stream = coordinator.start(prompt: prompt, params: GenerationParams())
 
         var tokens: [String] = []
         for try await token in stream.stream {
@@ -387,9 +396,9 @@ final class GenerationCoordinatorTests: XCTestCase {
     }
 }
 
-// MARK: - Mock LlamaCoreActor
+// MARK: - Mock SLlamaActor
 
-private class MockLlamaCoreActor: SwiftyLlamaCore {
+private class MockSwiftyLlamaCore: SwiftyLlamaCore {
     var startedGenerations: [(id: GenerationID, prompt: String, params: GenerationParams)] = []
     var cancelledGenerations: [GenerationID] = []
     var shouldCompleteSuccessfully = false

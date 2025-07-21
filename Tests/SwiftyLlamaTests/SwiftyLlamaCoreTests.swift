@@ -1,7 +1,9 @@
 import Foundation
 import XCTest
+@testable import SLlama
 @testable import SwiftyLlama
 
+@SLlamaActor
 final class SwiftyLlamaCoreTests: XCTestCase {
     // MARK: - Test Properties
 
@@ -30,7 +32,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
     // MARK: - Initialization Tests
 
-    func testInitializationWithValidModel() throws {
+    func testInitializationWithValidModel() async throws {
         // Skip if model not available
         guard SLlamaTestUtilities.isTestModelAvailable() else {
             throw XCTSkip("Test model not available")
@@ -43,7 +45,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
         XCTAssertNotNil(testCore)
     }
 
-    func testInitializationWithInvalidModelPath() {
+    func testInitializationWithInvalidModelPath() async throws {
         // Test with non-existent model path
         XCTAssertThrowsError(try SwiftyLlamaCore(modelPath: "/nonexistent/model.gguf")) { error in
             // Should throw a model loading error
@@ -51,7 +53,7 @@ final class SwiftyLlamaCoreTests: XCTestCase {
         }
     }
 
-    func testInitializationWithCustomContextSize() throws {
+    func testInitializationWithCustomContextSize() async throws {
         // Skip if model not available
         guard SLlamaTestUtilities.isTestModelAvailable() else {
             throw XCTSkip("Test model not available")
@@ -74,9 +76,10 @@ final class SwiftyLlamaCoreTests: XCTestCase {
 
         let id = GenerationID()
         let params = GenerationParams(
-            temperature: 0.1, // Low temperature for deterministic output
+            seed: 42,
             topK: 10,
-            topP: 0.9
+            topP: 0.9,
+            temperature: 0.1 // Low temperature for deterministic output
         )
 
         let prompt = "Hello"
@@ -130,9 +133,9 @@ final class SwiftyLlamaCoreTests: XCTestCase {
         }
 
         let testCases = [
-            GenerationParams(temperature: 0.1, topK: 5, topP: 0.8),
-            GenerationParams(temperature: 0.5, topK: 20, topP: 0.9),
-            GenerationParams(temperature: 0.9, topK: 40, topP: 0.95),
+            GenerationParams(seed: 1, topK: 5, topP: 0.8, temperature: 0.1),
+            GenerationParams(seed: 2, topK: 20, topP: 0.9, temperature: 0.5),
+            GenerationParams(seed: 3, topK: 40, topP: 0.95, temperature: 0.9),
         ]
 
         let prompt = "Test"
@@ -283,9 +286,16 @@ final class SwiftyLlamaCoreTests: XCTestCase {
         }
 
         let extremeParams = [
-            GenerationParams(temperature: 0.0, topK: 1, topP: 0.1), // Very deterministic
-            GenerationParams(temperature: 2.0, topK: 100, topP: 1.0), // Very random
-            GenerationParams(repeatPenalty: 2.0, repetitionLookback: 128), // High repetition penalty
+            GenerationParams(seed: 1, topK: 1, topP: 0.1, temperature: 0.0), // Very deterministic
+            GenerationParams(seed: 2, topK: 100, topP: 1.0, temperature: 2.0), // Very random
+            GenerationParams(
+                seed: 3,
+                topK: 40,
+                topP: 0.9,
+                temperature: 0.7,
+                repeatPenalty: 2.0,
+                repetitionLookback: 128
+            ), // High repetition penalty
         ]
 
         let prompt = "Test"
