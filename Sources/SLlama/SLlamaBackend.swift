@@ -10,13 +10,13 @@ public class SLlamaBackend: @unchecked Sendable {
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
-    @MainActor static var _isInitialized = false
+    @SLlamaActor static var _isInitialized = false
 
     // MARK: Static Computed Properties
 
     /// Check if the backend is initialized
     /// - Returns: true if the backend is initialized, false otherwise
-    @MainActor
+    @SLlamaActor
     public static var isInitialized: Bool {
         _isInitialized
     }
@@ -25,7 +25,7 @@ public class SLlamaBackend: @unchecked Sendable {
 
     /// Initialize the llama backend
     /// This should be called before any other llama operations
-    @MainActor
+    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -38,7 +38,7 @@ public class SLlamaBackend: @unchecked Sendable {
 
     /// Free the llama backend
     /// This should be called when the application is shutting down
-    @MainActor
+    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif

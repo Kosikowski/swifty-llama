@@ -87,14 +87,17 @@ struct SLlamaQuantizationTests {
     }
 
     @Test("Backend initialization for quantization")
-    @MainActor
-    func backendInitializationForQuantization() throws {
+    @SLlamaActor
+    func backendInitializationForQuantization() async throws {
         // Test that backend can be initialized for quantization operations
-        SLlamaBackend.initialize()
-        defer { SLlamaBackend.free() }
+        await SLlamaBackend.initialize()
+        defer {
+            Task { await SLlamaBackend.free() }
+        }
 
         // Verify backend is initialized
-        #expect(SLlamaBackend.isInitialized == true, "Backend should be initialized")
+        let isInitialized = await SLlamaBackend.isInitialized
+        #expect(isInitialized == true, "Backend should be initialized")
 
         // Test that we can create parameters after initialization
         let params = SLlamaQuantization.defaultParams()

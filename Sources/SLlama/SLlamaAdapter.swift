@@ -4,7 +4,7 @@ import llama
 // MARK: - SLlamaAdapter
 
 /// A wrapper for llama LoRA adapter operations
-public class SLlamaAdapter {
+public class SLlamaAdapter: @unchecked Sendable {
     // MARK: Properties
 
     var adapter: SLlamaAdapterLoraPointer?
