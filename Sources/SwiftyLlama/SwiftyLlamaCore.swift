@@ -13,18 +13,20 @@ public class SwiftyLlamaCore: GenerationCore {
 
     private let model: SLlamaModel
     private let vocab: SLlamaVocab
+    private let maxContextSize: Int32
     private var sessions: [GenerationID: Session] = [:]
 
     // MARK: - init / deinit
 
     /// Pass in the *already loaded* model context (one per actor).
-    public init(modelPath: String, maxCtx _: Int32 = 2048) throws {
+    public init(modelPath: String, maxCtx: Int32 = 2048) throws {
         // Initialize SLlama backend
         SLlama.initialize()
 
         // Load model
         model = try SLlamaModel(modelPath: modelPath)
         vocab = SLlamaVocab(vocab: model.vocab)
+        maxContextSize = maxCtx
     }
 
     deinit {
@@ -79,9 +81,9 @@ public class SwiftyLlamaCore: GenerationCore {
         do {
             // Create a fresh context for this generation to avoid state conflicts
             let contextParams = SLlamaContext.createParams(
-                contextSize: 512, // Use a reasonable context size
-                batchSize: 512, // Large enough to handle prompt tokens
-                physicalBatchSize: 512,
+                contextSize: UInt32(maxContextSize), // Use the configured context size
+                batchSize: 256, // Reduced batch size for better memory management
+                physicalBatchSize: 256,
                 maxSequences: 1,
                 threads: 8,
                 batchThreads: 8
@@ -99,15 +101,16 @@ public class SwiftyLlamaCore: GenerationCore {
             let sampler = createSampler(with: params, context: context)
 
             // Tokenize the prompt
-            let promptTokens = try SLlamaTokenizer.tokenize(
-                text: prompt,
-                vocab: vocab.pointer,
-                addSpecial: true,
-                parseSpecial: true
-            )
+            let promptTokens = try vocab.tokenize(text: prompt)
+            
+            // Check for empty prompt
+            guard !promptTokens.isEmpty else {
+                continuation.finish()
+                return
+            }
 
             // Process prompt tokens in chunks to avoid exceeding batch size
-            let maxBatchSize = 512
+            let maxBatchSize = 256 // Reduced to match context batch size
             var position = 0
 
             for batchStart in stride(from: 0, to: promptTokens.count, by: maxBatchSize) {
