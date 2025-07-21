@@ -102,7 +102,7 @@ public class SwiftyLlamaCore: GenerationCore {
 
             // Tokenize the prompt
             let promptTokens = try vocab.tokenize(text: prompt)
-            
+
             // Check for empty prompt
             guard !promptTokens.isEmpty else {
                 continuation.finish()
