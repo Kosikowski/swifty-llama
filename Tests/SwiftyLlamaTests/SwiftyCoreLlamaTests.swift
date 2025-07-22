@@ -25,8 +25,6 @@ struct SwiftyCoreLlamaTests {
         // Create SwiftyCoreLlama with real model
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
-        #expect(swiftyCore != nil, "SwiftyCoreLlama should be created successfully")
-
         // Test model info
         let modelInfo = swiftyCore.modelInfo
         #expect(!modelInfo.name.isEmpty, "Model name should not be empty")
@@ -51,11 +49,6 @@ struct SwiftyCoreLlamaTests {
 
         // Start generation
         let stream = await swiftyCore.start(prompt: prompt, params: params)
-
-        // Verify stream was created
-        #expect(stream != nil, "Stream should be created")
-        #expect(stream.id != nil, "Stream ID should not be nil")
-        #expect(stream.stream != nil, "Stream should not be nil")
 
         // Verify generation info exists
         let info = await swiftyCore.getGenerationInfo(stream.id)
@@ -82,11 +75,6 @@ struct SwiftyCoreLlamaTests {
         let stream1 = await swiftyCore.start(prompt: prompts[0], params: params)
         let stream2 = await swiftyCore.start(prompt: prompts[1], params: params)
         let stream3 = await swiftyCore.start(prompt: prompts[2], params: params)
-
-        // Verify all streams were created
-        #expect(stream1 != nil, "Stream 1 should be created")
-        #expect(stream2 != nil, "Stream 2 should be created")
-        #expect(stream3 != nil, "Stream 3 should be created")
 
         // Verify all generation IDs are different
         #expect(stream1.id != stream2.id, "Generation IDs should be different")
@@ -128,7 +116,6 @@ struct SwiftyCoreLlamaTests {
 
         // Test starting new conversation
         let conversationId1 = swiftyCore.startNewConversation()
-        #expect(conversationId1 != nil, "Conversation ID should be created")
 
         // Test getting current conversation
         let currentId = swiftyCore.getCurrentConversationId()
