@@ -93,6 +93,31 @@ struct SLlamaPerformanceTests {
         }
     }
 
+    @Test("Token generation benchmark works")
+    func tokenGenerationBenchmark() throws {
+        let performance = SLlamaPerformance()
+
+        // Test token generation benchmark with a small number of iterations
+        let benchmarkResults = performance.benchmarkTokenGeneration(
+            modelPath: TestUtilities.testModelPath,
+            prompt: "Hello, how are you?",
+            maxTokens: 150,
+            iterations: 1
+        )
+
+        #expect(benchmarkResults != nil, "Token generation benchmark should return results")
+        if let results = benchmarkResults {
+            print("Token generation benchmark results: \(results)")
+            print("Tokens per second: \(results.tokensPerSecond)")
+            print("Total tokens generated: \(results.totalTokensGenerated)")
+            print("Average tokens per iteration: \(results.averageTokensPerIteration)")
+            #expect(results.averageGenerationTime > 0, "Average generation time should be positive")
+            #expect(results.totalGenerationTime > 0, "Total generation time should be positive")
+            #expect(results.tokensPerSecond >= 0, "Tokens per second should be non-negative")
+            #expect(results.totalTokensGenerated > 0, "Should generate some tokens")
+        }
+    }
+
     @Test("Performance optimization")
     func performanceOptimization() throws {
         let modelPath = TestUtilities.testModelPath

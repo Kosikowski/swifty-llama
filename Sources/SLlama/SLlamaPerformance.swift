@@ -82,6 +82,108 @@ public class SLlamaPerformance: @unchecked Sendable {
         )
     }
 
+    /// Benchmark token generation performance
+    /// - Parameters:
+    ///   - modelPath: Path to the model file
+    ///   - prompt: Prompt to generate tokens from
+    ///   - maxTokens: Maximum number of tokens to generate
+    ///   - iterations: Number of iterations to run
+    /// - Returns: Token generation benchmark results, or nil if benchmarking failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
+    public func benchmarkTokenGeneration(
+        modelPath: String,
+        prompt: String,
+        maxTokens: Int = 100,
+        iterations: Int = 3
+    )
+        -> STokenGenerationBenchmarkResults?
+    {
+        var totalGenerationTime: TimeInterval = 0
+        var totalTokensGenerated: Int = 0
+        var generationTimes: [TimeInterval] = []
+        var tokensPerIteration: [Int] = []
+
+        for _ in 0 ..< iterations {
+            let startTime = CFAbsoluteTimeGetCurrent()
+
+            do {
+                let model = try SLlamaModel(modelPath: modelPath)
+                let context = try SLlamaContext(model: model)
+                let vocab = SLlamaVocab(vocab: model.vocab)
+                
+                // Tokenize the prompt
+                let promptTokens = try vocab.tokenize(text: prompt)
+                
+                // Process prompt tokens
+                let batch = SLlamaBatch(nTokens: Int32(promptTokens.count), nSeqMax: 1)
+                for (index, token) in promptTokens.enumerated() {
+                    batch.addToken(
+                        token,
+                        position: Int32(index),
+                        sequenceIds: [0],
+                        logits: index == promptTokens.count - 1
+                    )
+                }
+                try context.core().decode(batch)
+                
+                // Generate tokens
+                let sampler = SLlamaSampler.temperature(context: context, temperature: 0.7) ?? SLlamaSampler.greedy(context: context) ?? SLlamaSampler(context: context)
+                var tokensGenerated = 0
+                var currentPosition = promptTokens.count
+                
+                for _ in 0 ..< maxTokens {
+                    guard let nextToken = sampler.sample() else { break }
+                    
+                    if nextToken == vocab.eosToken { break }
+                    
+                    sampler.accept(nextToken)
+                    tokensGenerated += 1
+                    
+                    // Process single token
+                    let generationBatch = SLlamaBatch(nTokens: 1, nSeqMax: 1)
+                    generationBatch.addToken(
+                        nextToken,
+                        position: Int32(currentPosition),
+                        sequenceIds: [0],
+                        logits: true
+                    )
+                    try context.core().decode(generationBatch)
+                    currentPosition += 1
+                }
+
+                let endTime = CFAbsoluteTimeGetCurrent()
+                let generationTime = endTime - startTime
+
+                totalGenerationTime += generationTime
+                totalTokensGenerated += tokensGenerated
+                generationTimes.append(generationTime)
+                tokensPerIteration.append(tokensGenerated)
+            } catch {
+                // Skip this iteration on error
+                continue
+            }
+        }
+
+        let avgGenerationTime = totalGenerationTime / Double(iterations)
+        let minGenerationTime = generationTimes.min() ?? 0
+        let maxGenerationTime = generationTimes.max() ?? 0
+        let avgTokensPerIteration = totalTokensGenerated / iterations
+        let tokensPerSecond = totalGenerationTime > 0 ? Double(totalTokensGenerated) / totalGenerationTime : 0
+
+        return STokenGenerationBenchmarkResults(
+            averageGenerationTime: avgGenerationTime,
+            minimumGenerationTime: minGenerationTime,
+            maximumGenerationTime: maxGenerationTime,
+            totalTokensGenerated: totalTokensGenerated,
+            averageTokensPerIteration: avgTokensPerIteration,
+            tokensPerSecond: tokensPerSecond,
+            iterations: iterations,
+            totalGenerationTime: totalGenerationTime
+        )
+    }
+
     // MARK: - Profiling
 
     /// Profile memory usage during a custom operation
@@ -576,6 +678,40 @@ public struct SLoadingBenchmarkResults {
         self.maximumLoadTime = maximumLoadTime
         self.iterations = iterations
         self.totalLoadTime = totalLoadTime
+    }
+}
+
+// MARK: - STokenGenerationBenchmarkResults
+
+/// Benchmark results for token generation performance
+public struct STokenGenerationBenchmarkResults {
+    public let averageGenerationTime: TimeInterval
+    public let minimumGenerationTime: TimeInterval
+    public let maximumGenerationTime: TimeInterval
+    public let totalTokensGenerated: Int
+    public let averageTokensPerIteration: Int
+    public let tokensPerSecond: Double
+    public let iterations: Int
+    public let totalGenerationTime: TimeInterval
+
+    public init(
+        averageGenerationTime: TimeInterval,
+        minimumGenerationTime: TimeInterval,
+        maximumGenerationTime: TimeInterval,
+        totalTokensGenerated: Int,
+        averageTokensPerIteration: Int,
+        tokensPerSecond: Double,
+        iterations: Int,
+        totalGenerationTime: TimeInterval
+    ) {
+        self.averageGenerationTime = averageGenerationTime
+        self.minimumGenerationTime = minimumGenerationTime
+        self.maximumGenerationTime = maximumGenerationTime
+        self.totalTokensGenerated = totalTokensGenerated
+        self.averageTokensPerIteration = averageTokensPerIteration
+        self.tokensPerSecond = tokensPerSecond
+        self.iterations = iterations
+        self.totalGenerationTime = totalGenerationTime
     }
 }
 
