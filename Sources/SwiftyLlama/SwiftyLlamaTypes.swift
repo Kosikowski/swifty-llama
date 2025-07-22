@@ -96,11 +96,12 @@ public enum GenerationError: Error, LocalizedError {
 }
 
 /// A unique identifier for a conversation
-public struct ConversationID: Hashable, Sendable {
-    private let id = UUID()
+public struct ConversationID: Hashable, Sendable, Codable {
+    private let id: UUID
 
     public init() {
         // Initialize with a new UUID
+        id = UUID()
     }
 
     public func hash(into hasher: inout Hasher) {

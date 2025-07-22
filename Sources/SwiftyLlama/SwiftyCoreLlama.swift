@@ -24,18 +24,32 @@ public class SwiftyCoreLlama {
     private var tokenBuffer: [SLlamaToken] = []
 
     // Conversation management
-    private struct Conversation {
-        let id: ConversationID
-        var messages: [ConversationMessage]
-        var totalTokens: Int32
-        let createdAt: Date
+    public struct Conversation: Codable {
+        public let id: ConversationID
+        public var messages: [ConversationMessage]
+        public var totalTokens: Int32
+        public let createdAt: Date
+
+        public init(id: ConversationID, messages: [ConversationMessage], totalTokens: Int32, createdAt: Date) {
+            self.id = id
+            self.messages = messages
+            self.totalTokens = totalTokens
+            self.createdAt = createdAt
+        }
     }
 
-    private struct ConversationMessage {
-        let role: String
-        let content: String
-        let tokens: [SLlamaToken]
-        let timestamp: Date
+    public struct ConversationMessage: Codable {
+        public let role: String
+        public let content: String
+        public let tokens: [SLlamaToken] // SLlamaToken == Int32 is Codable
+        public let timestamp: Date
+
+        public init(role: String, content: String, tokens: [SLlamaToken], timestamp: Date) {
+            self.role = role
+            self.content = content
+            self.tokens = tokens
+            self.timestamp = timestamp
+        }
     }
 
     private var conversations: [ConversationID: Conversation] = [:]
@@ -148,6 +162,83 @@ public class SwiftyCoreLlama {
         batch.addToken(token, position: position, sequenceIds: [0], logits: isLogit)
     }
 
+    // MARK: - Persistence Support
+
+    /// Get the current state of all conversations for persistence
+    public func getConversationState() -> [Conversation] {
+        Array(conversations.values)
+    }
+
+    /// Restore conversations from persisted state
+    public func restoreConversations(_ savedConversations: [Conversation]) {
+        conversations.removeAll()
+        for conversation in savedConversations {
+            conversations[conversation.id] = conversation
+        }
+    }
+
+    /// Save conversations to JSON data
+    public func saveConversationsToJSON() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(getConversationState())
+    }
+
+    /// Load conversations from JSON data
+    public func loadConversationsFromJSON(_ data: Data) throws {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let savedConversations = try decoder.decode([Conversation].self, from: data)
+        restoreConversations(savedConversations)
+    }
+
+    /// Warm up context with conversation history (lazy reconstruction of KV cache)
+    private func warmUpContext(with conversation: Conversation) throws {
+        guard let ctx = context else { return }
+        let hist = conversation.messages.flatMap(\.tokens)
+        guard !hist.isEmpty else { return }
+
+        // 1) Start from a clean slate
+        ctx.clearMemory(data: true)
+        currentTokenCount = 0
+        tokenBuffer.removeAll()
+        clearBatch()
+
+        // 2) Configure context for warm-up (use default params)
+        let defaultParams = GenerationParams(temperature: 0.7, maxTokens: 100)
+        try configureContext(with: defaultParams)
+
+        // 3) Feed every historical token
+        for (i, tok) in hist.enumerated() {
+            addToBatch(
+                token: tok,
+                position: Int32(i),
+                isLogit: i == hist.count - 1
+            ) // last token gets logits
+        }
+        try ctx.core().decode(batch!)
+        currentTokenCount = Int32(hist.count)
+    }
+
+    /// Continue a conversation with warm-up (for restored conversations)
+    public func continueConversationWithWarmUp(_ id: ConversationID) throws {
+        guard let conversation = conversations[id] else {
+            throw GenerationError.conversationNotFound
+        }
+
+        // Warm up the context with conversation history
+        try warmUpContext(with: conversation)
+        currentConversationId = id
+    }
+
+    /// Check if a conversation needs warm-up (has history but context is cold)
+    private func needsWarmUp(for conversationId: ConversationID) -> Bool {
+        guard let conversation = conversations[conversationId] else { return false }
+        // Need warm-up if conversation has history but our context is empty
+        // AND we haven't already warmed up this conversation
+        return !conversation.messages.isEmpty && (currentTokenCount == 0 || tokenBuffer.isEmpty)
+    }
+
     // MARK: - Public API
 
     /// Begin a new generation and immediately obtain a token stream
@@ -217,8 +308,10 @@ public class SwiftyCoreLlama {
             // Ensure context is initialized (only once per instance)
             try ensureContextInitialized()
 
-            // Configure context for this generation
-            try configureContext(with: params)
+            // Configure context for this generation (only if not already warmed up)
+            if currentTokenCount == 0 {
+                try configureContext(with: params)
+            }
 
             // Tokenize prompt
             let promptTokens = try vocab.tokenize(text: prompt)
@@ -239,7 +332,11 @@ public class SwiftyCoreLlama {
 
             // Generate tokens
             var generatedTokens: [SLlamaToken] = []
-            while shouldContinuePredicting, currentTokenCount < Int32(params.maxTokens) {
+            let maxNewTokens = max(0, Int32(params.maxTokens) - currentTokenCount)
+
+            // If we already have more tokens than requested, we can still generate a minimum number
+            let minNewTokens = maxNewTokens > 0 ? maxNewTokens : 1
+            while shouldContinuePredicting, generatedTokens.count < minNewTokens {
                 let token = predictNextToken(sampler: sampler, llamaContext: context!)
 
                 if token == vocab.eosToken {
@@ -278,9 +375,9 @@ public class SwiftyCoreLlama {
             } else {
                 // Map underlying errors to appropriate GenerationError cases
                 switch error {
-                    case let tokenizationError where error.localizedDescription.contains("tokenize"):
+                    case _ where error.localizedDescription.contains("tokenize"):
                         .tokenizationFailed
-                    case let contextError where error.localizedDescription.contains("context"):
+                    case _ where error.localizedDescription.contains("context"):
                         .contextPreparationFailed
                     default:
                         .generationFailed
@@ -311,6 +408,9 @@ public class SwiftyCoreLlama {
                 // Context too long - need to truncate or start new conversation
                 return false
             }
+
+            // Note: Warm-up should be done before calling this method via continueConversationWithWarmUp
+            // We don't warm up here to avoid clearing the context during generation
 
             // If we have history, we need to continue from where we left off
             if !historyTokens.isEmpty {
@@ -425,6 +525,16 @@ public class SwiftyCoreLlama {
         content: String,
         tokens: [SLlamaToken]
     ) async {
+        // Ensure conversation exists
+        if conversations[conversationId] == nil {
+            conversations[conversationId] = Conversation(
+                id: conversationId,
+                messages: [],
+                totalTokens: 0,
+                createdAt: Date()
+            )
+        }
+
         guard var conversation = conversations[conversationId] else { return }
 
         let message = ConversationMessage(

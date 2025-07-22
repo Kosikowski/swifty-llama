@@ -238,9 +238,10 @@ struct SwiftyCoreLlamaTests {
 
         #expect(info1 != nil, "First conversation info should exist")
         #expect(info2 != nil, "Second conversation info should exist")
-        // Both conversations should have 1 message each, but they should be separate
-        #expect(info1?.messageCount == 1, "First conversation should have 1 message")
-        #expect(info2?.messageCount == 1, "Second conversation should have 1 message")
+        // Both conversations should have 2 messages each (user message + assistant response), but they should be
+        // separate
+        #expect(info1?.messageCount == 2, "First conversation should have 2 messages (user + assistant)")
+        #expect(info2?.messageCount == 2, "Second conversation should have 2 messages (user + assistant)")
         // Verify they are different conversation IDs
         #expect(info1?.id != info2?.id, "Conversation IDs should be different")
 
@@ -578,6 +579,125 @@ extension SwiftyCoreLlamaTests {
             let description = error.errorDescription
             #expect(description != nil, "Error description should not be nil for \(error)")
             #expect(!description!.isEmpty, "Error description should not be empty for \(error)")
+        }
+    }
+
+    // MARK: - Persistence Tests
+
+    @Test("SwiftyCoreLlama conversation persistence test")
+    func conversationPersistenceTest() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for conversation persistence test"
+        )
+
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 5)
+
+        // Start a conversation and generate some content
+        let stream = await swiftyCore.start(prompt: "Hello, how are you?", params: params)
+
+        // Verify conversation was created and generation is active
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        #expect(activeIDs.count > 0, "Should have active generations")
+
+        var tokens: [String] = []
+        for try await token in stream.stream {
+            tokens.append(token)
+            if tokens.count >= 3 {
+                break
+            }
+        }
+
+        // Get conversation state
+        let conversationState = await swiftyCore.getConversationState()
+        #expect(conversationState.count > 0, "Should have conversation state")
+
+        // Test JSON serialization/deserialization
+        let jsonData = try await swiftyCore.saveConversationsToJSON()
+        #expect(jsonData.count > 0, "JSON data should not be empty")
+
+        // Create a new instance and restore conversations
+        let newSwiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        try await newSwiftyCore.loadConversationsFromJSON(jsonData)
+
+        // Verify conversations were restored
+        let restoredState = await newSwiftyCore.getConversationState()
+        #expect(restoredState.count == conversationState.count, "Should have same number of conversations")
+
+        // Test continuing a restored conversation
+        if let firstConversation = restoredState.first {
+            try await newSwiftyCore.continueConversationWithWarmUp(firstConversation.id)
+
+            // Start a new generation in the restored conversation
+            let newStream = await newSwiftyCore.start(
+                prompt: "Continue our conversation",
+                params: params,
+                conversationId: firstConversation.id
+            )
+
+            var newTokens: [String] = []
+            for try await token in newStream.stream {
+                newTokens.append(token)
+                if newTokens.count >= 2 {
+                    break
+                }
+            }
+
+            #expect(newTokens.count > 0, "Should be able to continue restored conversation")
+        }
+    }
+
+    @Test("SwiftyCoreLlama conversation warm-up test")
+    func conversationWarmUpTest() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for conversation warm-up test"
+        )
+
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 3)
+
+        // Start a conversation
+        let stream = await swiftyCore.start(prompt: "Tell me a short story", params: params)
+
+        var tokens: [String] = []
+        for try await token in stream.stream {
+            tokens.append(token)
+        }
+
+        // Get conversation state
+        let conversationState = await swiftyCore.getConversationState()
+        #expect(conversationState.count > 0, "Should have conversation state")
+
+        if let conversation = conversationState.first {
+            // Test warm-up functionality
+            try await swiftyCore.continueConversationWithWarmUp(conversation.id)
+
+            // Verify the conversation is now active
+            let currentId = await swiftyCore.getCurrentConversationId()
+            #expect(currentId == conversation.id, "Current conversation should be set")
+
+            // Test that we can continue the warmed-up conversation
+            let continueStream = await swiftyCore.start(
+                prompt: "Continue the story",
+                params: params,
+                conversationId: conversation.id
+            )
+
+            var continueTokens: [String] = []
+            for try await token in continueStream.stream {
+                continueTokens.append(token)
+                if continueTokens.count >= 2 {
+                    break
+                }
+            }
+
+            #expect(continueTokens.count > 0, "Should be able to continue warmed-up conversation")
         }
     }
 }
