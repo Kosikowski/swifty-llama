@@ -4,7 +4,7 @@ import TestUtilities
 import XCTest
 @testable import SwiftyLlama
 
-@SwiftyLlamaActor
+@SLlamaActor
 final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
     // MARK: - Test Properties
 
@@ -241,7 +241,11 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
 
         XCTAssertNotNil(info1)
         XCTAssertNotNil(info2)
-        XCTAssertNotEqual(info1?.messageCount, info2?.messageCount)
+        // Both conversations should have 1 message each, but they should be separate
+        XCTAssertEqual(info1?.messageCount, 1)
+        XCTAssertEqual(info2?.messageCount, 1)
+        // Verify they are different conversation IDs
+        XCTAssertNotEqual(info1?.id, info2?.id)
 
         // Clean up
         await swiftyCore.cancelAll()

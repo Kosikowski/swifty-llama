@@ -3,7 +3,7 @@ import SLlama
 import XCTest
 @testable import SwiftyLlama
 
-@SwiftyLlamaActor
+@SLlamaActor
 final class SwiftyCoreLlamaDemoTests: XCTestCase, @unchecked Sendable {
     // MARK: - Test Properties
 

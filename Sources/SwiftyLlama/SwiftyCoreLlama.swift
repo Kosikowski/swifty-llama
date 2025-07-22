@@ -3,7 +3,7 @@ import SLlama
 
 /// A unified actor that combines generation coordination and core functionality
 /// This solves the async stream context issues by keeping everything within the same actor context
-@SwiftyLlamaActor
+@SLlamaActor
 public class SwiftyCoreLlama {
     // MARK: - Private Properties
 
@@ -193,7 +193,7 @@ public class SwiftyCoreLlama {
         )
 
         // Start generation task within the same actor context - NO detached task as it would cause segmentation fault
-        Task { @SwiftyLlamaActor in
+        Task { @SLlamaActor in
             await self.performGeneration(
                 id: id,
                 prompt: prompt,
@@ -546,38 +546,4 @@ public class SwiftyCoreLlama {
             nlToken: vocab.nlToken
         )
     }
-}
-
-// MARK: - Supporting Types
-
-public struct ConversationID: Hashable, Sendable {
-    private let id = UUID()
-}
-
-public struct GenerationInfo {
-    public let id: GenerationID
-    public let conversationId: ConversationID?
-    public let params: GenerationParams
-    public let startTime: Date
-    public let isActive: Bool
-}
-
-public struct ConversationInfo {
-    public let id: ConversationID
-    public let messageCount: Int
-    public let totalTokens: Int32
-    public let createdAt: Date
-}
-
-public struct ModelInfo {
-    public let name: String
-    public let contextSize: Int32
-    public let vocabSize: Int32
-}
-
-public struct VocabInfo {
-    public let size: Int32
-    public let bosToken: SLlamaToken
-    public let eosToken: SLlamaToken
-    public let nlToken: SLlamaToken
 }

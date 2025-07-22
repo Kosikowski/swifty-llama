@@ -4,7 +4,7 @@ import SLlama
 /// A demonstration of the SwiftyCoreLlama concept that solves async stream context issues
 /// This shows how combining GenerationCoordinator and SLlamaGenerationCore into a single actor
 /// solves the async stream context problems without using the real model
-@SwiftyLlamaActor
+@SLlamaActor
 public class SwiftyCoreLlamaDemo {
     // MARK: - Private Properties
 
@@ -45,7 +45,7 @@ public class SwiftyCoreLlamaDemo {
             id: id,
             params: params,
             startTime: Date(),
-            task: nil
+            task: nil as Task<Void, Never>?
         )
 
         // Start generation task within the same actor context
