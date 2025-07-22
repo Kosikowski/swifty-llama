@@ -516,12 +516,12 @@ extension SwiftyCoreLlamaTests {
 
         // Try to continue a non-existent conversation
         do {
-            try await swiftyCore.continueConversation(nonExistentConversationId)
-            #expect(false, "Should have thrown conversationNotFound error")
+            try swiftyCore.continueConversation(nonExistentConversationId)
+            #expect(Bool(false), "Should have thrown conversationNotFound error")
         } catch let error as GenerationError {
             #expect(error == .conversationNotFound, "Should throw conversationNotFound error")
         } catch {
-            #expect(false, "Should have thrown GenerationError, got: \(error)")
+            #expect(Bool(false), "Should have thrown GenerationError, got: \(error)")
         }
     }
 
@@ -545,7 +545,7 @@ extension SwiftyCoreLlamaTests {
 
         // Consume the stream and catch any errors
         do {
-            for try await token in stream.stream {
+            for try await _ in stream.stream {
                 tokenCount += 1
                 if tokenCount > 10 {
                     break
@@ -554,7 +554,7 @@ extension SwiftyCoreLlamaTests {
         } catch let error as GenerationError {
             receivedError = error
         } catch {
-            #expect(false, "Should have thrown GenerationError, got: \(error)")
+            #expect(Bool(false), "Should have thrown GenerationError, got: \(error)")
         }
 
         // Verify we either got tokens or a specific error
@@ -612,24 +612,24 @@ extension SwiftyCoreLlamaTests {
         }
 
         // Get conversation state
-        let conversationState = await swiftyCore.getConversationState()
+        let conversationState = swiftyCore.getConversationState()
         #expect(conversationState.count > 0, "Should have conversation state")
 
         // Test JSON serialization/deserialization
-        let jsonData = try await swiftyCore.saveConversationsToJSON()
+        let jsonData = try swiftyCore.saveConversationsToJSON()
         #expect(jsonData.count > 0, "JSON data should not be empty")
 
         // Create a new instance and restore conversations
         let newSwiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
-        try await newSwiftyCore.loadConversationsFromJSON(jsonData)
+        try newSwiftyCore.loadConversationsFromJSON(jsonData)
 
         // Verify conversations were restored
-        let restoredState = await newSwiftyCore.getConversationState()
+        let restoredState = newSwiftyCore.getConversationState()
         #expect(restoredState.count == conversationState.count, "Should have same number of conversations")
 
         // Test continuing a restored conversation
         if let firstConversation = restoredState.first {
-            try await newSwiftyCore.continueConversationWithWarmUp(firstConversation.id)
+            try newSwiftyCore.continueConversationWithWarmUp(firstConversation.id)
 
             // Start a new generation in the restored conversation
             let newStream = await newSwiftyCore.start(
@@ -671,15 +671,15 @@ extension SwiftyCoreLlamaTests {
         }
 
         // Get conversation state
-        let conversationState = await swiftyCore.getConversationState()
+        let conversationState = swiftyCore.getConversationState()
         #expect(conversationState.count > 0, "Should have conversation state")
 
         if let conversation = conversationState.first {
             // Test warm-up functionality
-            try await swiftyCore.continueConversationWithWarmUp(conversation.id)
+            try swiftyCore.continueConversationWithWarmUp(conversation.id)
 
             // Verify the conversation is now active
-            let currentId = await swiftyCore.getCurrentConversationId()
+            let currentId = swiftyCore.getCurrentConversationId()
             #expect(currentId == conversation.id, "Current conversation should be set")
 
             // Test that we can continue the warmed-up conversation

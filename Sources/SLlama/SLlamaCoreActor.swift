@@ -1,10 +1,6 @@
-//
-//  SLlamaCoreActor.swift
-//  SLlama
-//
-//  Created by Mateusz Kosikowski on 21/07/2025.
-//
 
+
+/// A global actor providing isolation for operations related to the SLlama module.
 @globalActor
 public actor SLlamaActor {
     public static let shared = SLlamaActor()
