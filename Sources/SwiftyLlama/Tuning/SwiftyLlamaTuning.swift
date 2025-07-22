@@ -72,6 +72,43 @@ public protocol SwiftyLlamaTuning: AnyObject {
     /// - Returns: Current training metrics or nil if no session is active
     func getTrainingMetrics() -> TrainingMetrics?
 
+    // MARK: - Model Saving
+
+    /// Save the current LoRA adapter to a file
+    /// - Parameters:
+    ///   - path: Output path for the LoRA adapter
+    ///   - metadata: Additional metadata to include
+    /// - Throws: TuningError if saving fails
+    func saveLoRAAdapter(path: String, metadata: LoRAMetadata?) throws
+
+    /// Save the fine-tuned model (base model + LoRA)
+    /// - Parameters:
+    ///   - path: Output path for the fine-tuned model
+    ///   - format: Model format (gguf, safetensors, etc.)
+    ///   - metadata: Additional metadata to include
+    /// - Throws: TuningError if saving fails
+    func saveFineTunedModel(
+        path: String,
+        format: ModelFormat,
+        metadata: ModelMetadata?
+    ) throws
+
+    /// Export model in different formats
+    /// - Parameters:
+    ///   - path: Output path
+    ///   - format: Target format
+    ///   - quantization: Quantization settings
+    /// - Throws: TuningError if export fails
+    func exportModel(
+        path: String,
+        format: ModelFormat,
+        quantization: ModelQuantization?
+    ) throws
+
+    /// Get model saving information
+    /// - Returns: ModelSavingInfo with current state
+    func getModelSavingInfo() -> ModelSavingInfo
+
     // MARK: - Evaluation
 
     /// Evaluate model performance on validation set
@@ -105,12 +142,31 @@ public extension SwiftyLlamaTuning {
         try applyLoRA(path: path, scale: 1.0, metadata: metadata)
     }
 
-    /// Prepare training data with default validation split
-    /// - Parameter conversations: Array of training conversations
-    /// - Returns: TrainingDataset with training and validation examples
-    /// - Throws: TuningError if tokenizer is not initialized
-    func prepareTrainingData(conversations: [TrainingConversation]) throws -> TrainingDataset {
-        try prepareTrainingData(conversations: conversations, validationSplit: 0.1)
+    /// Save LoRA adapter with default metadata
+    /// - Parameter path: Output path for the LoRA adapter
+    /// - Throws: TuningError if saving fails
+    func saveLoRAAdapter(path: String) throws {
+        try saveLoRAAdapter(path: path, metadata: nil)
+    }
+
+    /// Save fine-tuned model with default format and metadata
+    /// - Parameter path: Output path for the fine-tuned model
+    /// - Throws: TuningError if saving fails
+    func saveFineTunedModel(path: String) throws {
+        try saveFineTunedModel(
+            path: path,
+            format: .gguf,
+            metadata: nil
+        )
+    }
+
+    /// Export model with default quantization
+    /// - Parameters:
+    ///   - path: Output path
+    ///   - format: Target format
+    /// - Throws: TuningError if export fails
+    func exportModel(path: String, format: ModelFormat) throws {
+        try exportModel(path: path, format: format, quantization: nil)
     }
 }
 

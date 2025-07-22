@@ -14,6 +14,14 @@ public enum TuningError: Error, LocalizedError, Equatable {
     case invalidEpochs(epochs: Int)
     case trainingSessionNotFound
     case incompatibleAdapter
+    case invalidValidationSplit(split: Double)
+    case noLoRAApplied
+    case baseModelNotLoaded
+    case loraSaveFailed(path: String, errorDescription: String)
+    case modelSaveFailed(path: String, errorDescription: String)
+    case modelExportFailed(path: String, errorDescription: String)
+    case unsupportedModelFormat(format: String)
+    case invalidQuantizationSettings(description: String)
 
     public var errorDescription: String? {
         switch self {
@@ -37,6 +45,22 @@ public enum TuningError: Error, LocalizedError, Equatable {
                 "No active training session found"
             case .incompatibleAdapter:
                 "LoRA adapter is incompatible with current model"
+            case let .invalidValidationSplit(split):
+                "Invalid validation split: \(split). Must be between 0.0 and 1.0"
+            case .noLoRAApplied:
+                "No LoRA adapter is currently applied"
+            case .baseModelNotLoaded:
+                "Base model is not loaded"
+            case let .loraSaveFailed(path, errorDescription):
+                "Failed to save LoRA adapter at path: \(path), error: \(errorDescription)"
+            case let .modelSaveFailed(path, errorDescription):
+                "Failed to save model at path: \(path), error: \(errorDescription)"
+            case let .modelExportFailed(path, errorDescription):
+                "Failed to export model at path: \(path), error: \(errorDescription)"
+            case let .unsupportedModelFormat(format):
+                "Unsupported model format: \(format)"
+            case let .invalidQuantizationSettings(description):
+                "Invalid quantization settings: \(description)"
         }
     }
 }

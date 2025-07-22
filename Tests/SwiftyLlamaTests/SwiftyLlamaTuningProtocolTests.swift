@@ -25,7 +25,7 @@ struct SwiftyLlamaTuningProtocolTests {
         // Test that default parameter extensions work
         // These should compile and not throw errors for the default implementations
         do {
-            _ = try tuningLlama.prepareTrainingData(conversations: [])
+            _ = try tuningLlama.prepareTrainingData(conversations: [], validationSplit: 0.1)
         } catch {
             // Expected to throw TuningError.tokenizerNotInitialized
             #expect(error is TuningError)
