@@ -5,7 +5,7 @@ import Testing
 
 @Suite("SwiftyTuningLlamaProtocol Tests")
 @SwiftyLlamaActor
-struct SwiftyTuningLlamaProtocolTests {
+struct SwiftyLlamaTuningProtocolTests {
     @Test("SwiftyTuningLlamaProtocol conformance test")
     func protocolConformance() async throws {
         // Verify that SwiftyTuningLlama conforms to SwiftyTuningLlamaProtocol

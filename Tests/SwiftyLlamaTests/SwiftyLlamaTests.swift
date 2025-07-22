@@ -5,7 +5,7 @@ import TestUtilities
 @testable import SwiftyLlama
 
 @SwiftyLlamaActor
-struct SwiftyCoreLlamaTests {
+struct SwiftyLlamaTests {
     // MARK: - Compilation Tests
 
     @Test("SwiftyCoreLlama compilation test")
@@ -252,7 +252,7 @@ struct SwiftyCoreLlamaTests {
 
 // MARK: - Cancellation Tests
 
-extension SwiftyCoreLlamaTests {
+extension SwiftyLlamaTests {
     @Test("SwiftyCoreLlama individual cancellation test")
     func individualCancellation() async throws {
         // Fail if model not available

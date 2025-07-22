@@ -5,7 +5,7 @@ import Testing
 
 @Suite("SwiftyTuningLlama Tests")
 @SwiftyLlamaActor
-struct SwiftyTuningLlamaTests {
+struct SwiftyLlamaTunerTests {
     @Test("SwiftyTuningLlama initialization test")
     func initialization() async throws {
         let tuningLlama = SwiftyLlamaTuner()
