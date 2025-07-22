@@ -229,7 +229,7 @@ public class SwiftyCoreLlama {
             try configureContext(with: params)
 
             // Create sampler
-            let sampler = createSampler(with: params, context: context!)
+            let sampler = createSampler(with: params, llamaContext: context!)
 
             // Tokenize prompt
             let promptTokens = try vocab.tokenize(text: prompt)
@@ -238,7 +238,7 @@ public class SwiftyCoreLlama {
             guard prepareContextWithConversation(
                 for: promptTokens,
                 conversationId: conversationId,
-                context: context!
+                llamaContext: context!
             ) else {
                 continuation.finish(throwing: NSError(
                     domain: "SwiftyCoreLlama",
@@ -248,13 +248,14 @@ public class SwiftyCoreLlama {
                 return
             }
 
-            // Reset sampler state
-            sampler.reset()
+            // Recreate sampler with updated context
+            let updatedSampler = createSampler(with: params, llamaContext: context!)
+            updatedSampler.reset()
 
             // Generate tokens
             var generatedTokens: [SLlamaToken] = []
             while shouldContinuePredicting, currentTokenCount < Int32(params.maxTokens) {
-                let token = predictNextToken(sampler: sampler, context: context!)
+                let token = predictNextToken(sampler: updatedSampler, llamaContext: context!)
 
                 if token == vocab.eosToken {
                     break
@@ -295,7 +296,7 @@ public class SwiftyCoreLlama {
     private func prepareContextWithConversation(
         for promptTokens: [SLlamaToken],
         conversationId: ConversationID,
-        context: SLlamaContext
+        llamaContext: SLlamaContext
     )
         -> Bool
     {
@@ -307,23 +308,26 @@ public class SwiftyCoreLlama {
             currentTokenCount = 0
             tokenBuffer.removeAll()
 
-            // For new conversation, create a fresh context
-            do {
-                context = try SLlamaContext(model: model)
-                isContextInitialized = true
-            } catch {
-                return false
-            }
+            // For new conversation, we need to reset the context completely
+            // Reset our state
+            currentTokenCount = 0
+            tokenBuffer.removeAll()
+
+            // Clear the KV cache completely for a brand-new conversation
+            llamaContext.clearMemory(data: true)
+
+            // Recreate the batch
+            batch = SLlamaBatch(nTokens: maxContextSize, nSeqMax: 1)
 
             clearBatch()
 
-            // For new conversation, start from position 0
+            // For new conversation, start from position 0 since we cleared the cache
             for (i, token) in promptTokens.enumerated() {
                 addToBatch(token: token, position: Int32(i), isLogit: i == promptTokens.count - 1)
             }
 
             do {
-                try context!.core().decode(batch!)
+                try llamaContext.core().decode(batch!)
             } catch {
                 return false
             }
@@ -356,19 +360,22 @@ public class SwiftyCoreLlama {
                 addToBatch(token: token, position: position, isLogit: i == promptTokens.count - 1)
             }
         } else {
+            // Empty conversation - need to clear KV cache since we're starting fresh
+            llamaContext.clearMemory(data: true)
+
             currentTokenCount = 0
             tokenBuffer.removeAll()
 
             clearBatch()
 
-            // For new conversation, start from position 0
+            // For new conversation, start from position 0 since we cleared the cache
             for (i, token) in promptTokens.enumerated() {
                 addToBatch(token: token, position: Int32(i), isLogit: i == promptTokens.count - 1)
             }
         }
 
         do {
-            try context.core().decode(batch!)
+            try llamaContext.core().decode(batch!)
         } catch {
             return false
         }
@@ -385,7 +392,7 @@ public class SwiftyCoreLlama {
 
     // MARK: - Context Preparation (like the working example) - for new conversations
 
-    private func prepareContext(for promptTokens: [SLlamaToken], context: SLlamaContext) -> Bool {
+    private func prepareContext(for promptTokens: [SLlamaToken], llamaContext _: SLlamaContext) -> Bool {
         guard !promptTokens.isEmpty else { return false }
 
         currentTokenCount = 0
@@ -401,7 +408,7 @@ public class SwiftyCoreLlama {
         }
 
         do {
-            try context.core().decode(batch!)
+            try context!.core().decode(batch!)
         } catch {
             return false
         }
@@ -435,7 +442,7 @@ public class SwiftyCoreLlama {
 
     // MARK: - Token Prediction (like the working example)
 
-    private func predictNextToken(sampler: SLlamaSampler, context: SLlamaContext) -> SLlamaToken {
+    private func predictNextToken(sampler: SLlamaSampler, llamaContext _: SLlamaContext) -> SLlamaToken {
         guard shouldContinuePredicting, currentTokenCount < maxContextSize else {
             return vocab.eosToken
         }
@@ -462,7 +469,7 @@ public class SwiftyCoreLlama {
         addToBatch(token: token, position: currentTokenCount)
 
         do {
-            try context.core().decode(batch!)
+            try context!.core().decode(batch!)
         } catch {
             shouldContinuePredicting = false
             return vocab.eosToken
@@ -472,12 +479,12 @@ public class SwiftyCoreLlama {
         return token
     }
 
-    private func createSampler(with params: GenerationParams, context: SLlamaContext) -> SLlamaSampler {
+    private func createSampler(with params: GenerationParams, llamaContext: SLlamaContext) -> SLlamaSampler {
         // Create a temperature sampler with the given parameters
         let sampler = SLlamaSampler.temperature(
-            context: context,
+            context: llamaContext,
             temperature: params.temperature
-        ) ?? SLlamaSampler.greedy(context: context) ?? SLlamaSampler(context: context)
+        ) ?? SLlamaSampler.greedy(context: llamaContext) ?? SLlamaSampler(context: llamaContext)
 
         return sampler
     }
