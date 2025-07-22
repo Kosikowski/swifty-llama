@@ -190,7 +190,7 @@ public class SLlamaGenerationCore: GenerationCore {
                 temperature: params.temperature
             ) ?? SLlamaSampler.greedy(context: context) ?? SLlamaSampler(context: context)
         }
-        
+
         // Fallback to temperature sampler
         return SLlamaSampler.temperature(
             context: context,
@@ -257,20 +257,20 @@ public struct GenerationParams: Sendable, Equatable {
         repeatPenalty: Float = 1.1,
         repetitionLookback: Int32 = 64,
 
-        // Context configuration
+        // Context configuration - optimized for performance like benchmark
         contextSize: UInt32 = 2048,
-        batchSize: UInt32 = 1, // Single token processing for memory efficiency
-        physicalBatchSize: UInt32 = 1, // Single token processing for memory efficiency
+        batchSize: UInt32 = 512, // Optimized batch size for performance
+        physicalBatchSize: UInt32 = 512, // Optimized physical batch size
         maxSequences: UInt32 = 1,
-        threads: Int32 = 4, // Conservative thread count
-        batchThreads: Int32 = 4, // Conservative thread count
+        threads: Int32 = 0, // Auto-detect optimal thread count
+        batchThreads: Int32 = 0, // Auto-detect optimal thread count
         enableEmbeddings: Bool = false,
         enableOffloading: Bool = true,
         enableCausalAttention: Bool = true,
 
         // Generation limits
         maxTokens: Int32 = 1000, // Safety limit
-        maxBatchSize: Int32 = 256 // Maximum batch size for prompt processing
+        maxBatchSize: Int32 = 512 // Optimized batch size for prompt processing
     ) {
         self.seed = seed
         self.topK = topK
