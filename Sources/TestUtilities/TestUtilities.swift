@@ -62,7 +62,9 @@ public enum TestUtilities {
             print("🔍 TestUtilities: Searching for model in paths:")
             for (index, path) in sourcePaths.enumerated() {
                 let exists = FileManager.default.fileExists(atPath: path)
-                print("   \(index): \(path) - \(exists ? "✅ Found" : "❌ Not found")")
+                if exists {
+                    print("   \(index): \(path) - \(exists ? "✅ Found" : "❌ Not found")")
+                }
             }
         #endif
 

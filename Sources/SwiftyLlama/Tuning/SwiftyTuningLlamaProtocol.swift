@@ -3,7 +3,7 @@ import Foundation
 /// Public protocol for fine-tuning operations with llama.cpp
 /// This protocol defines the interface for SwiftyTuningLlama functionality
 @SwiftyLlamaActor
-public protocol SwiftyTuningLlamaProtocol: AnyObject {
+public protocol SwiftyLlamaTuning: AnyObject {
     // MARK: - Model Loading
 
     /// Load the base model for fine-tuning
@@ -95,7 +95,7 @@ public protocol SwiftyTuningLlamaProtocol: AnyObject {
 
 // MARK: - Default Parameter Extensions
 
-public extension SwiftyTuningLlamaProtocol {
+public extension SwiftyLlamaTuning {
     /// Apply a LoRA adapter with default scale
     /// - Parameters:
     ///   - path: Path to the LoRA adapter file
@@ -117,4 +117,4 @@ public extension SwiftyTuningLlamaProtocol {
 // MARK: - Protocol Conformance
 
 /// Make SwiftyTuningLlama conform to the protocol
-extension SwiftyTuningLlama: SwiftyTuningLlamaProtocol {}
+extension SwiftyLlamaTuner: SwiftyLlamaTuning {}

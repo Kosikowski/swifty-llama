@@ -3,7 +3,7 @@ import SLlama
 
 /// Actor for fine-tuning operations with llama.cpp
 @SLlamaActor
-public final class SwiftyTuningLlama {
+public final class SwiftyLlamaTuner {
     // MARK: - Properties
 
     private var model: SLlamaModel?

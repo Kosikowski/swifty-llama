@@ -9,7 +9,7 @@ struct SwiftyTuningLlamaProtocolTests {
     @Test("SwiftyTuningLlamaProtocol conformance test")
     func protocolConformance() async throws {
         // Verify that SwiftyTuningLlama conforms to SwiftyTuningLlamaProtocol
-        let tuningLlama: SwiftyTuningLlamaProtocol = SwiftyTuningLlama()
+        let tuningLlama: SwiftyLlamaTuning = SwiftyLlamaTuner()
 
         // Test that we can call protocol methods
         #expect(tuningLlama.getCurrentLoRA() == nil)
@@ -20,7 +20,7 @@ struct SwiftyTuningLlamaProtocolTests {
 
     @Test("SwiftyTuningLlamaProtocol default parameter extensions test")
     func defaultParameterExtensions() async throws {
-        let tuningLlama: SwiftyTuningLlamaProtocol = SwiftyTuningLlama()
+        let tuningLlama: SwiftyLlamaTuning = SwiftyLlamaTuner()
 
         // Test that default parameter extensions work
         // These should compile and not throw errors for the default implementations
@@ -42,7 +42,7 @@ struct SwiftyTuningLlamaProtocolTests {
     @Test("SwiftyTuningLlamaProtocol type safety test")
     func typeSafety() async throws {
         // Test that the protocol provides type safety
-        let tuningLlama: SwiftyTuningLlamaProtocol = SwiftyTuningLlama()
+        let tuningLlama: SwiftyLlamaTuning = SwiftyLlamaTuner()
 
         // Verify that protocol methods return the correct types
         let currentLoRA = tuningLlama.getCurrentLoRA()

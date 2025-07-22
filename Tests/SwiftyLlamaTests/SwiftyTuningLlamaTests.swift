@@ -8,7 +8,7 @@ import Testing
 struct SwiftyTuningLlamaTests {
     @Test("SwiftyTuningLlama initialization test")
     func initialization() async throws {
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Verify initial state
         #expect(tuningLlama.getCurrentLoRA() == nil)
@@ -25,7 +25,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for model loading test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -43,7 +43,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for LoRA adapter management test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -70,7 +70,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for training data preparation test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -125,7 +125,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for training session management test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -181,7 +181,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for invalid training config test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -242,7 +242,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for evaluation test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -279,7 +279,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for LoRA compatibility test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -302,7 +302,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for LoRA fallback mode test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -317,7 +317,7 @@ struct SwiftyTuningLlamaTests {
 
     @Test("SwiftyTuningLlama error handling test")
     func errorHandling() async throws {
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Test operations without loading model
         do {
@@ -363,7 +363,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for QLoRA configuration test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -417,7 +417,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for empty conversations test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -438,7 +438,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for single message conversation test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -468,7 +468,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for LoRA removal test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -493,7 +493,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for training session without dataset test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -518,7 +518,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for evaluation with empty validation test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -541,7 +541,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for training metrics test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -584,7 +584,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for boundary value training config test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -653,7 +653,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for validation split edge cases test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -703,7 +703,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for multiple LoRA adapters test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
@@ -738,7 +738,7 @@ struct SwiftyTuningLlamaTests {
             "Test model must be available for training session state transitions test"
         )
 
-        let tuningLlama = SwiftyTuningLlama()
+        let tuningLlama = SwiftyLlamaTuner()
 
         // Load model first
         try tuningLlama.loadModel(path: TestUtilities.testModelPath)
