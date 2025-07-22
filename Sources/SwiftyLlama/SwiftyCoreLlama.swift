@@ -183,17 +183,8 @@ public class SwiftyCoreLlama {
             bufferingPolicy: .unbounded
         )
 
-        // Store generation info
-        activeGenerations[id] = LiveGeneration(
-            id: id,
-            conversationId: targetConversationId,
-            params: params,
-            startTime: Date(),
-            task: nil as Task<Void, Never>?
-        )
-
         // Start generation task within the same actor context - NO detached task as it would cause segmentation fault
-        Task { @SLlamaActor in
+        let task = Task { @SLlamaActor in
             await self.performGeneration(
                 id: id,
                 prompt: prompt,
@@ -203,6 +194,15 @@ public class SwiftyCoreLlama {
             )
             return ()
         }
+
+        // Store generation info with the actual task
+        activeGenerations[id] = LiveGeneration(
+            id: id,
+            conversationId: targetConversationId,
+            params: params,
+            startTime: Date(),
+            task: task
+        )
 
         // Set up termination callback
         continuation.onTermination = { @Sendable _ in

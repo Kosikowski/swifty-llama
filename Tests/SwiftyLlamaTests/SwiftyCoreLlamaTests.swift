@@ -251,3 +251,199 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
         await swiftyCore.cancelAll()
     }
 }
+
+// MARK: - Cancellation Tests
+
+extension SwiftyCoreLlamaTests {
+    func testIndividualCancellation() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 10)
+
+        // Start a generation
+        let stream = await swiftyCore.start(prompt: "Hello world", params: params)
+
+        // Verify it's active
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertTrue(activeIDs.contains(stream.id))
+
+        // Cancel the specific generation
+        await swiftyCore.cancel(stream.id)
+
+        // Verify it's no longer active
+        let finalActiveIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertFalse(finalActiveIDs.contains(stream.id))
+
+        // Verify generation info is nil after cancellation (since it's removed from activeGenerations)
+        let info = await swiftyCore.getGenerationInfo(stream.id)
+        XCTAssertNil(info)
+    }
+
+    func testCancellationOfNonExistentGeneration() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        // Create a fake generation ID
+        let fakeID = GenerationID()
+
+        // This should not crash and should be a no-op
+        await swiftyCore.cancel(fakeID)
+
+        // Verify no generations are active
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertEqual(activeIDs.count, 0)
+    }
+
+    func testCancellationDuringStreamConsumption() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 20)
+
+        // Start a generation
+        let stream = await swiftyCore.start(prompt: "Generate a long response", params: params)
+
+        var tokenCount = 0
+        var wasCancelled = false
+
+        // Start consuming the stream
+        do {
+            for try await token in stream.stream {
+                tokenCount += 1
+
+                // Cancel after receiving a few tokens
+                if tokenCount == 3 {
+                    await swiftyCore.cancel(stream.id)
+                    wasCancelled = true
+                }
+
+                // The stream should eventually terminate after cancellation
+                if tokenCount > 10 {
+                    break
+                }
+            }
+        } catch {
+            // Stream might throw an error after cancellation
+            wasCancelled = true
+        }
+
+        // Verify cancellation happened
+        XCTAssertTrue(wasCancelled)
+
+        // Verify generation is no longer active
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertFalse(activeIDs.contains(stream.id))
+    }
+
+    func testCancellationOfAlreadyCancelledGeneration() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 5)
+
+        // Start a generation
+        let stream = await swiftyCore.start(prompt: "Hello", params: params)
+
+        // Cancel it once
+        await swiftyCore.cancel(stream.id)
+
+        // Cancel it again (should be a no-op)
+        await swiftyCore.cancel(stream.id)
+
+        // Verify it's still not active
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertFalse(activeIDs.contains(stream.id))
+    }
+
+    func testCancelAllWithMultipleGenerations() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 3)
+
+        // Start multiple generations
+        let stream1 = await swiftyCore.start(prompt: "First", params: params)
+        let stream2 = await swiftyCore.start(prompt: "Second", params: params)
+        let stream3 = await swiftyCore.start(prompt: "Third", params: params)
+
+        // Verify all are active
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertEqual(activeIDs.count, 3)
+        XCTAssertTrue(activeIDs.contains(stream1.id))
+        XCTAssertTrue(activeIDs.contains(stream2.id))
+        XCTAssertTrue(activeIDs.contains(stream3.id))
+
+        // Cancel all
+        await swiftyCore.cancelAll()
+
+        // Verify none are active
+        let finalActiveIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertEqual(finalActiveIDs.count, 0)
+
+        // Verify all generation info are nil after cancellation (since they're removed from activeGenerations)
+        let info1 = await swiftyCore.getGenerationInfo(stream1.id)
+        let info2 = await swiftyCore.getGenerationInfo(stream2.id)
+        let info3 = await swiftyCore.getGenerationInfo(stream3.id)
+
+        XCTAssertNil(info1)
+        XCTAssertNil(info2)
+        XCTAssertNil(info3)
+    }
+
+    func testCancellationWithOnTerminationCallback() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 10)
+
+        // Start a generation
+        let stream = await swiftyCore.start(prompt: "Test termination", params: params)
+
+        // Verify it's active
+        let info = await swiftyCore.getGenerationInfo(stream.id)
+        XCTAssertNotNil(info)
+        XCTAssertTrue(info?.isActive ?? false)
+
+        // Cancel the generation
+        await swiftyCore.cancel(stream.id)
+
+        // The onTermination callback should trigger another cancel call
+        // This should be handled gracefully (no-op for already cancelled)
+
+        // Verify it's no longer active (should be nil since removed from activeGenerations)
+        let finalInfo = await swiftyCore.getGenerationInfo(stream.id)
+        XCTAssertNil(finalInfo)
+    }
+
+    func testCancellationStateVerification() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 5)
+
+        // Start a generation
+        let stream = await swiftyCore.start(prompt: "Test state", params: params)
+
+        // Verify initial state
+        let initialInfo = await swiftyCore.getGenerationInfo(stream.id)
+        XCTAssertNotNil(initialInfo)
+        XCTAssertTrue(initialInfo?.isActive ?? false)
+        XCTAssertEqual(initialInfo?.id, stream.id)
+
+        // Cancel it
+        await swiftyCore.cancel(stream.id)
+
+        // Verify cancelled state (should be nil since removed from activeGenerations)
+        let cancelledInfo = await swiftyCore.getGenerationInfo(stream.id)
+        XCTAssertNil(cancelledInfo)
+
+        // Verify it's not in active list
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertFalse(activeIDs.contains(stream.id))
+    }
+
+    func testCancellationWithEmptyActiveGenerations() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        // Cancel all when no generations are active
+        await swiftyCore.cancelAll()
+
+        // Verify no active generations
+        let activeIDs = await swiftyCore.getActiveGenerationIDs()
+        XCTAssertEqual(activeIDs.count, 0)
+    }
+}
