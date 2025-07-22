@@ -39,7 +39,9 @@ public class SLlamaGenerationCore: GenerationCore {
         id: GenerationID,
         prompt: String,
         params: GenerationParams
-    ) async throws -> AsyncThrowingStream<String, Error> {
+    ) async throws
+        -> AsyncThrowingStream<String, Error>
+    {
         let (stream, continuation) = AsyncThrowingStream<String, Error>.makeStream(
             bufferingPolicy: .unbounded
         )
@@ -51,13 +53,14 @@ public class SLlamaGenerationCore: GenerationCore {
                 params: params,
                 continuation: continuation
             )
+            return ()
         }
 
         activeGenerations[id] = task
 
         // Ensure cleanup when stream is terminated
         continuation.onTermination = { @Sendable _ in
-            Task { await self.cancel(id) }
+            Task { await self.cancel(id: id) }
         }
 
         return stream
@@ -130,7 +133,7 @@ public class SLlamaGenerationCore: GenerationCore {
                     sequenceIds: [0],
                     logits: true
                 )
-                
+
                 // Decode the single token
                 try context.core().decode(generationBatch)
                 currentPosition += 1
@@ -172,33 +175,37 @@ public class SLlamaGenerationCore: GenerationCore {
     }
 
     private func createSampler(with params: GenerationParams, context: SLlamaContext) -> SLlamaSampler {
-        // Use SLlamaSamplerChain.custom to utilize all parameters
-        guard let chain = SLlamaSamplerChain.custom(
+        // Try to create a sophisticated sampler chain that uses all parameters
+        if let chain = SLlamaSamplerChain.custom(
             context: context,
             temperature: params.temperature,
             topK: params.topK,
             topP: params.topP,
             repetitionPenalty: params.repeatPenalty
-        ) else {
-            // Fallback to temperature sampler
+        ) {
+            // For now, we'll use the chain's sample method directly
+            // In a more sophisticated implementation, we'd wrap the chain
             return SLlamaSampler.temperature(
                 context: context,
                 temperature: params.temperature
             ) ?? SLlamaSampler.greedy(context: context) ?? SLlamaSampler(context: context)
         }
-
-        // For now, we'll use the chain's sample method directly
-        // In a more sophisticated implementation, we'd wrap the chain
+        
+        // Fallback to temperature sampler
         return SLlamaSampler.temperature(
             context: context,
             temperature: params.temperature
         ) ?? SLlamaSampler.greedy(context: context) ?? SLlamaSampler(context: context)
     }
 
-    private func processPromptTokens(_ promptTokens: [SLlamaToken], context: SLlamaContext, maxBatchSize: Int32) async throws {
+    private func processPromptTokens(
+        _ promptTokens: [SLlamaToken],
+        context: SLlamaContext,
+        maxBatchSize _: Int32
+    ) async throws {
         // Process all tokens in a single batch for efficiency
         let batch = SLlamaBatch(nTokens: Int32(promptTokens.count), nSeqMax: 1)
-        
+
         for (index, token) in promptTokens.enumerated() {
             batch.addToken(
                 token,
@@ -207,7 +214,7 @@ public class SLlamaGenerationCore: GenerationCore {
                 logits: index == promptTokens.count - 1 // Only last token needs logits
             )
         }
-        
+
         try context.core().decode(batch)
     }
 }
@@ -225,7 +232,7 @@ public struct GenerationParams: Sendable, Equatable {
     public var temperature: Float
     public var repeatPenalty: Float
     public var repetitionLookback: Int32
-    
+
     // Context configuration parameters
     public var contextSize: UInt32
     public var batchSize: UInt32
@@ -236,7 +243,7 @@ public struct GenerationParams: Sendable, Equatable {
     public var enableEmbeddings: Bool
     public var enableOffloading: Bool
     public var enableCausalAttention: Bool
-    
+
     // Generation limits
     public var maxTokens: Int32
     public var maxBatchSize: Int32
@@ -249,21 +256,21 @@ public struct GenerationParams: Sendable, Equatable {
         temperature: Float = 0.7,
         repeatPenalty: Float = 1.1,
         repetitionLookback: Int32 = 64,
-        
+
         // Context configuration
         contextSize: UInt32 = 2048,
-        batchSize: UInt32 = 1,           // Single token processing for memory efficiency
-        physicalBatchSize: UInt32 = 1,   // Single token processing for memory efficiency
+        batchSize: UInt32 = 1, // Single token processing for memory efficiency
+        physicalBatchSize: UInt32 = 1, // Single token processing for memory efficiency
         maxSequences: UInt32 = 1,
-        threads: Int32 = 4,              // Conservative thread count
-        batchThreads: Int32 = 4,         // Conservative thread count
+        threads: Int32 = 4, // Conservative thread count
+        batchThreads: Int32 = 4, // Conservative thread count
         enableEmbeddings: Bool = false,
         enableOffloading: Bool = true,
         enableCausalAttention: Bool = true,
-        
+
         // Generation limits
-        maxTokens: Int32 = 1000,         // Safety limit
-        maxBatchSize: Int32 = 256        // Maximum batch size for prompt processing
+        maxTokens: Int32 = 1000, // Safety limit
+        maxBatchSize: Int32 = 256 // Maximum batch size for prompt processing
     ) {
         self.seed = seed
         self.topK = topK
@@ -271,7 +278,7 @@ public struct GenerationParams: Sendable, Equatable {
         self.temperature = temperature
         self.repeatPenalty = repeatPenalty
         self.repetitionLookback = repetitionLookback
-        
+
         self.contextSize = contextSize
         self.batchSize = batchSize
         self.physicalBatchSize = physicalBatchSize
@@ -281,7 +288,7 @@ public struct GenerationParams: Sendable, Equatable {
         self.enableEmbeddings = enableEmbeddings
         self.enableOffloading = enableOffloading
         self.enableCausalAttention = enableCausalAttention
-        
+
         self.maxTokens = maxTokens
         self.maxBatchSize = maxBatchSize
     }

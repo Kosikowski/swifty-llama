@@ -9,7 +9,7 @@ public struct SLlamaModelSplittingConfig: Sendable {
     public let maxSplitPathLength: Int32
     /// Maximum buffer size for path prefix extraction
     public let maxPathPrefixLength: Int32
-    
+
     public init(
         maxSplitPathLength: Int32 = 1024,
         maxPathPrefixLength: Int32 = 1024
@@ -47,7 +47,7 @@ public class SLlamaModelSplitting: @unchecked Sendable {
 
         let result = llama_split_path(
             &splitPath,
-            maxLength,
+            Int(maxLength),
             pathPrefix,
             Int32(splitNumber),
             Int32(totalSplits)
@@ -83,7 +83,7 @@ public class SLlamaModelSplitting: @unchecked Sendable {
 
         let result = llama_split_prefix(
             &pathPrefix,
-            maxLength,
+            Int(maxLength),
             splitPath,
             Int32(splitNumber),
             Int32(totalSplits)

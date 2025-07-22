@@ -13,7 +13,7 @@ public struct SLlamaTokenizerConfig: Sendable {
     public let chatTemplateBufferSize: Int32
     /// Maximum number of built-in templates to retrieve
     public let maxBuiltinTemplates: Int32
-    
+
     public init(
         maxTokenPieceLength: Int32 = 256,
         detokenizeBufferMultiplier: Int32 = 10,
@@ -128,7 +128,7 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
         }
 
         let tokenizerConfig = config ?? SLlamaTokenizerConfig()
-        
+
         // Allocate buffer for the piece (worst case: token could be multiple characters)
         let maxLength = tokenizerConfig.maxTokenPieceLength
         var buffer = [CChar](repeating: 0, count: Int(maxLength))
@@ -193,9 +193,10 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
         }
 
         let tokenizerConfig = config ?? SLlamaTokenizerConfig()
-        
+
         // Allocate buffer for the text (worst case: each token could be multiple characters)
-        let maxLength = tokens.count * Int(tokenizerConfig.detokenizeBufferMultiplier) // Estimate: each token averages N characters
+        let maxLength = tokens
+            .count * Int(tokenizerConfig.detokenizeBufferMultiplier) // Estimate: each token averages N characters
         var buffer = [CChar](repeating: 0, count: maxLength)
 
         let result = llama_detokenize(
@@ -379,7 +380,7 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
         }
 
         let tokenizerConfig = config ?? SLlamaTokenizerConfig()
-        
+
         // Use a configurable buffer size for chat template application
         let maxLength = tokenizerConfig.chatTemplateBufferSize
         var buffer = [CChar](repeating: 0, count: Int(maxLength))
