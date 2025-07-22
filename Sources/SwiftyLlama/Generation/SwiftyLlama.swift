@@ -4,7 +4,7 @@ import SLlama
 /// A unified actor that combines generation coordination and core functionality
 /// This solves the async stream context issues by keeping everything within the same actor context
 @SwiftyLlamaActor
-public class SwiftyCoreLlama {
+public class SwiftyLlama {
     // MARK: - Private Properties
 
     private let model: SLlamaModel

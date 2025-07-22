@@ -11,7 +11,7 @@ struct SwiftyCoreLlamaTests {
     @Test("SwiftyCoreLlama compilation test")
     func compilation() throws {
         // Just test that we can reference the type
-        let _: SwiftyCoreLlama.Type = SwiftyCoreLlama.self
+        let _: SwiftyLlama.Type = SwiftyLlama.self
         #expect(true, "Compilation test should pass")
     }
 
@@ -23,7 +23,7 @@ struct SwiftyCoreLlamaTests {
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for initialization test")
 
         // Create SwiftyCoreLlama with real model
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         // Test model info
         let modelInfo = swiftyCore.modelInfo
@@ -42,7 +42,7 @@ struct SwiftyCoreLlamaTests {
         // Fail if model not available
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for generation test")
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let prompt = "Hello"
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)
@@ -66,7 +66,7 @@ struct SwiftyCoreLlamaTests {
         // Fail if model not available
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for multiple generations test")
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let prompts = ["Hello", "How are", "The weather"]
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
@@ -112,7 +112,7 @@ struct SwiftyCoreLlamaTests {
         // Fail if model not available
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for conversation management test")
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         // Test starting new conversation
         let conversationId1 = swiftyCore.startNewConversation()
@@ -147,7 +147,7 @@ struct SwiftyCoreLlamaTests {
         // Fail if model not available
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for conversation continuity test")
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
 
@@ -204,7 +204,7 @@ struct SwiftyCoreLlamaTests {
             "Test model must be available for new conversation vs continuation test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
 
@@ -258,7 +258,7 @@ extension SwiftyCoreLlamaTests {
         // Fail if model not available
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for individual cancellation test")
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 10)
 
@@ -289,7 +289,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for cancellation of non-existent generation test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         // Create a fake generation ID
         let fakeID = GenerationID()
@@ -310,7 +310,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for cancellation during stream consumption test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 20)
 
@@ -365,7 +365,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for cancellation of already cancelled generation test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)
 
@@ -391,7 +391,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for cancel all with multiple generations test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
 
@@ -432,7 +432,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for cancellation with onTermination callback test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 10)
 
@@ -463,7 +463,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for cancellation state verification test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)
 
@@ -496,7 +496,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for cancellation with empty active generations test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         // Cancel all when no generations are active
         await swiftyCore.cancelAll()
@@ -510,7 +510,7 @@ extension SwiftyCoreLlamaTests {
 
     @Test("SwiftyCoreLlama conversation not found error test")
     func conversationNotFoundError() async throws {
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let nonExistentConversationId = ConversationID()
 
@@ -533,7 +533,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for generation error handling test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)
 
@@ -592,7 +592,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for conversation persistence test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)
 
@@ -620,7 +620,7 @@ extension SwiftyCoreLlamaTests {
         #expect(jsonData.count > 0, "JSON data should not be empty")
 
         // Create a new instance and restore conversations
-        let newSwiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let newSwiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
         try newSwiftyCore.loadConversationsFromJSON(jsonData)
 
         // Verify conversations were restored
@@ -658,7 +658,7 @@ extension SwiftyCoreLlamaTests {
             "Test model must be available for conversation warm-up test"
         )
 
-        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+        let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
 
