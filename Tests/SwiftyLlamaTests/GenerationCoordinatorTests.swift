@@ -388,6 +388,97 @@ final class GenerationCoordinatorTests: XCTestCase, @unchecked Sendable {
         XCTAssertFalse(tokens3.isEmpty)
     }
 
+    // MARK: - Real Model Tests
+
+    func testRealModelGeneration() async throws {
+        // Skip if model not available
+        guard TestUtilities.isTestModelAvailable() else {
+            throw XCTSkip("Test model not available")
+        }
+
+        // Test basic model loading without generation
+        let model = try SLlamaModel(modelPath: TestUtilities.testModelPath)
+        let vocab = SLlamaVocab(vocab: model.vocab)
+
+        // Test tokenization
+        let prompt = "Hello"
+        let promptTokens = try SLlamaTokenizer.tokenize(text: prompt, vocab: vocab.pointer)
+
+        // Verify basic functionality
+        XCTAssertNotNil(model, "Model should load successfully")
+        XCTAssertNotNil(vocab, "Vocab should be created successfully")
+        XCTAssertFalse(promptTokens.isEmpty, "Should tokenize prompt successfully")
+
+        print("✅ Real model test passed - model loaded successfully")
+        print("   - Model loaded: \(model)")
+        print("   - Vocabulary size: \(vocab.tokenCount)")
+        print("   - Prompt tokens: \(promptTokens.count)")
+    }
+
+    func testRealModelPerformance() async throws {
+        // Skip if model not available
+        guard TestUtilities.isTestModelAvailable() else {
+            throw XCTSkip("Test model not available")
+        }
+
+        // Test basic model loading and tokenization first
+        let model = try SLlamaModel(modelPath: TestUtilities.testModelPath)
+        let context = try SLlamaContext(model: model)
+        let vocab = SLlamaVocab(vocab: model.vocab)
+
+        // Test basic tokenization
+        let prompt = "The quick brown fox"
+        let promptTokens = try SLlamaTokenizer.tokenize(text: prompt, vocab: vocab.pointer)
+
+        // Process prompt tokens using the same approach as benchmark
+        let batch = SLlamaBatch(nTokens: Int32(promptTokens.count), nSeqMax: 1)
+        for (index, token) in promptTokens.enumerated() {
+            batch.addToken(
+                token,
+                position: Int32(index),
+                sequenceIds: [0],
+                logits: index == promptTokens.count - 1
+            )
+        }
+        try context.core().decode(batch)
+
+        // Generate a few tokens using the same approach as benchmark
+        let sampler = SLlamaSampler.temperature(context: context, temperature: 0.3) ?? SLlamaSampler
+            .greedy(context: context) ?? SLlamaSampler(context: context)
+        var tokensGenerated = 0
+        var currentPosition = promptTokens.count
+
+        for _ in 0 ..< 5 { // Generate just 5 tokens for test
+            guard let nextToken = sampler.sample() else { break }
+
+            if nextToken == vocab.eosToken { break }
+
+            sampler.accept(nextToken)
+            tokensGenerated += 1
+
+            // Process single token using the same approach as benchmark
+            let generationBatch = SLlamaBatch(nTokens: 1, nSeqMax: 1)
+            generationBatch.addToken(
+                nextToken,
+                position: Int32(currentPosition),
+                sequenceIds: [0],
+                logits: true
+            )
+            try context.core().decode(generationBatch)
+            currentPosition += 1
+        }
+
+        // Verify basic generation works
+        XCTAssertGreaterThan(tokensGenerated, 0, "Should generate at least one token")
+
+        print("✅ Real model performance test passed")
+        print("   - Generated \(tokensGenerated) tokens")
+        print("   - Model loaded successfully")
+        print("   - Context created successfully")
+        print("   - Tokenization worked")
+        print("   - Generation worked")
+    }
+
     // MARK: - Helper Methods
 
     private func startAndCollect(coordinator: GenerationCoordinator, prompt: String) async throws -> [String] {

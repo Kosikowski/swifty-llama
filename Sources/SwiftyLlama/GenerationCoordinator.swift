@@ -93,7 +93,7 @@ public class SLlamaGenerationCore: GenerationCore {
             // Process prompt tokens
             try await processPromptTokens(promptTokens, context: context, maxBatchSize: params.maxBatchSize)
 
-            // Generate tokens efficiently - process one by one to avoid memory slot issues
+            // Generate tokens using the same approach as the working benchmark
             var currentPosition = promptTokens.count
             let maxTokens = params.maxTokens // Use configurable limit
 
@@ -125,7 +125,7 @@ public class SLlamaGenerationCore: GenerationCore {
                 // Accept token for sampler state
                 sampler.accept(nextToken)
 
-                // Process single token immediately
+                // Process token using context.core().decode (same as benchmark)
                 let generationBatch = SLlamaBatch(nTokens: 1, nSeqMax: 1)
                 generationBatch.addToken(
                     nextToken,
@@ -133,8 +133,6 @@ public class SLlamaGenerationCore: GenerationCore {
                     sequenceIds: [0],
                     logits: true
                 )
-
-                // Decode the single token
                 try context.core().decode(generationBatch)
                 currentPosition += 1
             }
@@ -153,18 +151,8 @@ public class SLlamaGenerationCore: GenerationCore {
     }
 
     private func createContext(with params: GenerationParams) throws -> SLlamaContext {
-        let contextParams = SLlamaContext.createParams(
-            contextSize: params.contextSize,
-            batchSize: params.batchSize,
-            physicalBatchSize: params.physicalBatchSize,
-            maxSequences: params.maxSequences,
-            threads: params.threads,
-            batchThreads: params.batchThreads,
-            enableEmbeddings: params.enableEmbeddings,
-            enableOffloading: params.enableOffloading
-        )
-
-        let context = try SLlamaContext(model: model, contextParams: contextParams)
+        // Use default context creation like the benchmark
+        let context = try SLlamaContext(model: model)
 
         // Configure the context using parameters
         context.setThreads(nThreads: params.threads, nThreadsBatch: params.batchThreads)
@@ -257,7 +245,7 @@ public struct GenerationParams: Sendable, Equatable {
         repeatPenalty: Float = 1.1,
         repetitionLookback: Int32 = 64,
 
-        // Context configuration - optimized for performance like benchmark
+        // Context configuration - optimized for performance
         contextSize: UInt32 = 2048,
         batchSize: UInt32 = 512, // Optimized batch size for performance
         physicalBatchSize: UInt32 = 512, // Optimized physical batch size

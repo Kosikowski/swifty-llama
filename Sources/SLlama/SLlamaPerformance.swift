@@ -101,7 +101,7 @@ public class SLlamaPerformance: @unchecked Sendable {
         -> STokenGenerationBenchmarkResults?
     {
         var totalGenerationTime: TimeInterval = 0
-        var totalTokensGenerated: Int = 0
+        var totalTokensGenerated = 0
         var generationTimes: [TimeInterval] = []
         var tokensPerIteration: [Int] = []
 
@@ -112,10 +112,10 @@ public class SLlamaPerformance: @unchecked Sendable {
                 let model = try SLlamaModel(modelPath: modelPath)
                 let context = try SLlamaContext(model: model)
                 let vocab = SLlamaVocab(vocab: model.vocab)
-                
+
                 // Tokenize the prompt
                 let promptTokens = try vocab.tokenize(text: prompt)
-                
+
                 // Process prompt tokens
                 let batch = SLlamaBatch(nTokens: Int32(promptTokens.count), nSeqMax: 1)
                 for (index, token) in promptTokens.enumerated() {
@@ -127,20 +127,21 @@ public class SLlamaPerformance: @unchecked Sendable {
                     )
                 }
                 try context.core().decode(batch)
-                
+
                 // Generate tokens
-                let sampler = SLlamaSampler.temperature(context: context, temperature: 0.7) ?? SLlamaSampler.greedy(context: context) ?? SLlamaSampler(context: context)
+                let sampler = SLlamaSampler.temperature(context: context, temperature: 0.7) ?? SLlamaSampler
+                    .greedy(context: context) ?? SLlamaSampler(context: context)
                 var tokensGenerated = 0
                 var currentPosition = promptTokens.count
-                
+
                 for _ in 0 ..< maxTokens {
                     guard let nextToken = sampler.sample() else { break }
-                    
+
                     if nextToken == vocab.eosToken { break }
-                    
+
                     sampler.accept(nextToken)
                     tokensGenerated += 1
-                    
+
                     // Process single token
                     let generationBatch = SLlamaBatch(nTokens: 1, nSeqMax: 1)
                     generationBatch.addToken(
