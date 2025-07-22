@@ -3,7 +3,7 @@ import SLlama
 
 /// A unified actor that combines generation coordination and core functionality
 /// This solves the async stream context issues by keeping everything within the same actor context
-@SLlamaActor
+@SwiftyLlamaActor
 public class SwiftyCoreLlama {
     // MARK: - Private Properties
 
@@ -76,11 +76,7 @@ public class SwiftyCoreLlama {
     }
 
     private func configureContext(with params: GenerationParams) throws {
-        guard let context else { throw NSError(
-            domain: "SwiftyCoreLlama",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: "Context not initialized"]
-        ) }
+        guard let context else { throw GenerationError.contextNotInitialized }
 
         // Configure the context using parameters
         context.setThreads(nThreads: params.threads, nThreadsBatch: params.batchThreads)
@@ -106,11 +102,7 @@ public class SwiftyCoreLlama {
     /// Continue an existing conversation
     public func continueConversation(_ id: ConversationID) throws {
         guard conversations[id] != nil else {
-            throw NSError(
-                domain: "SwiftyCoreLlama",
-                code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Conversation not found"]
-            )
+            throw GenerationError.conversationNotFound
         }
         currentConversationId = id
     }
@@ -184,7 +176,7 @@ public class SwiftyCoreLlama {
         )
 
         // Start generation task within the same actor context - NO detached task as it would cause segmentation fault
-        let task = Task { @SLlamaActor in
+        let task = Task { @SwiftyLlamaActor in
             await self.performGeneration(
                 id: id,
                 prompt: prompt,
@@ -237,11 +229,7 @@ public class SwiftyCoreLlama {
                 conversationId: conversationId,
                 llamaContext: context!
             ) else {
-                continuation.finish(throwing: NSError(
-                    domain: "SwiftyCoreLlama",
-                    code: 3,
-                    userInfo: [NSLocalizedDescriptionKey: "Failed to prepare context"]
-                ))
+                continuation.finish(throwing: GenerationError.contextPreparationFailed)
                 return
             }
 
@@ -284,7 +272,21 @@ public class SwiftyCoreLlama {
             continuation.finish()
 
         } catch {
-            continuation.finish(throwing: error)
+            // Convert specific errors to GenerationError
+            let generationError: GenerationError = if error is GenerationError {
+                error as! GenerationError
+            } else {
+                // Map underlying errors to appropriate GenerationError cases
+                switch error {
+                    case let tokenizationError where error.localizedDescription.contains("tokenize"):
+                        .tokenizationFailed
+                    case let contextError where error.localizedDescription.contains("context"):
+                        .contextPreparationFailed
+                    default:
+                        .generationFailed
+                }
+            }
+            continuation.finish(throwing: generationError)
         }
     }
 

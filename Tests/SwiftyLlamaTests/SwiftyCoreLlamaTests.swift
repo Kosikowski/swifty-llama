@@ -4,7 +4,7 @@ import Testing
 import TestUtilities
 @testable import SwiftyLlama
 
-@SLlamaActor
+@SwiftyLlamaActor
 struct SwiftyCoreLlamaTests {
     // MARK: - Compilation Tests
 
@@ -503,5 +503,81 @@ extension SwiftyCoreLlamaTests {
         // Verify no active generations
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
         #expect(activeIDs.count == 0, "Should have no active generations")
+    }
+
+    // MARK: - Error Handling Tests
+
+    @Test("SwiftyCoreLlama conversation not found error test")
+    func conversationNotFoundError() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let nonExistentConversationId = ConversationID()
+
+        // Try to continue a non-existent conversation
+        do {
+            try await swiftyCore.continueConversation(nonExistentConversationId)
+            #expect(false, "Should have thrown conversationNotFound error")
+        } catch let error as GenerationError {
+            #expect(error == .conversationNotFound, "Should throw conversationNotFound error")
+        } catch {
+            #expect(false, "Should have thrown GenerationError, got: \(error)")
+        }
+    }
+
+    @Test("SwiftyCoreLlama generation error handling test")
+    func generationErrorHandling() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for generation error handling test"
+        )
+
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 5)
+
+        // Start a generation
+        let stream = await swiftyCore.start(prompt: "Test error handling", params: params)
+
+        var receivedError: GenerationError?
+        var tokenCount = 0
+
+        // Consume the stream and catch any errors
+        do {
+            for try await token in stream.stream {
+                tokenCount += 1
+                if tokenCount > 10 {
+                    break
+                }
+            }
+        } catch let error as GenerationError {
+            receivedError = error
+        } catch {
+            #expect(false, "Should have thrown GenerationError, got: \(error)")
+        }
+
+        // Verify we either got tokens or a specific error
+        #expect(tokenCount > 0 || receivedError != nil, "Should have received tokens or a specific error")
+    }
+
+    @Test("SwiftyCoreLlama error description test")
+    func errorDescriptionTest() {
+        // Test that all GenerationError cases have proper descriptions
+        let errors: [GenerationError] = [
+            .abortedByUser,
+            .modelNotLoaded,
+            .contextNotInitialized,
+            .conversationNotFound,
+            .contextPreparationFailed,
+            .tokenizationFailed,
+            .generationFailed,
+            .invalidState,
+        ]
+
+        for error in errors {
+            let description = error.errorDescription
+            #expect(description != nil, "Error description should not be nil for \(error)")
+            #expect(!description!.isEmpty, "Error description should not be empty for \(error)")
+        }
     }
 }

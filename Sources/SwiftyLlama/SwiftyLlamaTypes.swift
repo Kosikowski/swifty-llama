@@ -1,6 +1,8 @@
 import Foundation
 import SLlama
 
+public typealias SwiftyLlamaActor = SLlamaActor
+
 // MARK: - Shared Type Definitions
 
 /// A unique identifier for a generation
@@ -64,9 +66,12 @@ public struct GenerationStream {
 public enum GenerationError: Error, LocalizedError {
     case abortedByUser
     case modelNotLoaded
-    case contextInitializationFailed
+    case contextNotInitialized
+    case conversationNotFound
+    case contextPreparationFailed
     case tokenizationFailed
     case generationFailed
+    case invalidState
 
     public var errorDescription: String? {
         switch self {
@@ -74,12 +79,18 @@ public enum GenerationError: Error, LocalizedError {
                 "Generation was aborted by user"
             case .modelNotLoaded:
                 "Model is not loaded"
-            case .contextInitializationFailed:
-                "Failed to initialize context"
+            case .contextNotInitialized:
+                "Context not initialized"
+            case .conversationNotFound:
+                "Conversation not found"
+            case .contextPreparationFailed:
+                "Failed to prepare context"
             case .tokenizationFailed:
                 "Failed to tokenize input"
             case .generationFailed:
                 "Generation failed"
+            case .invalidState:
+                "Invalid state"
         }
     }
 }
