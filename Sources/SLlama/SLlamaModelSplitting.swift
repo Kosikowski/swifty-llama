@@ -1,6 +1,24 @@
 import Foundation
 import llama
 
+// MARK: - Model Splitting Configuration
+
+/// Configuration for SLlamaModelSplitting buffer sizes
+public struct SLlamaModelSplittingConfig: Sendable {
+    /// Maximum buffer size for split path generation
+    public let maxSplitPathLength: Int32
+    /// Maximum buffer size for path prefix extraction
+    public let maxPathPrefixLength: Int32
+    
+    public init(
+        maxSplitPathLength: Int32 = 1024,
+        maxPathPrefixLength: Int32 = 1024
+    ) {
+        self.maxSplitPathLength = maxSplitPathLength
+        self.maxPathPrefixLength = maxPathPrefixLength
+    }
+}
+
 // MARK: - SLlamaModelSplitting
 
 /// A wrapper for llama model splitting operations
@@ -10,6 +28,7 @@ public class SLlamaModelSplitting: @unchecked Sendable {
     ///   - pathPrefix: Base path for the model files
     ///   - splitNumber: Current split number (0-based)
     ///   - totalSplits: Total number of splits
+    ///   - config: Model splitting configuration (optional, uses defaults if nil)
     /// - Returns: Generated split path, or nil if failed
     #if SLLAMA_INLINE_ALL
         @inlinable
@@ -17,12 +36,14 @@ public class SLlamaModelSplitting: @unchecked Sendable {
     public static func buildSplitPath(
         pathPrefix: String,
         splitNumber: Int,
-        totalSplits: Int
+        totalSplits: Int,
+        config: SLlamaModelSplittingConfig? = nil
     )
         -> String?
     {
-        let maxLength = 1024
-        var splitPath = [CChar](repeating: 0, count: maxLength)
+        let splittingConfig = config ?? SLlamaModelSplittingConfig()
+        let maxLength = splittingConfig.maxSplitPathLength
+        var splitPath = [CChar](repeating: 0, count: Int(maxLength))
 
         let result = llama_split_path(
             &splitPath,
@@ -43,6 +64,7 @@ public class SLlamaModelSplitting: @unchecked Sendable {
     ///   - splitPath: Full path of a split file
     ///   - splitNumber: Expected split number
     ///   - totalSplits: Expected total number of splits
+    ///   - config: Model splitting configuration (optional, uses defaults if nil)
     /// - Returns: Extracted path prefix, or nil if failed
     #if SLLAMA_INLINE_ALL
         @inlinable
@@ -50,12 +72,14 @@ public class SLlamaModelSplitting: @unchecked Sendable {
     public static func extractPathPrefix(
         from splitPath: String,
         splitNumber: Int,
-        totalSplits: Int
+        totalSplits: Int,
+        config: SLlamaModelSplittingConfig? = nil
     )
         -> String?
     {
-        let maxLength = 1024
-        var pathPrefix = [CChar](repeating: 0, count: maxLength)
+        let splittingConfig = config ?? SLlamaModelSplittingConfig()
+        let maxLength = splittingConfig.maxPathPrefixLength
+        var pathPrefix = [CChar](repeating: 0, count: Int(maxLength))
 
         let result = llama_split_prefix(
             &pathPrefix,

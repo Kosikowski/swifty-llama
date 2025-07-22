@@ -1,6 +1,32 @@
 import Foundation
 import llama
 
+// MARK: - Tokenizer Configuration
+
+/// Configuration for SLlamaTokenizer buffer sizes and limits
+public struct SLlamaTokenizerConfig: Sendable {
+    /// Maximum buffer size for token-to-piece conversion
+    public let maxTokenPieceLength: Int32
+    /// Maximum buffer size for detokenization (multiplier for token count)
+    public let detokenizeBufferMultiplier: Int32
+    /// Maximum buffer size for chat template application
+    public let chatTemplateBufferSize: Int32
+    /// Maximum number of built-in templates to retrieve
+    public let maxBuiltinTemplates: Int32
+    
+    public init(
+        maxTokenPieceLength: Int32 = 256,
+        detokenizeBufferMultiplier: Int32 = 10,
+        chatTemplateBufferSize: Int32 = 4096,
+        maxBuiltinTemplates: Int32 = 100
+    ) {
+        self.maxTokenPieceLength = maxTokenPieceLength
+        self.detokenizeBufferMultiplier = detokenizeBufferMultiplier
+        self.chatTemplateBufferSize = chatTemplateBufferSize
+        self.maxBuiltinTemplates = maxBuiltinTemplates
+    }
+}
+
 // MARK: - SLlamaTokenizer
 
 /// A wrapper for llama tokenization functions
@@ -82,6 +108,7 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     ///   - vocab: The vocabulary to use
     ///   - lstrip: Number of leading spaces to skip
     ///   - special: Whether to render special tokens
+    ///   - config: Tokenizer configuration (optional, uses defaults if nil)
     /// - Returns: The text representation of the token
     /// - Throws: SLlamaError if conversion fails
     #if SLLAMA_INLINE_ALL
@@ -91,7 +118,8 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
         token: SLlamaToken,
         vocab: SLlamaVocabPointer?,
         lstrip: Int32 = 0,
-        special: Bool = false
+        special: Bool = false,
+        config: SLlamaTokenizerConfig? = nil
     ) throws
         -> String
     {
@@ -99,9 +127,11 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
             throw SLlamaError.invalidVocabulary
         }
 
+        let tokenizerConfig = config ?? SLlamaTokenizerConfig()
+        
         // Allocate buffer for the piece (worst case: token could be multiple characters)
-        let maxLength = 256
-        var buffer = [CChar](repeating: 0, count: maxLength)
+        let maxLength = tokenizerConfig.maxTokenPieceLength
+        var buffer = [CChar](repeating: 0, count: Int(maxLength))
 
         let result = llama_token_to_piece(
             vocab,
@@ -139,6 +169,7 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     ///   - vocab: The vocabulary to use
     ///   - removeSpecial: Whether to remove special tokens (BOS/EOS) if model is configured to do so
     ///   - unparseSpecial: Whether to render special tokens in output
+    ///   - config: Tokenizer configuration (optional, uses defaults if nil)
     /// - Returns: The text representation
     /// - Throws: SLlamaError if conversion fails
     #if SLLAMA_INLINE_ALL
@@ -148,7 +179,8 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
         tokens: [SLlamaToken],
         vocab: SLlamaVocabPointer?,
         removeSpecial: Bool = true,
-        unparseSpecial: Bool = true
+        unparseSpecial: Bool = true,
+        config: SLlamaTokenizerConfig? = nil
     ) throws
         -> String
     {
@@ -160,8 +192,10 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
             return "" // Empty token array produces empty string
         }
 
+        let tokenizerConfig = config ?? SLlamaTokenizerConfig()
+        
         // Allocate buffer for the text (worst case: each token could be multiple characters)
-        let maxLength = tokens.count * 10 // Estimate: each token averages 10 characters
+        let maxLength = tokens.count * Int(tokenizerConfig.detokenizeBufferMultiplier) // Estimate: each token averages N characters
         var buffer = [CChar](repeating: 0, count: maxLength)
 
         let result = llama_detokenize(
@@ -326,6 +360,7 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     ///   - template: The template to use (nil for model default)
     ///   - messages: Array of chat messages
     ///   - addAssistant: Whether to end with assistant message tokens
+    ///   - config: Tokenizer configuration (optional, uses defaults if nil)
     /// - Returns: The formatted prompt
     /// - Throws: SLlamaError if template application fails
     #if SLLAMA_INLINE_ALL
@@ -334,7 +369,8 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     public static func applyChatTemplate(
         template: String?,
         messages: [SLlamaChatMessage],
-        addAssistant: Bool = true
+        addAssistant: Bool = true,
+        config: SLlamaTokenizerConfig? = nil
     ) throws
         -> String
     {
@@ -342,9 +378,11 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
             throw SLlamaError.invalidParameters("Messages array cannot be empty")
         }
 
-        // Use a fixed buffer size for now, as we can't access message content easily
-        let maxLength = 4096
-        var buffer = [CChar](repeating: 0, count: maxLength)
+        let tokenizerConfig = config ?? SLlamaTokenizerConfig()
+        
+        // Use a configurable buffer size for chat template application
+        let maxLength = tokenizerConfig.chatTemplateBufferSize
+        var buffer = [CChar](repeating: 0, count: Int(maxLength))
 
         let result = llama_chat_apply_template(
             template,
@@ -376,13 +414,16 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     }
 
     /// Get list of built-in chat templates
+    /// - Parameters:
+    ///   - config: Tokenizer configuration (optional, uses defaults if nil)
     /// - Returns: Array of template names
     /// - Throws: SLlamaError if operation fails
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
-    public static func getBuiltinTemplates() throws -> [String] {
-        let maxTemplates = 100
+    public static func getBuiltinTemplates(config: SLlamaTokenizerConfig? = nil) throws -> [String] {
+        let tokenizerConfig = config ?? SLlamaTokenizerConfig()
+        let maxTemplates = Int(tokenizerConfig.maxBuiltinTemplates)
         var templates = [UnsafePointer<CChar>?](repeating: nil, count: maxTemplates)
 
         let result = llama_chat_builtin_templates(&templates, maxTemplates)
