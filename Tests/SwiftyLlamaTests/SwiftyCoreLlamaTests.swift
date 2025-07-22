@@ -318,10 +318,12 @@ extension SwiftyCoreLlamaTests {
 
         var tokenCount = 0
         var wasCancelled = false
+        var tokens: [String] = []
 
         // Start consuming the stream
         do {
             for try await token in stream.stream {
+                tokens.append(token)
                 tokenCount += 1
 
                 // Cancel after receiving a few tokens
@@ -343,9 +345,15 @@ extension SwiftyCoreLlamaTests {
         // Verify cancellation happened
         #expect(wasCancelled, "Cancellation should have occurred")
 
+        // Verify we received some tokens
+        #expect(tokens.count > 0, "Should have received some tokens")
+
         // Verify generation is no longer active
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
         #expect(!activeIDs.contains(stream.id), "Generation should not be active after cancellation")
+
+        // Print the tokens received during the test
+        print("Tokens received during cancellation test: \(tokens)")
     }
 
     @Test("SwiftyCoreLlama cancellation of already cancelled generation test")

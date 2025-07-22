@@ -228,9 +228,6 @@ public class SwiftyCoreLlama {
             // Configure context for this generation
             try configureContext(with: params)
 
-            // Create sampler
-            let sampler = createSampler(with: params, llamaContext: context!)
-
             // Tokenize prompt
             let promptTokens = try vocab.tokenize(text: prompt)
 
@@ -249,13 +246,13 @@ public class SwiftyCoreLlama {
             }
 
             // Recreate sampler with updated context
-            let updatedSampler = createSampler(with: params, llamaContext: context!)
-            updatedSampler.reset()
+            let sampler = createSampler(with: params, llamaContext: context!)
+            sampler.reset()
 
             // Generate tokens
             var generatedTokens: [SLlamaToken] = []
             while shouldContinuePredicting, currentTokenCount < Int32(params.maxTokens) {
-                let token = predictNextToken(sampler: updatedSampler, llamaContext: context!)
+                let token = predictNextToken(sampler: sampler, llamaContext: context!)
 
                 if token == vocab.eosToken {
                     break
@@ -302,8 +299,60 @@ public class SwiftyCoreLlama {
     {
         guard !promptTokens.isEmpty else { return false }
 
-        // Get conversation history
-        guard var conversation = conversations[conversationId] else {
+        // Check if conversation exists
+        if let conversation = conversations[conversationId] {
+            // Existing conversation - continue from history
+            let historyTokens = conversation.messages.flatMap(\.tokens)
+            let totalTokens = historyTokens.count + promptTokens.count
+
+            guard maxContextSize > totalTokens else {
+                // Context too long - need to truncate or start new conversation
+                return false
+            }
+
+            // If we have history, we need to continue from where we left off
+            if !historyTokens.isEmpty {
+                currentTokenCount = Int32(historyTokens.count)
+                tokenBuffer = historyTokens
+
+                // For continuation, we need to start new tokens from the next position
+                clearBatch()
+
+                // Add new prompt tokens starting from the next position after history
+                for (i, token) in promptTokens.enumerated() {
+                    let position = Int32(historyTokens.count + i)
+                    addToBatch(token: token, position: position, isLogit: i == promptTokens.count - 1)
+                }
+            } else {
+                // Empty conversation - need to clear KV cache since we're starting fresh
+                llamaContext.clearMemory(data: true)
+
+                currentTokenCount = 0
+                tokenBuffer.removeAll()
+
+                clearBatch()
+
+                // For new conversation, start from position 0 since we cleared the cache
+                for (i, token) in promptTokens.enumerated() {
+                    addToBatch(token: token, position: Int32(i), isLogit: i == promptTokens.count - 1)
+                }
+            }
+
+            do {
+                try llamaContext.core().decode(batch!)
+            } catch {
+                return false
+            }
+
+            // Update token count based on whether we have history or not
+            if !historyTokens.isEmpty {
+                currentTokenCount = Int32(historyTokens.count + promptTokens.count)
+            } else {
+                currentTokenCount = Int32(promptTokens.count)
+            }
+            shouldContinuePredicting = true
+            return true
+        } else {
             // New conversation - start fresh
             currentTokenCount = 0
             tokenBuffer.removeAll()
@@ -336,58 +385,6 @@ public class SwiftyCoreLlama {
             shouldContinuePredicting = true
             return true
         }
-
-        // Calculate total tokens including history
-        let historyTokens = conversation.messages.flatMap(\.tokens)
-        let totalTokens = historyTokens.count + promptTokens.count
-
-        guard maxContextSize > totalTokens else {
-            // Context too long - need to truncate or start new conversation
-            return false
-        }
-
-        // If we have history, we need to continue from where we left off
-        if !historyTokens.isEmpty {
-            currentTokenCount = Int32(historyTokens.count)
-            tokenBuffer = historyTokens
-
-            // For continuation, we need to start new tokens from the next position
-            clearBatch()
-
-            // Add new prompt tokens starting from the next position after history
-            for (i, token) in promptTokens.enumerated() {
-                let position = Int32(historyTokens.count + i)
-                addToBatch(token: token, position: position, isLogit: i == promptTokens.count - 1)
-            }
-        } else {
-            // Empty conversation - need to clear KV cache since we're starting fresh
-            llamaContext.clearMemory(data: true)
-
-            currentTokenCount = 0
-            tokenBuffer.removeAll()
-
-            clearBatch()
-
-            // For new conversation, start from position 0 since we cleared the cache
-            for (i, token) in promptTokens.enumerated() {
-                addToBatch(token: token, position: Int32(i), isLogit: i == promptTokens.count - 1)
-            }
-        }
-
-        do {
-            try llamaContext.core().decode(batch!)
-        } catch {
-            return false
-        }
-
-        // Update token count based on whether we have history or not
-        if !historyTokens.isEmpty {
-            currentTokenCount = Int32(historyTokens.count + promptTokens.count)
-        } else {
-            currentTokenCount = Int32(promptTokens.count)
-        }
-        shouldContinuePredicting = true
-        return true
     }
 
     // MARK: - Context Preparation (like the working example) - for new conversations
