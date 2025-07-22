@@ -121,4 +121,129 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
         let finalActiveIDs = await swiftyCore.getActiveGenerationIDs()
         XCTAssertEqual(finalActiveIDs.count, 0)
     }
+
+    // MARK: - Conversation Management Tests
+
+    func testConversationManagement() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        // Test starting new conversation
+        let conversationId1 = swiftyCore.startNewConversation()
+        XCTAssertNotNil(conversationId1)
+
+        // Test getting current conversation
+        let currentId = swiftyCore.getCurrentConversationId()
+        XCTAssertEqual(currentId, conversationId1)
+
+        // Test conversation info
+        let info1 = swiftyCore.getConversationInfo(conversationId1)
+        XCTAssertNotNil(info1)
+        XCTAssertEqual(info1?.messageCount, 0)
+        XCTAssertEqual(info1?.totalTokens, 0)
+
+        // Test starting another conversation
+        let conversationId2 = swiftyCore.startNewConversation()
+        XCTAssertNotEqual(conversationId1, conversationId2)
+
+        // Test continuing conversation
+        try swiftyCore.continueConversation(conversationId1)
+        let currentIdAfterContinue = swiftyCore.getCurrentConversationId()
+        XCTAssertEqual(currentIdAfterContinue, conversationId1)
+
+        // Test clearing conversation
+        swiftyCore.clearConversation(conversationId1)
+        let infoAfterClear = swiftyCore.getConversationInfo(conversationId1)
+        XCTAssertNil(infoAfterClear)
+    }
+
+    func testConversationContinuity() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 3)
+
+        // Start a conversation
+        let conversationId = swiftyCore.startNewConversation()
+
+        // First message
+        let stream1 = await swiftyCore.start(
+            prompt: "Hello, my name is Alice",
+            params: params,
+            conversationId: conversationId
+        )
+
+        // Wait for generation to complete
+        var response1 = ""
+        for try await token in stream1.stream {
+            response1 += token
+        }
+
+        // Verify conversation was stored
+        let info1 = swiftyCore.getConversationInfo(conversationId)
+        XCTAssertNotNil(info1)
+        XCTAssertGreaterThan(info1?.messageCount ?? 0, 0)
+        XCTAssertGreaterThan(info1?.totalTokens ?? 0, 0)
+
+        // Continue the same conversation
+        let stream2 = await swiftyCore.start(
+            prompt: "What's my name?",
+            params: params,
+            conversationId: conversationId
+        )
+
+        // Wait for generation to complete
+        var response2 = ""
+        for try await token in stream2.stream {
+            response2 += token
+        }
+
+        // Verify conversation has more messages
+        let info2 = swiftyCore.getConversationInfo(conversationId)
+        XCTAssertNotNil(info2)
+        XCTAssertGreaterThan(info2?.messageCount ?? 0, info1?.messageCount ?? 0)
+        XCTAssertGreaterThan(info2?.totalTokens ?? 0, info1?.totalTokens ?? 0)
+
+        // Clean up
+        await swiftyCore.cancelAll()
+    }
+
+    func testNewConversationVsContinuation() async throws {
+        let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 3)
+
+        // First conversation
+        let conversationId1 = swiftyCore.startNewConversation()
+        let stream1 = await swiftyCore.start(
+            prompt: "Remember: I like pizza",
+            params: params,
+            conversationId: conversationId1
+        )
+
+        // Wait for completion
+        for try await _ in stream1.stream {}
+
+        // Second conversation (should be separate)
+        let conversationId2 = swiftyCore.startNewConversation()
+        let stream2 = await swiftyCore.start(
+            prompt: "What do I like?",
+            params: params,
+            conversationId: conversationId2
+        )
+
+        // Wait for completion
+        for try await _ in stream2.stream {}
+
+        // Verify they are separate conversations
+        XCTAssertNotEqual(conversationId1, conversationId2)
+
+        let info1 = swiftyCore.getConversationInfo(conversationId1)
+        let info2 = swiftyCore.getConversationInfo(conversationId2)
+
+        XCTAssertNotNil(info1)
+        XCTAssertNotNil(info2)
+        XCTAssertNotEqual(info1?.messageCount, info2?.messageCount)
+
+        // Clean up
+        await swiftyCore.cancelAll()
+    }
 }

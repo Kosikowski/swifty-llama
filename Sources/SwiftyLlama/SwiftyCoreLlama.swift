@@ -1,4 +1,3 @@
-import Atomics
 import Foundation
 import SLlama
 
@@ -24,9 +23,28 @@ public class SwiftyCoreLlama {
     private var shouldContinuePredicting = false
     private var tokenBuffer: [SLlamaToken] = []
 
+    // Conversation management
+    private struct Conversation {
+        let id: ConversationID
+        var messages: [ConversationMessage]
+        var totalTokens: Int32
+        let createdAt: Date
+    }
+
+    private struct ConversationMessage {
+        let role: String
+        let content: String
+        let tokens: [SLlamaToken]
+        let timestamp: Date
+    }
+
+    private var conversations: [ConversationID: Conversation] = [:]
+    private var currentConversationId: ConversationID?
+
     // Generation tracking
     private struct LiveGeneration {
         let id: GenerationID
+        let conversationId: ConversationID?
         var params: GenerationParams
         let startTime: Date
         var task: Task<Void, Never>?
@@ -70,6 +88,62 @@ public class SwiftyCoreLlama {
         context.setCausalAttention(params.enableCausalAttention)
     }
 
+    // MARK: - Conversation Management
+
+    /// Start a new conversation
+    public func startNewConversation() -> ConversationID {
+        let id = ConversationID()
+        conversations[id] = Conversation(
+            id: id,
+            messages: [],
+            totalTokens: 0,
+            createdAt: Date()
+        )
+        currentConversationId = id
+        return id
+    }
+
+    /// Continue an existing conversation
+    public func continueConversation(_ id: ConversationID) throws {
+        guard conversations[id] != nil else {
+            throw NSError(
+                domain: "SwiftyCoreLlama",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Conversation not found"]
+            )
+        }
+        currentConversationId = id
+    }
+
+    /// Get current conversation ID
+    public func getCurrentConversationId() -> ConversationID? {
+        currentConversationId
+    }
+
+    /// Get conversation info
+    public func getConversationInfo(_ id: ConversationID) -> ConversationInfo? {
+        guard let conversation = conversations[id] else { return nil }
+
+        return ConversationInfo(
+            id: conversation.id,
+            messageCount: conversation.messages.count,
+            totalTokens: conversation.totalTokens,
+            createdAt: conversation.createdAt
+        )
+    }
+
+    /// Clear a conversation (removes context)
+    public func clearConversation(_ id: ConversationID) {
+        conversations.removeValue(forKey: id)
+        if currentConversationId == id {
+            currentConversationId = nil
+        }
+        // Reset context state
+        currentTokenCount = 0
+        tokenBuffer.removeAll()
+        shouldContinuePredicting = false
+    }
+
     // MARK: - Batch Management (like the working example)
 
     private func clearBatch() {
@@ -85,14 +159,25 @@ public class SwiftyCoreLlama {
     // MARK: - Public API
 
     /// Begin a new generation and immediately obtain a token stream
+    /// If no conversation is active, starts a new one
     @discardableResult
     public func start(
         prompt: String,
-        params: GenerationParams
+        params: GenerationParams,
+        conversationId: ConversationID? = nil
     ) async
         -> GenerationStream
     {
         let id = GenerationID()
+
+        // Determine conversation to use
+        let targetConversationId: ConversationID = if let conversationId {
+            conversationId
+        } else if let currentId = currentConversationId {
+            currentId
+        } else {
+            startNewConversation()
+        }
 
         let (stream, continuation) = AsyncThrowingStream<String, Error>.makeStream(
             bufferingPolicy: .unbounded
@@ -101,17 +186,19 @@ public class SwiftyCoreLlama {
         // Store generation info
         activeGenerations[id] = LiveGeneration(
             id: id,
+            conversationId: targetConversationId,
             params: params,
             startTime: Date(),
-            task: nil
+            task: nil as Task<Void, Never>?
         )
 
-        // Start generation task within the same actor context - NO detached task!
+        // Start generation task within the same actor context - NO detached task as it would cause segmentation fault
         Task { @SwiftyLlamaActor in
             await self.performGeneration(
                 id: id,
                 prompt: prompt,
                 params: params,
+                conversationId: targetConversationId,
                 continuation: continuation
             )
             return ()
@@ -131,6 +218,7 @@ public class SwiftyCoreLlama {
         id _: GenerationID,
         prompt: String,
         params: GenerationParams,
+        conversationId: ConversationID,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async {
         do {
@@ -146,8 +234,12 @@ public class SwiftyCoreLlama {
             // Tokenize prompt
             let promptTokens = try vocab.tokenize(text: prompt)
 
-            // Prepare context (like the working example)
-            guard prepareContext(for: promptTokens, context: context!) else {
+            // Prepare context with conversation history
+            guard prepareContextWithConversation(
+                for: promptTokens,
+                conversationId: conversationId,
+                context: context!
+            ) else {
                 continuation.finish(throwing: NSError(
                     domain: "SwiftyCoreLlama",
                     code: 3,
@@ -160,6 +252,7 @@ public class SwiftyCoreLlama {
             sampler.reset()
 
             // Generate tokens
+            var generatedTokens: [SLlamaToken] = []
             while shouldContinuePredicting, currentTokenCount < Int32(params.maxTokens) {
                 let token = predictNextToken(sampler: sampler, context: context!)
 
@@ -167,8 +260,27 @@ public class SwiftyCoreLlama {
                     break
                 }
 
+                generatedTokens.append(token)
                 let tokenText = try vocab.tokenToPiece(token: token)
                 continuation.yield(tokenText)
+            }
+
+            // Store the conversation
+            await storeConversationMessage(
+                conversationId: conversationId,
+                role: "user",
+                content: prompt,
+                tokens: promptTokens
+            )
+
+            if !generatedTokens.isEmpty {
+                let responseContent = try generatedTokens.map { try vocab.tokenToPiece(token: $0) }.joined()
+                await storeConversationMessage(
+                    conversationId: conversationId,
+                    role: "assistant",
+                    content: responseContent,
+                    tokens: generatedTokens
+                )
             }
 
             continuation.finish()
@@ -178,7 +290,100 @@ public class SwiftyCoreLlama {
         }
     }
 
-    // MARK: - Context Preparation (like the working example)
+    // MARK: - Context Preparation with Conversation History
+
+    private func prepareContextWithConversation(
+        for promptTokens: [SLlamaToken],
+        conversationId: ConversationID,
+        context: SLlamaContext
+    )
+        -> Bool
+    {
+        guard !promptTokens.isEmpty else { return false }
+
+        // Get conversation history
+        guard var conversation = conversations[conversationId] else {
+            // New conversation - start fresh
+            currentTokenCount = 0
+            tokenBuffer.removeAll()
+
+            // For new conversation, create a fresh context
+            do {
+                context = try SLlamaContext(model: model)
+                isContextInitialized = true
+            } catch {
+                return false
+            }
+
+            clearBatch()
+
+            // For new conversation, start from position 0
+            for (i, token) in promptTokens.enumerated() {
+                addToBatch(token: token, position: Int32(i), isLogit: i == promptTokens.count - 1)
+            }
+
+            do {
+                try context!.core().decode(batch!)
+            } catch {
+                return false
+            }
+
+            currentTokenCount = Int32(promptTokens.count)
+            shouldContinuePredicting = true
+            return true
+        }
+
+        // Calculate total tokens including history
+        let historyTokens = conversation.messages.flatMap(\.tokens)
+        let totalTokens = historyTokens.count + promptTokens.count
+
+        guard maxContextSize > totalTokens else {
+            // Context too long - need to truncate or start new conversation
+            return false
+        }
+
+        // If we have history, we need to continue from where we left off
+        if !historyTokens.isEmpty {
+            currentTokenCount = Int32(historyTokens.count)
+            tokenBuffer = historyTokens
+
+            // For continuation, we need to start new tokens from the next position
+            clearBatch()
+
+            // Add new prompt tokens starting from the next position after history
+            for (i, token) in promptTokens.enumerated() {
+                let position = Int32(historyTokens.count + i)
+                addToBatch(token: token, position: position, isLogit: i == promptTokens.count - 1)
+            }
+        } else {
+            currentTokenCount = 0
+            tokenBuffer.removeAll()
+
+            clearBatch()
+
+            // For new conversation, start from position 0
+            for (i, token) in promptTokens.enumerated() {
+                addToBatch(token: token, position: Int32(i), isLogit: i == promptTokens.count - 1)
+            }
+        }
+
+        do {
+            try context.core().decode(batch!)
+        } catch {
+            return false
+        }
+
+        // Update token count based on whether we have history or not
+        if !historyTokens.isEmpty {
+            currentTokenCount = Int32(historyTokens.count + promptTokens.count)
+        } else {
+            currentTokenCount = Int32(promptTokens.count)
+        }
+        shouldContinuePredicting = true
+        return true
+    }
+
+    // MARK: - Context Preparation (like the working example) - for new conversations
 
     private func prepareContext(for promptTokens: [SLlamaToken], context: SLlamaContext) -> Bool {
         guard !promptTokens.isEmpty else { return false }
@@ -204,6 +409,28 @@ public class SwiftyCoreLlama {
         currentTokenCount = Int32(initialCount)
         shouldContinuePredicting = true
         return true
+    }
+
+    // MARK: - Conversation Storage
+
+    private func storeConversationMessage(
+        conversationId: ConversationID,
+        role: String,
+        content: String,
+        tokens: [SLlamaToken]
+    ) async {
+        guard var conversation = conversations[conversationId] else { return }
+
+        let message = ConversationMessage(
+            role: role,
+            content: content,
+            tokens: tokens,
+            timestamp: Date()
+        )
+
+        conversation.messages.append(message)
+        conversation.totalTokens += Int32(tokens.count)
+        conversations[conversationId] = conversation
     }
 
     // MARK: - Token Prediction (like the working example)
@@ -276,6 +503,7 @@ public class SwiftyCoreLlama {
 
         return GenerationInfo(
             id: generation.id,
+            conversationId: generation.conversationId,
             params: generation.params,
             startTime: generation.startTime,
             isActive: generation.task?.isCancelled == false
@@ -315,11 +543,23 @@ public class SwiftyCoreLlama {
 
 // MARK: - Supporting Types
 
+public struct ConversationID: Hashable, Sendable {
+    private let id = UUID()
+}
+
 public struct GenerationInfo {
     public let id: GenerationID
+    public let conversationId: ConversationID?
     public let params: GenerationParams
     public let startTime: Date
     public let isActive: Bool
+}
+
+public struct ConversationInfo {
+    public let id: ConversationID
+    public let messageCount: Int
+    public let totalTokens: Int32
+    public let createdAt: Date
 }
 
 public struct ModelInfo {
