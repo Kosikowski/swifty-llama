@@ -1,58 +1,49 @@
 import Foundation
 import SLlama
+import Testing
 import TestUtilities
-import XCTest
 @testable import SwiftyLlama
 
 @SLlamaActor
-final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
-    // MARK: - Test Properties
-
-    // MARK: - Setup and Teardown
-
-    override func setUp() async throws {
-        try await super.setUp()
-
-        // Skip if model not available
-        guard TestUtilities.isTestModelAvailable() else {
-            throw XCTSkip("Test model not available")
-        }
-    }
-
-    override func tearDown() async throws {
-        try await super.tearDown()
-    }
-
+struct SwiftyCoreLlamaTests {
     // MARK: - Compilation Tests
 
-    func testCompilation() async throws {
+    @Test("SwiftyCoreLlama compilation test")
+    func compilation() throws {
         // Just test that we can reference the type
         let _: SwiftyCoreLlama.Type = SwiftyCoreLlama.self
-
-        XCTAssertTrue(true)
+        #expect(true, "Compilation test should pass")
     }
 
     // MARK: - Initialization Tests
 
-    func testInitialization() async throws {
+    @Test("SwiftyCoreLlama initialization test")
+    func initialization() async throws {
+        // Fail if model not available
+        #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for initialization test")
+
         // Create SwiftyCoreLlama with real model
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
-        XCTAssertNotNil(swiftyCore)
+        #expect(swiftyCore != nil, "SwiftyCoreLlama should be created successfully")
 
         // Test model info
         let modelInfo = swiftyCore.modelInfo
-        XCTAssertFalse(modelInfo.name.isEmpty)
-        XCTAssertGreaterThan(modelInfo.contextSize, 0)
+        #expect(!modelInfo.name.isEmpty, "Model name should not be empty")
+        #expect(modelInfo.contextSize > 0, "Context size should be positive")
 
         // Test vocab info
         let vocabInfo = swiftyCore.vocabInfo
-        XCTAssertGreaterThan(vocabInfo.size, 0)
+        #expect(vocabInfo.size > 0, "Vocab size should be positive")
     }
 
     // MARK: - Basic Functionality Tests
 
-    func testStartGeneration() async throws {
+    @Test("SwiftyCoreLlama start generation test")
+    func startGeneration() async throws {
+        // Fail if model not available
+        #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for generation test")
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let prompt = "Hello"
@@ -62,14 +53,14 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
         let stream = await swiftyCore.start(prompt: prompt, params: params)
 
         // Verify stream was created
-        XCTAssertNotNil(stream)
-        XCTAssertNotNil(stream.id)
-        XCTAssertNotNil(stream.stream)
+        #expect(stream != nil, "Stream should be created")
+        #expect(stream.id != nil, "Stream ID should not be nil")
+        #expect(stream.stream != nil, "Stream should not be nil")
 
         // Verify generation info exists
         let info = await swiftyCore.getGenerationInfo(stream.id)
-        XCTAssertNotNil(info)
-        XCTAssertEqual(info?.params, params)
+        #expect(info != nil, "Generation info should exist")
+        #expect(info?.params == params, "Generation params should match")
 
         // Cancel to clean up
         await swiftyCore.cancel(stream.id)
@@ -77,7 +68,11 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
 
     // MARK: - Multiple Generations Tests
 
-    func testMultipleGenerations() async throws {
+    @Test("SwiftyCoreLlama multiple generations test")
+    func multipleGenerations() async throws {
+        // Fail if model not available
+        #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for multiple generations test")
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let prompts = ["Hello", "How are", "The weather"]
@@ -89,74 +84,82 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
         let stream3 = await swiftyCore.start(prompt: prompts[2], params: params)
 
         // Verify all streams were created
-        XCTAssertNotNil(stream1)
-        XCTAssertNotNil(stream2)
-        XCTAssertNotNil(stream3)
+        #expect(stream1 != nil, "Stream 1 should be created")
+        #expect(stream2 != nil, "Stream 2 should be created")
+        #expect(stream3 != nil, "Stream 3 should be created")
 
         // Verify all generation IDs are different
-        XCTAssertNotEqual(stream1.id, stream2.id)
-        XCTAssertNotEqual(stream2.id, stream3.id)
-        XCTAssertNotEqual(stream1.id, stream3.id)
+        #expect(stream1.id != stream2.id, "Generation IDs should be different")
+        #expect(stream2.id != stream3.id, "Generation IDs should be different")
+        #expect(stream1.id != stream3.id, "Generation IDs should be different")
 
         // Verify all generation info exists
         let info1 = await swiftyCore.getGenerationInfo(stream1.id)
         let info2 = await swiftyCore.getGenerationInfo(stream2.id)
         let info3 = await swiftyCore.getGenerationInfo(stream3.id)
 
-        XCTAssertNotNil(info1)
-        XCTAssertNotNil(info2)
-        XCTAssertNotNil(info3)
+        #expect(info1 != nil, "Generation info 1 should exist")
+        #expect(info2 != nil, "Generation info 2 should exist")
+        #expect(info3 != nil, "Generation info 3 should exist")
 
         // Verify active generation IDs
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertEqual(activeIDs.count, 3)
-        XCTAssertTrue(activeIDs.contains(stream1.id))
-        XCTAssertTrue(activeIDs.contains(stream2.id))
-        XCTAssertTrue(activeIDs.contains(stream3.id))
+        #expect(activeIDs.count == 3, "Should have 3 active generations")
+        #expect(activeIDs.contains(stream1.id), "Should contain stream1 ID")
+        #expect(activeIDs.contains(stream2.id), "Should contain stream2 ID")
+        #expect(activeIDs.contains(stream3.id), "Should contain stream3 ID")
 
         // Cancel all to clean up
         await swiftyCore.cancelAll()
 
         // Verify all are cancelled
         let finalActiveIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertEqual(finalActiveIDs.count, 0)
+        #expect(finalActiveIDs.count == 0, "Should have no active generations after cancellation")
     }
 
     // MARK: - Conversation Management Tests
 
-    func testConversationManagement() async throws {
+    @Test("SwiftyCoreLlama conversation management test")
+    func conversationManagement() async throws {
+        // Fail if model not available
+        #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for conversation management test")
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         // Test starting new conversation
         let conversationId1 = swiftyCore.startNewConversation()
-        XCTAssertNotNil(conversationId1)
+        #expect(conversationId1 != nil, "Conversation ID should be created")
 
         // Test getting current conversation
         let currentId = swiftyCore.getCurrentConversationId()
-        XCTAssertEqual(currentId, conversationId1)
+        #expect(currentId == conversationId1, "Current conversation ID should match")
 
         // Test conversation info
         let info1 = swiftyCore.getConversationInfo(conversationId1)
-        XCTAssertNotNil(info1)
-        XCTAssertEqual(info1?.messageCount, 0)
-        XCTAssertEqual(info1?.totalTokens, 0)
+        #expect(info1 != nil, "Conversation info should exist")
+        #expect(info1?.messageCount == 0, "New conversation should have 0 messages")
+        #expect(info1?.totalTokens == 0, "New conversation should have 0 tokens")
 
         // Test starting another conversation
         let conversationId2 = swiftyCore.startNewConversation()
-        XCTAssertNotEqual(conversationId1, conversationId2)
+        #expect(conversationId1 != conversationId2, "Conversation IDs should be different")
 
         // Test continuing conversation
         try swiftyCore.continueConversation(conversationId1)
         let currentIdAfterContinue = swiftyCore.getCurrentConversationId()
-        XCTAssertEqual(currentIdAfterContinue, conversationId1)
+        #expect(currentIdAfterContinue == conversationId1, "Current conversation should be set correctly")
 
         // Test clearing conversation
         swiftyCore.clearConversation(conversationId1)
         let infoAfterClear = swiftyCore.getConversationInfo(conversationId1)
-        XCTAssertNil(infoAfterClear)
+        #expect(infoAfterClear == nil, "Cleared conversation should return nil")
     }
 
-    func testConversationContinuity() async throws {
+    @Test("SwiftyCoreLlama conversation continuity test")
+    func conversationContinuity() async throws {
+        // Fail if model not available
+        #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for conversation continuity test")
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
@@ -179,9 +182,9 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
 
         // Verify conversation was stored
         let info1 = swiftyCore.getConversationInfo(conversationId)
-        XCTAssertNotNil(info1)
-        XCTAssertGreaterThan(info1?.messageCount ?? 0, 0)
-        XCTAssertGreaterThan(info1?.totalTokens ?? 0, 0)
+        #expect(info1 != nil, "Conversation info should exist")
+        #expect(info1?.messageCount ?? 0 > 0, "Conversation should have messages")
+        #expect(info1?.totalTokens ?? 0 > 0, "Conversation should have tokens")
 
         // Continue the same conversation
         let stream2 = await swiftyCore.start(
@@ -198,15 +201,22 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
 
         // Verify conversation has more messages
         let info2 = swiftyCore.getConversationInfo(conversationId)
-        XCTAssertNotNil(info2)
-        XCTAssertGreaterThan(info2?.messageCount ?? 0, info1?.messageCount ?? 0)
-        XCTAssertGreaterThan(info2?.totalTokens ?? 0, info1?.totalTokens ?? 0)
+        #expect(info2 != nil, "Conversation info should still exist")
+        #expect(info2?.messageCount ?? 0 > info1?.messageCount ?? 0, "Conversation should have more messages")
+        #expect(info2?.totalTokens ?? 0 > info1?.totalTokens ?? 0, "Conversation should have more tokens")
 
         // Clean up
         await swiftyCore.cancelAll()
     }
 
-    func testNewConversationVsContinuation() async throws {
+    @Test("SwiftyCoreLlama new conversation vs continuation test")
+    func newConversationVsContinuation() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for new conversation vs continuation test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
@@ -234,18 +244,18 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
         for try await _ in stream2.stream {}
 
         // Verify they are separate conversations
-        XCTAssertNotEqual(conversationId1, conversationId2)
+        #expect(conversationId1 != conversationId2, "Conversation IDs should be different")
 
         let info1 = swiftyCore.getConversationInfo(conversationId1)
         let info2 = swiftyCore.getConversationInfo(conversationId2)
 
-        XCTAssertNotNil(info1)
-        XCTAssertNotNil(info2)
+        #expect(info1 != nil, "First conversation info should exist")
+        #expect(info2 != nil, "Second conversation info should exist")
         // Both conversations should have 1 message each, but they should be separate
-        XCTAssertEqual(info1?.messageCount, 1)
-        XCTAssertEqual(info2?.messageCount, 1)
+        #expect(info1?.messageCount == 1, "First conversation should have 1 message")
+        #expect(info2?.messageCount == 1, "Second conversation should have 1 message")
         // Verify they are different conversation IDs
-        XCTAssertNotEqual(info1?.id, info2?.id)
+        #expect(info1?.id != info2?.id, "Conversation IDs should be different")
 
         // Clean up
         await swiftyCore.cancelAll()
@@ -255,7 +265,11 @@ final class SwiftyCoreLlamaTests: XCTestCase, @unchecked Sendable {
 // MARK: - Cancellation Tests
 
 extension SwiftyCoreLlamaTests {
-    func testIndividualCancellation() async throws {
+    @Test("SwiftyCoreLlama individual cancellation test")
+    func individualCancellation() async throws {
+        // Fail if model not available
+        #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for individual cancellation test")
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 10)
@@ -265,21 +279,28 @@ extension SwiftyCoreLlamaTests {
 
         // Verify it's active
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertTrue(activeIDs.contains(stream.id))
+        #expect(activeIDs.contains(stream.id), "Generation should be active")
 
         // Cancel the specific generation
         await swiftyCore.cancel(stream.id)
 
         // Verify it's no longer active
         let finalActiveIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertFalse(finalActiveIDs.contains(stream.id))
+        #expect(!finalActiveIDs.contains(stream.id), "Generation should not be active after cancellation")
 
         // Verify generation info is nil after cancellation (since it's removed from activeGenerations)
         let info = await swiftyCore.getGenerationInfo(stream.id)
-        XCTAssertNil(info)
+        #expect(info == nil, "Generation info should be nil after cancellation")
     }
 
-    func testCancellationOfNonExistentGeneration() async throws {
+    @Test("SwiftyCoreLlama cancellation of non-existent generation test")
+    func cancellationOfNonExistentGeneration() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for cancellation of non-existent generation test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         // Create a fake generation ID
@@ -290,10 +311,17 @@ extension SwiftyCoreLlamaTests {
 
         // Verify no generations are active
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertEqual(activeIDs.count, 0)
+        #expect(activeIDs.count == 0, "Should have no active generations")
     }
 
-    func testCancellationDuringStreamConsumption() async throws {
+    @Test("SwiftyCoreLlama cancellation during stream consumption test")
+    func cancellationDuringStreamConsumption() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for cancellation during stream consumption test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 20)
@@ -326,14 +354,21 @@ extension SwiftyCoreLlamaTests {
         }
 
         // Verify cancellation happened
-        XCTAssertTrue(wasCancelled)
+        #expect(wasCancelled, "Cancellation should have occurred")
 
         // Verify generation is no longer active
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertFalse(activeIDs.contains(stream.id))
+        #expect(!activeIDs.contains(stream.id), "Generation should not be active after cancellation")
     }
 
-    func testCancellationOfAlreadyCancelledGeneration() async throws {
+    @Test("SwiftyCoreLlama cancellation of already cancelled generation test")
+    func cancellationOfAlreadyCancelledGeneration() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for cancellation of already cancelled generation test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)
@@ -349,10 +384,17 @@ extension SwiftyCoreLlamaTests {
 
         // Verify it's still not active
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertFalse(activeIDs.contains(stream.id))
+        #expect(!activeIDs.contains(stream.id), "Generation should not be active after double cancellation")
     }
 
-    func testCancelAllWithMultipleGenerations() async throws {
+    @Test("SwiftyCoreLlama cancel all with multiple generations test")
+    func cancelAllWithMultipleGenerations() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for cancel all with multiple generations test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 3)
@@ -364,29 +406,36 @@ extension SwiftyCoreLlamaTests {
 
         // Verify all are active
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertEqual(activeIDs.count, 3)
-        XCTAssertTrue(activeIDs.contains(stream1.id))
-        XCTAssertTrue(activeIDs.contains(stream2.id))
-        XCTAssertTrue(activeIDs.contains(stream3.id))
+        #expect(activeIDs.count == 3, "Should have 3 active generations")
+        #expect(activeIDs.contains(stream1.id), "Should contain stream1 ID")
+        #expect(activeIDs.contains(stream2.id), "Should contain stream2 ID")
+        #expect(activeIDs.contains(stream3.id), "Should contain stream3 ID")
 
         // Cancel all
         await swiftyCore.cancelAll()
 
         // Verify none are active
         let finalActiveIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertEqual(finalActiveIDs.count, 0)
+        #expect(finalActiveIDs.count == 0, "Should have no active generations after cancelAll")
 
         // Verify all generation info are nil after cancellation (since they're removed from activeGenerations)
         let info1 = await swiftyCore.getGenerationInfo(stream1.id)
         let info2 = await swiftyCore.getGenerationInfo(stream2.id)
         let info3 = await swiftyCore.getGenerationInfo(stream3.id)
 
-        XCTAssertNil(info1)
-        XCTAssertNil(info2)
-        XCTAssertNil(info3)
+        #expect(info1 == nil, "Generation info 1 should be nil after cancellation")
+        #expect(info2 == nil, "Generation info 2 should be nil after cancellation")
+        #expect(info3 == nil, "Generation info 3 should be nil after cancellation")
     }
 
-    func testCancellationWithOnTerminationCallback() async throws {
+    @Test("SwiftyCoreLlama cancellation with onTermination callback test")
+    func cancellationWithOnTerminationCallback() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for cancellation with onTermination callback test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 10)
@@ -396,8 +445,8 @@ extension SwiftyCoreLlamaTests {
 
         // Verify it's active
         let info = await swiftyCore.getGenerationInfo(stream.id)
-        XCTAssertNotNil(info)
-        XCTAssertTrue(info?.isActive ?? false)
+        #expect(info != nil, "Generation info should exist")
+        #expect(info?.isActive == true, "Generation should be active")
 
         // Cancel the generation
         await swiftyCore.cancel(stream.id)
@@ -407,10 +456,17 @@ extension SwiftyCoreLlamaTests {
 
         // Verify it's no longer active (should be nil since removed from activeGenerations)
         let finalInfo = await swiftyCore.getGenerationInfo(stream.id)
-        XCTAssertNil(finalInfo)
+        #expect(finalInfo == nil, "Generation info should be nil after cancellation")
     }
 
-    func testCancellationStateVerification() async throws {
+    @Test("SwiftyCoreLlama cancellation state verification test")
+    func cancellationStateVerification() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for cancellation state verification test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)
@@ -420,23 +476,30 @@ extension SwiftyCoreLlamaTests {
 
         // Verify initial state
         let initialInfo = await swiftyCore.getGenerationInfo(stream.id)
-        XCTAssertNotNil(initialInfo)
-        XCTAssertTrue(initialInfo?.isActive ?? false)
-        XCTAssertEqual(initialInfo?.id, stream.id)
+        #expect(initialInfo != nil, "Initial generation info should exist")
+        #expect(initialInfo?.isActive == true, "Generation should be active initially")
+        #expect(initialInfo?.id == stream.id, "Generation ID should match")
 
         // Cancel it
         await swiftyCore.cancel(stream.id)
 
         // Verify cancelled state (should be nil since removed from activeGenerations)
         let cancelledInfo = await swiftyCore.getGenerationInfo(stream.id)
-        XCTAssertNil(cancelledInfo)
+        #expect(cancelledInfo == nil, "Generation info should be nil after cancellation")
 
         // Verify it's not in active list
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertFalse(activeIDs.contains(stream.id))
+        #expect(!activeIDs.contains(stream.id), "Generation should not be in active list after cancellation")
     }
 
-    func testCancellationWithEmptyActiveGenerations() async throws {
+    @Test("SwiftyCoreLlama cancellation with empty active generations test")
+    func cancellationWithEmptyActiveGenerations() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for cancellation with empty active generations test"
+        )
+
         let swiftyCore = try SwiftyCoreLlama(modelPath: TestUtilities.testModelPath)
 
         // Cancel all when no generations are active
@@ -444,6 +507,6 @@ extension SwiftyCoreLlamaTests {
 
         // Verify no active generations
         let activeIDs = await swiftyCore.getActiveGenerationIDs()
-        XCTAssertEqual(activeIDs.count, 0)
+        #expect(activeIDs.count == 0, "Should have no active generations")
     }
 }
