@@ -406,4 +406,395 @@ struct SwiftyTuningLlamaTests {
         #expect(session.config.qLoRAConfig?.useDoubleQuant == true)
         #expect(session.config.qLoRAConfig?.computeDtype == "float16")
     }
+
+    // MARK: - Additional Edge Cases and Error Scenarios
+
+    @Test("SwiftyTuningLlama empty conversations test")
+    func emptyConversations() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for empty conversations test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Test with empty conversations
+        let dataset = try tuningLlama.prepareTrainingData(conversations: [])
+
+        // Verify empty dataset
+        #expect(dataset.training.isEmpty)
+        #expect(dataset.validation.isEmpty)
+    }
+
+    @Test("SwiftyTuningLlama single message conversation test")
+    func singleMessageConversation() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for single message conversation test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Test with single message conversation
+        let conversations = [
+            TrainingConversation(
+                id: "conv1",
+                messages: [
+                    TrainingMessage(role: .user, content: "Hello"),
+                ]
+            ),
+        ]
+
+        let dataset = try tuningLlama.prepareTrainingData(conversations: conversations)
+
+        // Verify dataset has content
+        #expect(dataset.training.count + dataset.validation.count == 1)
+        #expect(!dataset.training.isEmpty || !dataset.validation.isEmpty)
+    }
+
+    @Test("SwiftyTuningLlama LoRA removal test")
+    func loRARemoval() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for LoRA removal test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Test removing LoRA when none is applied
+        do {
+            try tuningLlama.removeLoRA()
+            // Should not throw when no LoRA is applied
+        } catch {
+            #expect(Bool(false), "Should not throw when removing non-existent LoRA")
+        }
+
+        // Verify no LoRA is applied
+        #expect(tuningLlama.getCurrentLoRA() == nil)
+    }
+
+    @Test("SwiftyTuningLlama training session without dataset test")
+    func trainingSessionWithoutDataset() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for training session without dataset test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Test starting training session with empty dataset
+        let emptyDataset = TrainingDataset(training: [], validation: [])
+        let config = TrainingConfig(loraRank: 8, learningRate: 2e-5, epochs: 3)
+
+        let session = try tuningLlama.startTrainingSession(dataset: emptyDataset, config: config)
+
+        // Verify session is created even with empty dataset
+        #expect(session.status == .running)
+        #expect(session.dataset.training.isEmpty)
+        #expect(session.dataset.validation.isEmpty)
+    }
+
+    @Test("SwiftyTuningLlama evaluation with empty validation test")
+    func evaluationWithEmptyValidation() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for evaluation with empty validation test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Test evaluation with empty validation set
+        let metrics = try tuningLlama.evaluateModel(validationExamples: [])
+
+        // Verify metrics for empty validation
+        #expect(metrics.totalExamples == 0)
+        #expect(metrics.totalTokens == 0)
+        #expect(metrics.averageLoss == 0.0)
+        #expect(metrics.perplexity == 1.0) // exp(0.0) = 1.0
+    }
+
+    @Test("SwiftyTuningLlama training metrics test")
+    func trainingMetrics() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for training metrics test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Create test dataset
+        let conversations = [
+            TrainingConversation(
+                id: "conv1",
+                messages: [
+                    TrainingMessage(role: .system, content: "You are a helpful assistant."),
+                    TrainingMessage(role: .user, content: "Hello"),
+                    TrainingMessage(role: .assistant, content: "Hi there!"),
+                ]
+            ),
+        ]
+
+        let dataset = try tuningLlama.prepareTrainingData(conversations: conversations)
+        let config = TrainingConfig(loraRank: 8, learningRate: 2e-5, epochs: 3)
+
+        // Start training session
+        _ = try tuningLlama.startTrainingSession(dataset: dataset, config: config)
+
+        // Get training metrics
+        let metrics = tuningLlama.getTrainingMetrics()
+
+        // Verify metrics structure
+        #expect(metrics != nil)
+        #expect(metrics?.currentEpoch == 0)
+        #expect(metrics?.currentStep == 0)
+        #expect(metrics?.trainingLoss == 0.0)
+        #expect(metrics?.validationLoss == 0.0)
+        #expect(metrics?.learningRate == 0.0)
+    }
+
+    @Test("SwiftyTuningLlama boundary value training config test")
+    func boundaryValueTrainingConfig() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for boundary value training config test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Create test dataset
+        let conversations = [
+            TrainingConversation(
+                id: "conv1",
+                messages: [
+                    TrainingMessage(role: .system, content: "You are a helpful assistant."),
+                    TrainingMessage(role: .user, content: "Hello"),
+                    TrainingMessage(role: .assistant, content: "Hi there!"),
+                ]
+            ),
+        ]
+
+        let dataset = try tuningLlama.prepareTrainingData(conversations: conversations)
+
+        // Test boundary values for LoRA rank
+        let minRankConfig = TrainingConfig(loraRank: 1, learningRate: 2e-5, epochs: 3)
+        let maxRankConfig = TrainingConfig(loraRank: 128, learningRate: 2e-5, epochs: 3)
+
+        // These should succeed
+        let minSession = try tuningLlama.startTrainingSession(dataset: dataset, config: minRankConfig)
+        #expect(minSession.config.loraRank == 1)
+
+        tuningLlama.stopTrainingSession()
+
+        let maxSession = try tuningLlama.startTrainingSession(dataset: dataset, config: maxRankConfig)
+        #expect(maxSession.config.loraRank == 128)
+
+        // Test boundary values for learning rate
+        let minLRConfig = TrainingConfig(loraRank: 8, learningRate: 0.000001, epochs: 3)
+        let maxLRConfig = TrainingConfig(loraRank: 8, learningRate: 1.0, epochs: 3)
+
+        tuningLlama.stopTrainingSession()
+
+        let minLRSession = try tuningLlama.startTrainingSession(dataset: dataset, config: minLRConfig)
+        #expect(minLRSession.config.learningRate == 0.000001)
+
+        tuningLlama.stopTrainingSession()
+
+        let maxLRSession = try tuningLlama.startTrainingSession(dataset: dataset, config: maxLRConfig)
+        #expect(maxLRSession.config.learningRate == 1.0)
+
+        // Test boundary values for epochs
+        let minEpochsConfig = TrainingConfig(loraRank: 8, learningRate: 2e-5, epochs: 1)
+        let maxEpochsConfig = TrainingConfig(loraRank: 8, learningRate: 2e-5, epochs: 100)
+
+        tuningLlama.stopTrainingSession()
+
+        let minEpochsSession = try tuningLlama.startTrainingSession(dataset: dataset, config: minEpochsConfig)
+        #expect(minEpochsSession.config.epochs == 1)
+
+        tuningLlama.stopTrainingSession()
+
+        let maxEpochsSession = try tuningLlama.startTrainingSession(dataset: dataset, config: maxEpochsConfig)
+        #expect(maxEpochsSession.config.epochs == 100)
+    }
+
+    @Test("SwiftyTuningLlama validation split edge cases test")
+    func validationSplitEdgeCases() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for validation split edge cases test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Create test conversations
+        let conversations = [
+            TrainingConversation(
+                id: "conv1",
+                messages: [
+                    TrainingMessage(role: .system, content: "You are a helpful assistant."),
+                    TrainingMessage(role: .user, content: "Hello"),
+                    TrainingMessage(role: .assistant, content: "Hi there!"),
+                ]
+            ),
+            TrainingConversation(
+                id: "conv2",
+                messages: [
+                    TrainingMessage(role: .system, content: "You are a math tutor."),
+                    TrainingMessage(role: .user, content: "What is 2+2?"),
+                    TrainingMessage(role: .assistant, content: "2+2 equals 4."),
+                ]
+            ),
+        ]
+
+        // Test validation split = 0.0 (all training)
+        let allTrainingDataset = try tuningLlama.prepareTrainingData(
+            conversations: conversations,
+            validationSplit: 0.0
+        )
+        #expect(allTrainingDataset.validation.isEmpty)
+        #expect(allTrainingDataset.training.count == 2)
+
+        // Test validation split = 1.0 (all validation)
+        let allValidationDataset = try tuningLlama.prepareTrainingData(
+            conversations: conversations,
+            validationSplit: 1.0
+        )
+        #expect(allValidationDataset.training.isEmpty)
+        #expect(allValidationDataset.validation.count == 2)
+    }
+
+    @Test("SwiftyTuningLlama multiple LoRA adapters test")
+    func multipleLoRAAdapters() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for multiple LoRA adapters test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Test applying multiple LoRA adapters (they will all fail due to nonexistent files)
+        do {
+            try tuningLlama.applyLoRA(path: "/nonexistent/adapter1.gguf")
+            #expect(Bool(false), "Should have thrown an error for nonexistent adapter1")
+        } catch {
+            #expect(error is TuningError)
+            #expect((error as! TuningError) == .adapterFileNotFound(path: "/nonexistent/adapter1.gguf"))
+        }
+
+        do {
+            try tuningLlama.applyLoRA(path: "/nonexistent/adapter2.gguf")
+            #expect(Bool(false), "Should have thrown an error for nonexistent adapter2")
+        } catch {
+            #expect(error is TuningError)
+            #expect((error as! TuningError) == .adapterFileNotFound(path: "/nonexistent/adapter2.gguf"))
+        }
+
+        // Verify no adapters are available since they all failed
+        #expect(tuningLlama.getAvailableAdapters().isEmpty)
+        #expect(tuningLlama.getCurrentLoRA() == nil)
+    }
+
+    @Test("SwiftyTuningLlama training session state transitions test")
+    func trainingSessionStateTransitions() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for training session state transitions test"
+        )
+
+        let tuningLlama = SwiftyTuningLlama()
+
+        // Load model first
+        try tuningLlama.loadModel(path: TestUtilities.testModelPath)
+
+        // Create test dataset
+        let conversations = [
+            TrainingConversation(
+                id: "conv1",
+                messages: [
+                    TrainingMessage(role: .system, content: "You are a helpful assistant."),
+                    TrainingMessage(role: .user, content: "Hello"),
+                    TrainingMessage(role: .assistant, content: "Hi there!"),
+                ]
+            ),
+        ]
+
+        let dataset = try tuningLlama.prepareTrainingData(conversations: conversations)
+        let config = TrainingConfig(loraRank: 8, learningRate: 2e-5, epochs: 3)
+
+        // Start training session
+        let session = try tuningLlama.startTrainingSession(dataset: dataset, config: config)
+
+        // Verify initial state
+        #expect(session.status == .running)
+        #expect(session.endTime == nil)
+
+        // Stop training session
+        tuningLlama.stopTrainingSession()
+
+        // Verify stopped state
+        let stoppedSession = tuningLlama.getCurrentTrainingSession()
+        #expect(stoppedSession?.status == .stopped)
+        #expect(stoppedSession?.endTime != nil)
+        #expect(stoppedSession?.id == session.id)
+    }
+
+    @Test("SwiftyTuningLlama error description test")
+    func errorDescriptionTest() {
+        // Test that all TuningError cases have proper descriptions
+        let errors: [TuningError] = [
+            .contextNotInitialized,
+            .modelNotLoaded,
+            .tokenizerNotInitialized,
+            .adapterFileNotFound(path: "/test/path"),
+            .adapterApplicationFailed(path: "/test/path", errorDescription: "test error"),
+            .invalidLoRARank(rank: 0),
+            .invalidLearningRate(rate: 2.0),
+            .invalidEpochs(epochs: 0),
+            .trainingSessionNotFound,
+            .incompatibleAdapter,
+        ]
+
+        for error in errors {
+            let description = error.errorDescription
+            #expect(description != nil, "Error description should not be nil for \(error)")
+            #expect(!description!.isEmpty, "Error description should not be empty for \(error)")
+        }
+    }
 }

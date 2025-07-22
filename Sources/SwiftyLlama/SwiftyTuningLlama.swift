@@ -223,6 +223,16 @@ public final class SwiftyTuningLlama {
             throw TuningError.contextNotInitialized
         }
 
+        // Handle empty validation set
+        guard !validationExamples.isEmpty else {
+            return EvaluationMetrics(
+                perplexity: 1.0, // exp(0.0) = 1.0
+                averageLoss: 0.0,
+                totalExamples: 0,
+                totalTokens: 0
+            )
+        }
+
         var totalLoss: Float = 0.0
         var totalTokens = 0
 
