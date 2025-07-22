@@ -259,7 +259,7 @@ struct SwiftyTuningLlamaTests {
             ),
         ]
 
-        let dataset = try tuningLlama.prepareTrainingData(conversations: conversations)
+        let dataset = try tuningLlama.prepareTrainingData(conversations: conversations, validationSplit: 1.0)
 
         // Evaluate model
         let metrics = try tuningLlama.evaluateModel(validationExamples: dataset.validation)
