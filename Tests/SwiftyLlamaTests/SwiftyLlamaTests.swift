@@ -637,7 +637,7 @@ extension SwiftyLlamaTests {
 
         // Test continuing a restored conversation
         if let firstConversation = restoredState.first {
-            try newSwiftyCore.continueConversationWithWarmUp(firstConversation.id)
+            try newSwiftyCore.continueConversationWithContextReconstruction(firstConversation.id)
 
             // Start a new generation in the restored conversation
             let newStream = await newSwiftyCore.start(
@@ -658,12 +658,12 @@ extension SwiftyLlamaTests {
         }
     }
 
-    @Test("SwiftyCoreLlama conversation warm-up test")
-    func conversationWarmUpTest() async throws {
+    @Test("SwiftyCoreLlama conversation context reconstruction test")
+    func conversationContextReconstructionTest() async throws {
         // Fail if model not available
         #expect(
             TestUtilities.isTestModelAvailable(),
-            "Test model must be available for conversation warm-up test"
+            "Test model must be available for conversation context reconstruction test"
         )
 
         let swiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath)
@@ -683,14 +683,14 @@ extension SwiftyLlamaTests {
         #expect(conversationState.count > 0, "Should have conversation state")
 
         if let conversation = conversationState.first {
-            // Test warm-up functionality
-            try swiftyCore.continueConversationWithWarmUp(conversation.id)
+            // Test context reconstruction functionality
+            try swiftyCore.continueConversationWithContextReconstruction(conversation.id)
 
             // Verify the conversation is now active
             let currentId = swiftyCore.getCurrentConversationId()
             #expect(currentId == conversation.id, "Current conversation should be set")
 
-            // Test that we can continue the warmed-up conversation
+            // Test that we can continue the conversation with reconstructed context
             let continueStream = await swiftyCore.start(
                 prompt: "Continue the story",
                 params: params,
@@ -705,7 +705,7 @@ extension SwiftyLlamaTests {
                 }
             }
 
-            #expect(continueTokens.count > 0, "Should be able to continue warmed-up conversation")
+            #expect(continueTokens.count > 0, "Should be able to continue conversation with reconstructed context")
         }
     }
 

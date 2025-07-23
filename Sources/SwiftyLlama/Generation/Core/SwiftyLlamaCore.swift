@@ -330,8 +330,8 @@ public class SwiftyLlamaCore: SwiftyLlama {
         setConversations(savedConversations)
     }
 
-    /// Warm up context with conversation history (lazy reconstruction of KV cache)
-    private func warmUpContext(with conversation: Conversation) throws {
+    /// Reconstruct context with conversation history (lazy reconstruction of KV cache)
+    private func reconstructContext(with conversation: Conversation) throws {
         guard let ctx = context else { return }
         let hist = conversation.messages.flatMap(\.tokens)
         guard !hist.isEmpty else { return }
@@ -369,8 +369,8 @@ public class SwiftyLlamaCore: SwiftyLlama {
         }
     }
 
-    /// Continue a conversation with warm-up (for restored conversations)
-    public func continueConversationWithWarmUp(_ id: ConversationID) throws {
+    /// Continue a conversation with context reconstruction (for restored conversations)
+    public func continueConversationWithContextReconstruction(_ id: ConversationID) throws {
         guard let conversation = conversations[id] else {
             throw GenerationError.conversationNotFound(conversationId: id)
         }
@@ -390,13 +390,13 @@ public class SwiftyLlamaCore: SwiftyLlama {
             state.isWarmedUp = false
         }
 
-        // Warm up the context with conversation history
-        try warmUpContext(with: conversation)
+        // Reconstruct the context with conversation history
+        try reconstructContext(with: conversation)
         currentConversationId = id
     }
 
     /// Check if a conversation needs warm-up (has history but context is cold)
-    private func needsWarmUp(for conversationId: ConversationID) -> Bool {
+    private func needsContextReconstruction(for conversationId: ConversationID) -> Bool {
         guard let conversation = conversations[conversationId] else { return false }
         let state = getOrCreateConversationState(for: conversationId)
 

@@ -29,10 +29,10 @@ public protocol SwiftyLlama: AnyObject {
     /// - Parameter id: The conversation ID to clear
     func clearConversation(_ id: ConversationID)
 
-    /// Continue a conversation with warm-up (for restored conversations)
+    /// Continue a conversation with context reconstruction (for restored conversations)
     /// - Parameter id: The conversation ID to continue
     /// - Throws: GenerationError.conversationNotFound if conversation doesn't exist
-    func continueConversationWithWarmUp(_ id: ConversationID) throws
+    func continueConversationWithContextReconstruction(_ id: ConversationID) throws
 
     // MARK: - Conversation Titles
 
