@@ -10,6 +10,9 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     #endif
     var model: SLlamaModelPointer?
 
+    /// The backend type used for this model
+    private let backendType: SLlamaBackendType
+
     // MARK: Computed Properties
 
     /// Get the model pointer for direct C API access
@@ -115,10 +118,12 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
 
     // MARK: Lifecycle
 
-    /// Initialize with a model file path
-    /// - Parameter modelPath: Path to the model file
+    /// Initialize with model path and backend selection
+    /// - Parameters:
+    ///   - modelPath: Path to the model file
+    ///   - backendType: Backend type to use for computation (default: .auto)
     /// - Throws: SLlamaError if model loading fails
-    public init(modelPath: String) throws {
+    public init(modelPath: String, backendType: SLlamaBackendType = .auto) throws {
         // Check if file exists
         guard FileManager.default.fileExists(atPath: modelPath) else {
             throw SLlamaError.fileNotFound(modelPath)
@@ -129,7 +134,35 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
             throw SLlamaError.permissionDenied(modelPath)
         }
 
-        let params = llama_model_default_params()
+        var params = llama_model_default_params()
+
+        // Configure backend based on selection
+        switch backendType {
+            case .cpu:
+                // Force CPU-only computation
+                params.n_gpu_layers = 0
+                // Set devices to CPU only
+                params.devices = nil
+
+            case .gpu:
+                // Enable GPU computation
+                // For Apple platforms, this will use Metal
+                // For other platforms, this will use CUDA if available
+                params.n_gpu_layers = -1 // Use all available layers on GPU
+                params.devices = nil // Use all available devices
+
+            case .auto:
+                // Let llama.cpp choose the best available backend
+                // Check if GPU is available and use it if possible
+                if SLlama.supportsMetal() || SLlama.supportsGpuOffload() {
+                    params.n_gpu_layers = -1 // Use all available layers on GPU
+                    params.devices = nil // Use all available devices
+                } else {
+                    params.n_gpu_layers = 0 // CPU only
+                    params.devices = nil
+                }
+        }
+
         model = llama_model_load_from_file(modelPath, params)
 
         guard model != nil else {
@@ -159,6 +192,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
             let sizeInfo = fileSize.map { " (file size: \($0) bytes)" } ?? ""
             throw SLlamaError.modelLoadingFailed("Model could not be loaded from '\(modelPath)'\(sizeInfo)")
         }
+        self.backendType = backendType
     }
 
     /// Initialize with an existing model pointer (does not take ownership)
@@ -169,6 +203,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
             throw SLlamaError.invalidModel("Model pointer is null")
         }
         model = modelPointer
+        backendType = .auto // Default to auto if using an existing pointer
     }
 
     deinit {
@@ -431,5 +466,46 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     #endif
     public func getMetadata(key: String, bufferSize: Int) throws -> String {
         try metadataValue(for: key, bufferSize: bufferSize)
+    }
+
+    /// Get the backend type used for this model
+    /// - Returns: The backend type that was used during initialization
+    public func getBackendType() -> SLlamaBackendType {
+        backendType
+    }
+
+    /// Get information about the backend being used
+    /// - Returns: A string describing the current backend configuration
+    public func getBackendInfo() -> String {
+        let backendName = backendType.displayName
+        let backendDesc = backendType.description
+
+        var info = "Backend: \(backendName) - \(backendDesc)"
+
+        // Add hardware-specific information
+        if backendType == .gpu || backendType == .auto {
+            if SLlama.supportsMetal() {
+                info += " (Metal acceleration available)"
+            } else if SLlama.supportsGpuOffload() {
+                info += " (GPU offload available)"
+            } else {
+                info += " (GPU acceleration not available, falling back to CPU)"
+            }
+        }
+
+        return info
+    }
+
+    /// Check if the model is using GPU acceleration
+    /// - Returns: true if GPU acceleration is being used, false otherwise
+    public func isUsingGpuAcceleration() -> Bool {
+        switch backendType {
+            case .cpu:
+                false
+            case .gpu:
+                SLlama.supportsMetal() || SLlama.supportsGpuOffload()
+            case .auto:
+                SLlama.supportsMetal() || SLlama.supportsGpuOffload()
+        }
     }
 }

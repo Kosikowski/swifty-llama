@@ -378,6 +378,45 @@ public extension SLlamaModelKvOverrideType {
     static let string = LLAMA_KV_OVERRIDE_TYPE_STR
 }
 
+// MARK: - Backend Selection
+
+/// Backend selection for model computation
+/// This enum allows choosing between CPU and GPU computation regardless of specific hardware
+public enum SLlamaBackendType: String, CaseIterable, Sendable {
+    /// Use CPU for all computations
+    case cpu
+
+    /// Use GPU for computations (Metal on Apple platforms, CUDA on others)
+    case gpu
+
+    /// Use the best available backend (GPU if available, otherwise CPU)
+    case auto
+
+    /// Get the display name for the backend type
+    public var displayName: String {
+        switch self {
+            case .cpu:
+                "CPU"
+            case .gpu:
+                "GPU"
+            case .auto:
+                "Auto"
+        }
+    }
+
+    /// Get the description for the backend type
+    public var description: String {
+        switch self {
+            case .cpu:
+                "Use CPU for all computations"
+            case .gpu:
+                "Use GPU for computations (Metal/CUDA)"
+            case .auto:
+                "Automatically select best available backend"
+        }
+    }
+}
+
 // MARK: - Error Types
 
 /// Error types for SLlama operations

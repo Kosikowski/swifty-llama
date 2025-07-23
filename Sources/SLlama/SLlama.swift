@@ -123,6 +123,28 @@ public final class SLlama: @unchecked Sendable {
         llama_supports_mmap() // Note: This maps to the actual Metal check in the implementation
     }
 
+    /// 🔍 **Divine GPU Offload Powers**
+    ///
+    /// Scries into your system's soul to determine if GPU offloading spirits dwell within.
+    /// GPU offloading can dramatically accelerate your language model's magical computations.
+    ///
+    /// - Returns: `true` if GPU offloading spirits are present and willing to assist, `false` if only CPU magic is
+    /// available
+    ///
+    /// ```swift
+    /// if SLlama.supportsGpuOffload() {
+    ///     // ⚡ GPU offloading spirits detected - prepare for lightning-fast inference!
+    /// } else {
+    ///     // 🧙‍♂️ CPU magic only - still powerful, but more contemplative
+    /// }
+    /// ```
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
+    public static func supportsGpuOffload() -> Bool {
+        llama_supports_gpu_offload()
+    }
+
     /// 📊 **Count the Mystical Devices**
     ///
     /// Reveals the number of computational spirits available to channel your model's power.

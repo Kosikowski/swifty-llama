@@ -11,6 +11,13 @@ public class SwiftyLlamaCore: SwiftyLlama {
     private let vocab: SLlamaVocab
     private let maxContextSize: Int32
 
+    // MARK: - Public Properties
+
+    /// Get the underlying model instance
+    public var underlyingModel: SLlamaModel {
+        model
+    }
+
     // Shared context per instance (can be shared with proper memory clearing)
     private var context: SLlamaContext?
     private var isContextInitialized = false
@@ -48,9 +55,9 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
     // MARK: - Initialization
 
-    public init(modelPath: String, contextSize: Int32 = 2048) throws {
+    public init(modelPath: String, contextSize: Int32 = 2048, backendType: SLlamaBackendType = .auto) throws {
         SLlama.initialize()
-        model = try SLlamaModel(modelPath: modelPath)
+        model = try SLlamaModel(modelPath: modelPath, backendType: backendType)
         vocab = SLlamaVocab(model)
         maxContextSize = contextSize
     }

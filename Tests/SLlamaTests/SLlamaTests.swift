@@ -1,5 +1,6 @@
 import Testing
 @testable import SLlama
+@testable import TestUtilities
 
 struct SLlamaTests {
     @Test("SLlama initialization and cleanup")
@@ -32,5 +33,51 @@ struct SLlamaTests {
 
         // Cleanup
         SLlama.cleanup()
+    }
+
+    @Test("SLlama backend selection test")
+    func backendSelectionTest() async throws {
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for backend selection test"
+        )
+
+        let modelPath = TestUtilities.testModelPath
+
+        // Test CPU backend
+        let cpuModel = try SLlamaModel(modelPath: modelPath, backendType: .cpu)
+        #expect(cpuModel.getBackendType() == .cpu, "CPU backend should be set")
+        #expect(!cpuModel.isUsingGpuAcceleration(), "CPU backend should not use GPU acceleration")
+
+        // Test GPU backend
+        let gpuModel = try SLlamaModel(modelPath: modelPath, backendType: .gpu)
+        #expect(gpuModel.getBackendType() == .gpu, "GPU backend should be set")
+        // GPU acceleration depends on hardware support
+        let gpuAccelerationAvailable = SLlama.supportsMetal() || SLlama.supportsGpuOffload()
+        #expect(
+            gpuModel.isUsingGpuAcceleration() == gpuAccelerationAvailable,
+            "GPU acceleration should match hardware support"
+        )
+
+        // Test Auto backend
+        let autoModel = try SLlamaModel(modelPath: modelPath, backendType: .auto)
+        #expect(autoModel.getBackendType() == .auto, "Auto backend should be set")
+        // Auto should use GPU if available, otherwise CPU
+        let autoShouldUseGpu = SLlama.supportsMetal() || SLlama.supportsGpuOffload()
+        #expect(autoModel.isUsingGpuAcceleration() == autoShouldUseGpu, "Auto backend should use GPU if available")
+
+        // Test default initializer (should use auto)
+        let defaultModel = try SLlamaModel(modelPath: modelPath)
+        #expect(defaultModel.getBackendType() == .auto, "Default initializer should use auto backend")
+
+        // Test backend info
+        let cpuInfo = cpuModel.getBackendInfo()
+        #expect(cpuInfo.contains("CPU"), "CPU backend info should mention CPU")
+
+        let gpuInfo = gpuModel.getBackendInfo()
+        #expect(gpuInfo.contains("GPU"), "GPU backend info should mention GPU")
+
+        let autoInfo = autoModel.getBackendInfo()
+        #expect(autoInfo.contains("Auto"), "Auto backend info should mention Auto")
     }
 }

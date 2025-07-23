@@ -248,6 +248,55 @@ struct SwiftyLlamaTests {
         // Clean up
         await swiftyCore.cancelAll()
     }
+
+    @Test("SwiftyLlamaCore backend selection test")
+    func backendSelectionTest() async throws {
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for backend selection test"
+        )
+
+        let modelPath = TestUtilities.testModelPath
+
+        // Test CPU backend
+        let cpuCore = try SwiftyLlamaCore(modelPath: modelPath, contextSize: 512, backendType: .cpu)
+        let cpuModel = cpuCore.underlyingModel
+        #expect(cpuModel.getBackendType() == .cpu, "CPU backend should be set")
+        #expect(!cpuModel.isUsingGpuAcceleration(), "CPU backend should not use GPU acceleration")
+
+        // Test GPU backend
+        let gpuCore = try SwiftyLlamaCore(modelPath: modelPath, contextSize: 512, backendType: .gpu)
+        let gpuModel = gpuCore.underlyingModel
+        #expect(gpuModel.getBackendType() == .gpu, "GPU backend should be set")
+        // GPU acceleration depends on hardware support
+        let gpuAccelerationAvailable = SLlama.supportsMetal() || SLlama.supportsGpuOffload()
+        #expect(
+            gpuModel.isUsingGpuAcceleration() == gpuAccelerationAvailable,
+            "GPU acceleration should match hardware support"
+        )
+
+        // Test Auto backend
+        let autoCore = try SwiftyLlamaCore(modelPath: modelPath, contextSize: 512, backendType: .auto)
+        let autoModel = autoCore.underlyingModel
+        #expect(autoModel.getBackendType() == .auto, "Auto backend should be set")
+        // Auto should use GPU if available, otherwise CPU
+        let autoShouldUseGpu = SLlama.supportsMetal() || SLlama.supportsGpuOffload()
+        #expect(autoModel.isUsingGpuAcceleration() == autoShouldUseGpu, "Auto backend should use GPU if available")
+
+        // Test default initializer (should use auto)
+        let defaultCore = try SwiftyLlamaCore(modelPath: modelPath, contextSize: 512)
+        let defaultModel = defaultCore.underlyingModel
+        #expect(defaultModel.getBackendType() == .auto, "Default initializer should use auto backend")
+
+        // Test that we can create conversations with different backends
+        let cpuConversationId = cpuCore.startNewConversation()
+        let gpuConversationId = gpuCore.startNewConversation()
+        let autoConversationId = autoCore.startNewConversation()
+
+        #expect(cpuConversationId != gpuConversationId, "Different conversation IDs should be generated")
+        #expect(gpuConversationId != autoConversationId, "Different conversation IDs should be generated")
+        #expect(cpuConversationId != autoConversationId, "Different conversation IDs should be generated")
+    }
 }
 
 // MARK: - Cancellation Tests
