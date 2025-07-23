@@ -12,7 +12,7 @@ struct SwiftyLlamaTests {
     func compilation() throws {
         // Just test that we can reference the type
         let _: SwiftyLlama.Type = SwiftyLlama.self
-        #expect(true, "Compilation test should pass")
+        #expect(Bool(true), "Compilation test should pass")
     }
 
     // MARK: - Initialization Tests
@@ -292,7 +292,7 @@ extension SwiftyLlamaTests {
         let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         // Create a fake generation ID
-        let fakeID = SwiftyLlamaID()
+        let fakeID = GenerationID()
 
         // This should not crash and should be a no-op
         await swiftyCore.cancel(fakeID)
@@ -512,7 +512,7 @@ extension SwiftyLlamaTests {
     func conversationNotFoundError() async throws {
         let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
-        let nonExistentConversationId = SwiftyLlamaID()
+        let nonExistentConversationId = ConversationID()
 
         // Try to continue a non-existent conversation
         do {
