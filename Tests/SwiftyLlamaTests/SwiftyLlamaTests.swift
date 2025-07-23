@@ -292,7 +292,7 @@ extension SwiftyLlamaTests {
         let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
         // Create a fake generation ID
-        let fakeID = GenerationID()
+        let fakeID = SwiftyLlamaID()
 
         // This should not crash and should be a no-op
         await swiftyCore.cancel(fakeID)
@@ -512,7 +512,7 @@ extension SwiftyLlamaTests {
     func conversationNotFoundError() async throws {
         let swiftyCore = try SwiftyLlama(modelPath: TestUtilities.testModelPath)
 
-        let nonExistentConversationId = ConversationID()
+        let nonExistentConversationId = SwiftyLlamaID()
 
         // Try to continue a non-existent conversation
         do {

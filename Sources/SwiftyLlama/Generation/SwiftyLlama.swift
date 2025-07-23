@@ -25,12 +25,12 @@ public class SwiftyLlama {
 
     // Conversation management
     public struct Conversation: Codable {
-        public let id: ConversationID
+        public let id: SwiftyLlamaID
         public var messages: [ConversationMessage]
         public var totalTokens: Int32
         public let createdAt: Date
 
-        public init(id: ConversationID, messages: [ConversationMessage], totalTokens: Int32, createdAt: Date) {
+        public init(id: SwiftyLlamaID, messages: [ConversationMessage], totalTokens: Int32, createdAt: Date) {
             self.id = id
             self.messages = messages
             self.totalTokens = totalTokens
@@ -52,19 +52,19 @@ public class SwiftyLlama {
         }
     }
 
-    private var conversations: [ConversationID: Conversation] = [:]
-    private var currentConversationId: ConversationID?
+    private var conversations: [SwiftyLlamaID: Conversation] = [:]
+    private var currentConversationId: SwiftyLlamaID?
 
     // Generation tracking
     private struct LiveGeneration {
-        let id: GenerationID
-        let conversationId: ConversationID?
+        let id: SwiftyLlamaID
+        let conversationId: SwiftyLlamaID?
         var params: GenerationParams
         let startTime: Date
         var task: Task<Void, Never>?
     }
 
-    private var activeGenerations: [GenerationID: LiveGeneration] = [:]
+    private var activeGenerations: [SwiftyLlamaID: LiveGeneration] = [:]
 
     // MARK: - Initialization
 
@@ -101,8 +101,8 @@ public class SwiftyLlama {
     // MARK: - Conversation Management
 
     /// Start a new conversation
-    public func startNewConversation() -> ConversationID {
-        let id = ConversationID()
+    public func startNewConversation() -> SwiftyLlamaID {
+        let id = SwiftyLlamaID()
         conversations[id] = Conversation(
             id: id,
             messages: [],
@@ -114,7 +114,7 @@ public class SwiftyLlama {
     }
 
     /// Continue an existing conversation
-    public func continueConversation(_ id: ConversationID) throws {
+    public func continueConversation(_ id: SwiftyLlamaID) throws {
         guard conversations[id] != nil else {
             throw GenerationError.conversationNotFound
         }
@@ -122,12 +122,12 @@ public class SwiftyLlama {
     }
 
     /// Get current conversation ID
-    public func getCurrentConversationId() -> ConversationID? {
+    public func getCurrentConversationId() -> SwiftyLlamaID? {
         currentConversationId
     }
 
     /// Get conversation info
-    public func getConversationInfo(_ id: ConversationID) -> ConversationInfo? {
+    public func getConversationInfo(_ id: SwiftyLlamaID) -> ConversationInfo? {
         guard let conversation = conversations[id] else { return nil }
 
         return ConversationInfo(
@@ -139,7 +139,7 @@ public class SwiftyLlama {
     }
 
     /// Clear a conversation (removes context)
-    public func clearConversation(_ id: ConversationID) {
+    public func clearConversation(_ id: SwiftyLlamaID) {
         conversations.removeValue(forKey: id)
         if currentConversationId == id {
             currentConversationId = nil
@@ -221,7 +221,7 @@ public class SwiftyLlama {
     }
 
     /// Continue a conversation with warm-up (for restored conversations)
-    public func continueConversationWithWarmUp(_ id: ConversationID) throws {
+    public func continueConversationWithWarmUp(_ id: SwiftyLlamaID) throws {
         guard let conversation = conversations[id] else {
             throw GenerationError.conversationNotFound
         }
@@ -232,7 +232,7 @@ public class SwiftyLlama {
     }
 
     /// Check if a conversation needs warm-up (has history but context is cold)
-    private func needsWarmUp(for conversationId: ConversationID) -> Bool {
+    private func needsWarmUp(for conversationId: SwiftyLlamaID) -> Bool {
         guard let conversation = conversations[conversationId] else { return false }
         // Need warm-up if conversation has history but our context is empty
         // AND we haven't already warmed up this conversation
@@ -247,14 +247,14 @@ public class SwiftyLlama {
     public func start(
         prompt: String,
         params: GenerationParams,
-        conversationId: ConversationID? = nil
+        conversationId: SwiftyLlamaID? = nil
     ) async
         -> GenerationStream
     {
-        let id = GenerationID()
+        let id = SwiftyLlamaID()
 
         // Determine conversation to use
-        let targetConversationId: ConversationID = if let conversationId {
+        let targetConversationId: SwiftyLlamaID = if let conversationId {
             conversationId
         } else if let currentId = currentConversationId {
             currentId
@@ -298,10 +298,10 @@ public class SwiftyLlama {
     // MARK: - Private Generation Logic
 
     private func performGeneration(
-        id _: GenerationID,
+        id _: SwiftyLlamaID,
         prompt: String,
         params: GenerationParams,
-        conversationId: ConversationID,
+        conversationId: SwiftyLlamaID,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async {
         do {
@@ -391,7 +391,7 @@ public class SwiftyLlama {
 
     private func prepareContextWithConversation(
         for promptTokens: [SLlamaToken],
-        conversationId: ConversationID,
+        conversationId: SwiftyLlamaID,
         llamaContext: SLlamaContext
     )
         -> Bool
@@ -520,7 +520,7 @@ public class SwiftyLlama {
     // MARK: - Conversation Storage
 
     private func storeConversationMessage(
-        conversationId: ConversationID,
+        conversationId: SwiftyLlamaID,
         role: String,
         content: String,
         tokens: [SLlamaToken]
@@ -600,21 +600,21 @@ public class SwiftyLlama {
 
     // MARK: - Public Management Methods
 
-    public func update(id: GenerationID, _ params: GenerationParams) async {
+    public func update(id: SwiftyLlamaID, _ params: GenerationParams) async {
         if var generation = activeGenerations[id] {
             generation.params = params
             activeGenerations[id] = generation
         }
     }
 
-    public func cancel(_ id: GenerationID) async {
+    public func cancel(_ id: SwiftyLlamaID) async {
         if let generation = activeGenerations[id] {
             generation.task?.cancel()
             activeGenerations.removeValue(forKey: id)
         }
     }
 
-    public func getGenerationInfo(_ id: GenerationID) async -> GenerationInfo? {
+    public func getGenerationInfo(_ id: SwiftyLlamaID) async -> GenerationInfo? {
         guard let generation = activeGenerations[id] else { return nil }
 
         return GenerationInfo(
@@ -626,7 +626,7 @@ public class SwiftyLlama {
         )
     }
 
-    public func getActiveGenerationIDs() async -> [GenerationID] {
+    public func getActiveGenerationIDs() async -> [SwiftyLlamaID] {
         Array(activeGenerations.keys)
     }
 
