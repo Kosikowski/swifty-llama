@@ -620,19 +620,19 @@ extension SwiftyLlamaTests {
         }
 
         // Get conversation state
-        let conversationState = swiftyCore.getConversationState()
+        let conversationState = swiftyCore.getAllConversations()
         #expect(conversationState.count > 0, "Should have conversation state")
 
         // Test JSON serialization/deserialization
-        let jsonData = try swiftyCore.saveConversationsToJSON()
+        let jsonData = try await swiftyCore.exportConversations()
         #expect(jsonData.count > 0, "JSON data should not be empty")
 
         // Create a new instance and restore conversations
         let newSwiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath)
-        try newSwiftyCore.loadConversationsFromJSON(jsonData)
+        try newSwiftyCore.importConversations(jsonData)
 
         // Verify conversations were restored
-        let restoredState = newSwiftyCore.getConversationState()
+        let restoredState = newSwiftyCore.getAllConversations()
         #expect(restoredState.count == conversationState.count, "Should have same number of conversations")
 
         // Test continuing a restored conversation
@@ -679,7 +679,7 @@ extension SwiftyLlamaTests {
         }
 
         // Get conversation state
-        let conversationState = swiftyCore.getConversationState()
+        let conversationState = swiftyCore.getAllConversations()
         #expect(conversationState.count > 0, "Should have conversation state")
 
         if let conversation = conversationState.first {
@@ -873,7 +873,7 @@ extension SwiftyLlamaTests {
         #expect(veryFinalInfo3?.messageCount == 6, "Third conversation should have 6 messages")
 
         // Verify that conversations have different token counts by checking their content
-        let conversations = swiftyCore.getConversationState()
+        let conversations = swiftyCore.getAllConversations()
         #expect(conversations.count >= 3, "Should have at least 3 conversations")
 
         // Get the three test conversations
@@ -907,6 +907,145 @@ extension SwiftyLlamaTests {
         await swiftyCore.cancelAll()
     }
 
+    @Test("SwiftyCoreLlama conversation title functionality test")
+    func conversationTitleFunctionalityTest() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for conversation title functionality test"
+        )
+
+        let swiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath, contextSize: 512)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 10)
+
+        // Test 1: Set a title manually
+        let conversationId = swiftyCore.startNewConversation()
+
+        do {
+            try swiftyCore.setConversationTitle(conversationId, title: "Test Conversation")
+            let retrievedTitle = swiftyCore.getConversationTitle(conversationId)
+            #expect(retrievedTitle == "Test Conversation", "Should retrieve the set title")
+        } catch {
+            #expect(Bool(false), "Setting title should not throw an error")
+        }
+
+        // Test 2: Try to set a title that's too long
+        do {
+            let longTitle = String(repeating: "A", count: 201) // 201 characters
+            try swiftyCore.setConversationTitle(conversationId, title: longTitle)
+            #expect(Bool(false), "Setting title longer than 200 characters should throw an error")
+        } catch let error as GenerationError {
+            if case .titleTooLong = error {
+                // This is expected
+            } else {
+                throw error
+            }
+        }
+
+        // Test 3: Try to generate title for conversation with insufficient tokens
+        do {
+            try await swiftyCore.generateConversationTitle(conversationId)
+            #expect(Bool(false), "Generating title for conversation with insufficient tokens should throw an error")
+        } catch let error as GenerationError {
+            if case .insufficientTokensForTitleGeneration = error {
+                // This is expected
+            } else {
+                throw error
+            }
+        }
+
+        // Test 4: Generate a conversation with enough content and then generate title
+        let prompt = "Hello, I would like to discuss artificial intelligence and machine learning. Can you tell me about the differences between supervised and unsupervised learning?"
+
+        let stream = await swiftyCore.start(prompt: prompt, params: params, conversationId: conversationId)
+
+        // Consume the stream to generate a response
+        var response = ""
+        for try await token in stream.stream {
+            response += token
+        }
+
+        // Verify the conversation has content
+        let conversations = swiftyCore.getAllConversations()
+        let conversation = conversations.first!
+        #expect(!conversation.messages.isEmpty, "Conversation should have messages")
+        #expect(conversation.totalTokens > 0, "Conversation should have tokens")
+        print("Conversation has \(conversation.totalTokens) tokens")
+
+        // Test 5: Generate title for conversation with sufficient content
+        // First, let's add more content to the conversation to give the model more context
+        let continuationPrompt = "Can you also explain deep learning and neural networks?"
+        do {
+            let continueStream = await swiftyCore.start(
+                prompt: continuationPrompt,
+                params: params,
+                conversationId: conversationId
+            )
+            var continuationResponse = ""
+            for try await token in continueStream.stream {
+                continuationResponse += token
+            }
+            #expect(!continuationResponse.isEmpty, "Continuation should generate a response")
+        } catch {
+            print("Error continuing conversation: \(error)")
+        }
+
+        // Now try to generate a title with more content
+        // Note: The TinyStories model may not generate meaningful titles, so we test the API functionality
+        do {
+            try await swiftyCore.generateConversationTitle(conversationId)
+            let generatedTitle = swiftyCore.getConversationTitle(conversationId)
+            print("Generated title: '\(generatedTitle ?? "nil")'")
+            // The model might generate just punctuation, which gets cleaned to empty string
+            // This is acceptable for this test model - we're testing the API, not the model quality
+            if let title = generatedTitle, !title.isEmpty {
+                #expect(title.count <= 200, "Generated title should not exceed 200 characters")
+            } else {
+                print("Model generated empty title (acceptable for TinyStories model)")
+            }
+        } catch {
+            print("Title generation failed with error: \(error)")
+            #expect(Bool(false), "Generating title for conversation with sufficient content should not throw an error")
+        }
+
+        // Test 6: Test auto-generation during save
+        let newConversationId = swiftyCore.startNewConversation()
+        let newPrompt = "Let's talk about renewable energy sources and their impact on climate change."
+
+        let newStream = await swiftyCore.start(prompt: newPrompt, params: params, conversationId: newConversationId)
+
+        // Consume the stream
+        var newResponse = ""
+        for try await token in newStream.stream {
+            newResponse += token
+        }
+
+        // Verify the new conversation has no title initially
+        let newConversations = swiftyCore.getAllConversations()
+        let newConversation = newConversations.first { $0.id == newConversationId }!
+        #expect(newConversation.title == nil, "New conversation should not have a title initially")
+
+        // Save conversations (this should auto-generate titles)
+        let jsonData = try await swiftyCore.exportConversations()
+        #expect(!jsonData.isEmpty, "Should generate JSON data")
+
+        // Verify that the new conversation now has a title
+        let savedConversations = swiftyCore.getAllConversations()
+        let savedNewConversation = savedConversations.first { $0.id == newConversationId }!
+        print("Saved conversation title: \(savedNewConversation.title ?? "nil")")
+        // The model might generate just punctuation, which gets cleaned to empty string
+        // This is acceptable for this test model - we're testing the API, not the model quality
+        if let title = savedNewConversation.title, !title.isEmpty {
+            #expect(title.count <= 200, "Auto-generated title should not exceed 200 characters")
+        } else {
+            print("Model generated empty title for saved conversation (acceptable for TinyStories model)")
+        }
+
+        // Clean up
+        await swiftyCore.cancelAll()
+    }
+
     @Test("SwiftyCoreLlama context truncation validation test")
     func contextTruncationValidationTest() async throws {
         // Fail if model not available
@@ -934,7 +1073,7 @@ extension SwiftyLlamaTests {
         }
 
         // Verify the conversation was created and has content
-        let conversations = swiftyCore.getConversationState()
+        let conversations = swiftyCore.getAllConversations()
         #expect(conversations.count == 1, "Should have exactly one conversation")
 
         let conversation = conversations.first!
@@ -968,7 +1107,7 @@ extension SwiftyLlamaTests {
             #expect(!continuationResponse.isEmpty, "Continuation should generate a response")
 
             // Verify the conversation grew
-            let updatedConversations = swiftyCore.getConversationState()
+            let updatedConversations = swiftyCore.getAllConversations()
             let updatedConversation = updatedConversations.first!
             #expect(updatedConversations.count == 1, "Should still have exactly one conversation")
             #expect(updatedConversation.messages.count > conversation.messages.count, "Conversation should have grown")

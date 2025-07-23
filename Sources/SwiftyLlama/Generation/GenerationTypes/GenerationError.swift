@@ -10,6 +10,8 @@ public enum GenerationError: Error, LocalizedError {
     case tokenizationFailed(conversationId: ConversationID)
     case generationFailed(generationId: GenerationID)
     case invalidState(conversationId: ConversationID?)
+    case titleTooLong(conversationId: ConversationID, maxLength: Int)
+    case insufficientTokensForTitleGeneration(conversationId: ConversationID, requiredTokens: Int)
 
     public var errorDescription: String? {
         switch self {
@@ -33,6 +35,10 @@ public enum GenerationError: Error, LocalizedError {
                 } else {
                     "Invalid state"
                 }
+            case let .titleTooLong(conversationId, maxLength):
+                "Title too long (ConversationID: \(conversationId), max length: \(maxLength))"
+            case let .insufficientTokensForTitleGeneration(conversationId, requiredTokens):
+                "Insufficient tokens for title generation (ConversationID: \(conversationId), required: \(requiredTokens))"
         }
     }
 }

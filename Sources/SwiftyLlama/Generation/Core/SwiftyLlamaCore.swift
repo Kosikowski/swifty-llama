@@ -109,7 +109,8 @@ public class SwiftyLlamaCore: SwiftyLlama {
             id: id,
             messages: [],
             totalTokens: 0,
-            createdAt: Date()
+            createdAt: Date(),
+            title: nil
         )
         currentConversationId = id
 
@@ -154,6 +155,116 @@ public class SwiftyLlamaCore: SwiftyLlama {
         }
     }
 
+    // MARK: - Conversation Titles
+
+    /// Set a title for a conversation
+    public func setConversationTitle(_ id: ConversationID, title: String) throws {
+        guard conversations[id] != nil else {
+            throw GenerationError.conversationNotFound(conversationId: id)
+        }
+
+        guard title.count <= 200 else {
+            throw GenerationError.titleTooLong(conversationId: id, maxLength: 200)
+        }
+
+        conversations[id]?.title = title
+    }
+
+    /// Get the title of a conversation
+    public func getConversationTitle(_ id: ConversationID) -> String? {
+        conversations[id]?.title
+    }
+
+    /// Auto-generate a title for a conversation using the LLM
+    public func generateConversationTitle(_ id: ConversationID) async throws {
+        guard let conversation = conversations[id] else {
+            throw GenerationError.conversationNotFound(conversationId: id)
+        }
+
+        // Minimum token threshold for title generation (to ensure meaningful context)
+        let minimumTokensForTitle = 10
+
+        guard conversation.totalTokens >= minimumTokensForTitle else {
+            throw GenerationError.insufficientTokensForTitleGeneration(
+                conversationId: id,
+                requiredTokens: minimumTokensForTitle
+            )
+        }
+
+        // Create a title generation prompt based on the conversation content
+        let titlePrompt = createTitleGenerationPrompt(from: conversation)
+
+        // Generate title with conservative parameters
+        let titleParams = GenerationParams(
+            seed: 42,
+            topK: 40,
+            topP: 0.9,
+            temperature: 0.8,
+            repeatPenalty: 1.1,
+            maxTokens: 50 // Give more room for title generation
+        )
+
+        // Use a temporary conversation for title generation to avoid affecting the original conversation
+        let tempConversationId = ConversationID()
+        conversations[tempConversationId] = Conversation(
+            id: tempConversationId,
+            messages: [],
+            totalTokens: 0,
+            createdAt: Date(),
+            title: nil
+        )
+
+        let titleStream = await start(prompt: titlePrompt, params: titleParams, conversationId: tempConversationId)
+
+        var generatedTitle = ""
+        for try await token in titleStream.stream {
+            generatedTitle += token
+        }
+
+        // Clean up the generated title
+        let cleanedTitle = generatedTitle.sanitizeForTitle()
+
+        // Set the generated title
+        conversations[id]?.title = cleanedTitle
+
+        // Clean up the temporary conversation
+        conversations.removeValue(forKey: tempConversationId)
+        clearConversationState(for: tempConversationId)
+    }
+
+    // MARK: - Private Title Generation Helpers
+
+    private func createTitleGenerationPrompt(from conversation: Conversation) -> String {
+        // Extract the first few messages to provide context for title generation
+        let contextMessages = Array(conversation.messages.prefix(3))
+        let contextText = contextMessages.map { message in
+            "\(message.role): \(message.content)"
+        }.joined(separator: "\n")
+
+        return """
+        Create a short, descriptive title for this conversation (max 200 characters):
+
+        \(contextText)
+
+        Title:
+        """
+    }
+
+    /// Auto-generate titles for conversations that don't have titles
+    private func autoGenerateTitlesForConversations() async {
+        for (id, conversation) in conversations {
+            // Only generate titles for conversations that don't already have one
+            if conversation.title == nil {
+                do {
+                    try await generateConversationTitle(id)
+                } catch {
+                    // Silently ignore title generation errors to avoid blocking save
+                    // The conversation will be saved without a title
+                }
+            }
+        }
+    }
+
     // MARK: - Batch Management
     private func clearBatch() {
         guard let batch else { return }
@@ -167,18 +278,18 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
     // MARK: - Persistence Support
 
-    /// Get the current state of all conversations for persistence
-    public func getConversationState() -> [Conversation] {
+    /// Get all conversations
+    public func getAllConversations() -> [Conversation] {
         Array(conversations.values)
     }
 
-    /// Restore conversations from persisted state
-    public func restoreConversations(_ savedConversations: [Conversation]) {
-        conversations.removeAll()
+    /// Set conversations (replaces all existing conversations)
+    public func setConversations(_ conversations: [Conversation]) {
+        self.conversations.removeAll()
         conversationStates.removeAll()
 
-        for conversation in savedConversations {
-            conversations[conversation.id] = conversation
+        for conversation in conversations {
+            self.conversations[conversation.id] = conversation
             // Initialize conversation state for restored conversations
             // Mark as not warmed up since we need to reconstruct the context
             updateConversationState(for: conversation.id) { state in
@@ -189,15 +300,18 @@ public class SwiftyLlamaCore: SwiftyLlama {
         }
     }
 
-    /// Save conversations to JSON data
-    public func saveConversationsToJSON() throws -> Data {
+    /// Export conversations to data format
+    public func exportConversations() async throws -> Data {
+        // Auto-generate titles for conversations that don't have titles
+        await autoGenerateTitlesForConversations()
+
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        return try encoder.encode(getConversationState())
+        return try encoder.encode(getAllConversations())
     }
 
-    /// Load conversations from JSON data
-    public func loadConversationsFromJSON(_ data: Data) throws {
+    /// Import conversations from data format
+    public func importConversations(_ data: Data) throws {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let savedConversations = try decoder.decode([Conversation].self, from: data)
@@ -213,7 +327,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
         // Reset conversation states to ensure clean slate
         conversationStates.removeAll()
 
-        restoreConversations(savedConversations)
+        setConversations(savedConversations)
     }
 
     /// Warm up context with conversation history (lazy reconstruction of KV cache)

@@ -34,6 +34,26 @@ public protocol SwiftyLlama: AnyObject {
     /// - Throws: GenerationError.conversationNotFound if conversation doesn't exist
     func continueConversationWithWarmUp(_ id: ConversationID) throws
 
+    // MARK: - Conversation Titles
+
+    /// Set a title for a conversation
+    /// - Parameters:
+    ///   - id: The conversation ID
+    ///   - title: The title to set (must be 200 characters or less)
+    /// - Throws: GenerationError.conversationNotFound if conversation doesn't exist
+    func setConversationTitle(_ id: ConversationID, title: String) throws
+
+    /// Get the title of a conversation
+    /// - Parameter id: The conversation ID
+    /// - Returns: The conversation title, or nil if not set
+    func getConversationTitle(_ id: ConversationID) -> String?
+
+    /// Auto-generate a title for a conversation using the LLM
+    /// - Parameter id: The conversation ID
+    /// - Throws: GenerationError.conversationNotFound if conversation doesn't exist
+    /// - Note: Title will only be generated if conversation has sufficient tokens (minimum threshold)
+    func generateConversationTitle(_ id: ConversationID) async throws
+
     // MARK: - Generation
 
     /// Begin a new generation and immediately obtain a token stream
@@ -72,25 +92,25 @@ public protocol SwiftyLlama: AnyObject {
     /// Cancel all active generations
     func cancelAll() async
 
-    // MARK: - Persistence
+    // MARK: - State Management
 
-    /// Get the current state of all conversations for persistence
+    /// Get all conversations
     /// - Returns: Array of all conversations
-    func getConversationState() -> [Conversation]
+    func getAllConversations() -> [Conversation]
 
-    /// Restore conversations from persisted state
-    /// - Parameter savedConversations: Array of saved conversations
-    func restoreConversations(_ savedConversations: [Conversation])
+    /// Set conversations (replaces all existing conversations)
+    /// - Parameter conversations: Array of conversations to set
+    func setConversations(_ conversations: [Conversation])
 
-    /// Save conversations to JSON data
-    /// - Returns: JSON data containing all conversations
+    /// Export conversations to data format
+    /// - Returns: Data containing all conversations
     /// - Throws: Encoding errors if serialization fails
-    func saveConversationsToJSON() throws -> Data
+    func exportConversations() async throws -> Data
 
-    /// Load conversations from JSON data
-    /// - Parameter data: JSON data containing conversations
+    /// Import conversations from data format
+    /// - Parameter data: Data containing conversations
     /// - Throws: Decoding errors if deserialization fails
-    func loadConversationsFromJSON(_ data: Data) throws
+    func importConversations(_ data: Data) throws
 
     // MARK: - Model Information
 
@@ -133,12 +153,12 @@ public extension SwiftyLlama {
     /// Get all conversation IDs
     /// - Returns: Array of all conversation IDs
     func getAllConversationIDs() -> [ConversationID] {
-        getConversationState().map(\.id)
+        getAllConversations().map(\.id)
     }
 
     /// Clear all conversations
     func clearAllConversations() {
-        for conversation in getConversationState() {
+        for conversation in getAllConversations() {
             clearConversation(conversation.id)
         }
     }
