@@ -11,18 +11,27 @@ public class SwiftyLlamaCore: SwiftyLlama {
     private let vocab: SLlamaVocab
     private let maxContextSize: Int32
 
-    // Single context per instance
+    // Shared context per instance (can be shared with proper memory clearing)
     private var context: SLlamaContext?
     private var isContextInitialized = false
 
-    // Single batch instance
+    // Shared batch instance (can be shared with proper clearing)
     private var batch: SLlamaBatch?
 
-    // State tracking
-    private var currentTokenCount: Int32 = 0
-    private var shouldContinuePredicting = false
-    private var tokenBuffer: [SLlamaToken] = []
+    // Per-conversation state management
+    private struct ConversationState {
+        // Token generation state
+        var currentTokenCount: Int32 = 0
+        var shouldContinuePredicting: Bool = false
+        var tokenBuffer: [SLlamaToken] = []
 
+        // Generation tracking
+        var lastUsedParams: GenerationParams?
+        var isActive: Bool = false
+        var isWarmedUp: Bool = false
+    }
+
+    private var conversationStates: [ConversationID: ConversationState] = [:]
     private var conversations: [ConversationID: Conversation] = [:]
     private var currentConversationId: ConversationID?
 
@@ -69,6 +78,28 @@ public class SwiftyLlamaCore: SwiftyLlama {
         context.setCausalAttention(params.enableCausalAttention)
     }
 
+    // MARK: - Per-Conversation State Management
+
+    private func getOrCreateConversationState(for conversationId: ConversationID) -> ConversationState {
+        if conversationStates[conversationId] == nil {
+            conversationStates[conversationId] = ConversationState()
+        }
+        return conversationStates[conversationId]!
+    }
+
+    private func updateConversationState(
+        for conversationId: ConversationID,
+        _ update: (inout ConversationState) -> Void
+    ) {
+        var state = getOrCreateConversationState(for: conversationId)
+        update(&state)
+        conversationStates[conversationId] = state
+    }
+
+    private func clearConversationState(for conversationId: ConversationID) {
+        conversationStates.removeValue(forKey: conversationId)
+    }
+
     // MARK: - Conversation Management
 
     /// Start a new conversation
@@ -81,6 +112,10 @@ public class SwiftyLlamaCore: SwiftyLlama {
             createdAt: Date()
         )
         currentConversationId = id
+
+        // Initialize conversation state
+        _ = getOrCreateConversationState(for: id)
+
         return id
     }
 
@@ -112,13 +147,11 @@ public class SwiftyLlamaCore: SwiftyLlama {
     /// Clear a conversation (removes context)
     public func clearConversation(_ id: ConversationID) {
         conversations.removeValue(forKey: id)
+        clearConversationState(for: id)
+
         if currentConversationId == id {
             currentConversationId = nil
         }
-        // Reset context state
-        currentTokenCount = 0
-        tokenBuffer.removeAll()
-        shouldContinuePredicting = false
     }
 
     // MARK: - Batch Management
@@ -142,8 +175,12 @@ public class SwiftyLlamaCore: SwiftyLlama {
     /// Restore conversations from persisted state
     public func restoreConversations(_ savedConversations: [Conversation]) {
         conversations.removeAll()
+        conversationStates.removeAll()
+
         for conversation in savedConversations {
             conversations[conversation.id] = conversation
+            // Initialize conversation state for restored conversations
+            _ = getOrCreateConversationState(for: conversation.id)
         }
     }
 
@@ -170,8 +207,14 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
         // 1) Start from a clean slate
         ctx.clearMemory(data: true)
-        currentTokenCount = 0
-        tokenBuffer.removeAll()
+
+        // Update conversation state
+        updateConversationState(for: conversation.id) { state in
+            state.currentTokenCount = 0
+            state.tokenBuffer.removeAll()
+            state.isWarmedUp = true
+        }
+
         clearBatch()
 
         // 2) Configure context for warm-up (use default params)
@@ -187,7 +230,12 @@ public class SwiftyLlamaCore: SwiftyLlama {
             ) // last token gets logits
         }
         try ctx.core().decode(batch!)
-        currentTokenCount = Int32(hist.count)
+
+        // Update conversation state with historical token count
+        updateConversationState(for: conversation.id) { state in
+            state.currentTokenCount = Int32(hist.count)
+            state.tokenBuffer = hist
+        }
     }
 
     /// Continue a conversation with warm-up (for restored conversations)
@@ -204,9 +252,11 @@ public class SwiftyLlamaCore: SwiftyLlama {
     /// Check if a conversation needs warm-up (has history but context is cold)
     private func needsWarmUp(for conversationId: ConversationID) -> Bool {
         guard let conversation = conversations[conversationId] else { return false }
+        let state = getOrCreateConversationState(for: conversationId)
+
         // Need warm-up if conversation has history but our context is empty
         // AND we haven't already warmed up this conversation
-        return !conversation.messages.isEmpty && (currentTokenCount == 0 || tokenBuffer.isEmpty)
+        return !conversation.messages.isEmpty && (state.currentTokenCount == 0 || state.tokenBuffer.isEmpty)
     }
 
     // MARK: - Public API
@@ -279,7 +329,8 @@ public class SwiftyLlamaCore: SwiftyLlama {
             try ensureContextInitialized()
 
             // Configure context for this generation (only if not already warmed up)
-            if currentTokenCount == 0 {
+            let state = getOrCreateConversationState(for: conversationId)
+            if state.currentTokenCount == 0 {
                 try configureContext(with: params)
             }
 
@@ -302,12 +353,23 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
             // Generate tokens
             var generatedTokens: [SLlamaToken] = []
-            let maxNewTokens = max(0, Int32(params.maxTokens) - currentTokenCount)
+            let currentState = getOrCreateConversationState(for: conversationId)
+            let maxNewTokens = max(0, Int32(params.maxTokens) - currentState.currentTokenCount)
 
             // If we already have more tokens than requested, we can still generate a minimum number
             let minNewTokens = maxNewTokens > 0 ? maxNewTokens : 1
-            while shouldContinuePredicting, generatedTokens.count < minNewTokens {
-                let token = predictNextToken(sampler: sampler, llamaContext: context!)
+
+            // Update conversation state for generation
+            updateConversationState(for: conversationId) { state in
+                state.shouldContinuePredicting = true
+                state.lastUsedParams = params
+                state.isActive = true
+            }
+
+            while getOrCreateConversationState(for: conversationId).shouldContinuePredicting,
+                  generatedTokens.count < minNewTokens
+            {
+                let token = predictNextToken(sampler: sampler, llamaContext: context!, conversationId: conversationId)
 
                 if token == vocab.eosToken {
                     break
@@ -384,8 +446,10 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
             // If we have history, we need to continue from where we left off
             if !historyTokens.isEmpty {
-                currentTokenCount = Int32(historyTokens.count)
-                tokenBuffer = historyTokens
+                updateConversationState(for: conversationId) { state in
+                    state.currentTokenCount = Int32(historyTokens.count)
+                    state.tokenBuffer = historyTokens
+                }
 
                 // For continuation, we need to start new tokens from the next position
                 clearBatch()
@@ -399,8 +463,10 @@ public class SwiftyLlamaCore: SwiftyLlama {
                 // Empty conversation - need to clear KV cache since we're starting fresh
                 llamaContext.clearMemory(data: true)
 
-                currentTokenCount = 0
-                tokenBuffer.removeAll()
+                updateConversationState(for: conversationId) { state in
+                    state.currentTokenCount = 0
+                    state.tokenBuffer.removeAll()
+                }
 
                 clearBatch()
 
@@ -418,21 +484,33 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
             // Update token count based on whether we have history or not
             if !historyTokens.isEmpty {
-                currentTokenCount = Int32(historyTokens.count + promptTokens.count)
+                updateConversationState(for: conversationId) { state in
+                    state.currentTokenCount = Int32(historyTokens.count + promptTokens.count)
+                }
             } else {
-                currentTokenCount = Int32(promptTokens.count)
+                updateConversationState(for: conversationId) { state in
+                    state.currentTokenCount = Int32(promptTokens.count)
+                }
             }
-            shouldContinuePredicting = true
+
+            updateConversationState(for: conversationId) { state in
+                state.shouldContinuePredicting = true
+            }
+
             return true
         } else {
             // New conversation - start fresh
-            currentTokenCount = 0
-            tokenBuffer.removeAll()
+            updateConversationState(for: conversationId) { state in
+                state.currentTokenCount = 0
+                state.tokenBuffer.removeAll()
+            }
 
             // For new conversation, we need to reset the context completely
             // Reset our state
-            currentTokenCount = 0
-            tokenBuffer.removeAll()
+            updateConversationState(for: conversationId) { state in
+                state.currentTokenCount = 0
+                state.tokenBuffer.removeAll()
+            }
 
             // Clear the KV cache completely for a brand-new conversation
             llamaContext.clearMemory(data: true)
@@ -453,8 +531,11 @@ public class SwiftyLlamaCore: SwiftyLlama {
                 return false
             }
 
-            currentTokenCount = Int32(promptTokens.count)
-            shouldContinuePredicting = true
+            updateConversationState(for: conversationId) { state in
+                state.currentTokenCount = Int32(promptTokens.count)
+                state.shouldContinuePredicting = true
+            }
+
             return true
         }
     }
@@ -463,9 +544,6 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
     private func prepareContext(for promptTokens: [SLlamaToken], llamaContext _: SLlamaContext) -> Bool {
         guard !promptTokens.isEmpty else { return false }
-
-        currentTokenCount = 0
-        tokenBuffer.removeAll()
 
         let initialCount = promptTokens.count
         guard maxContextSize > initialCount else { return false }
@@ -482,8 +560,6 @@ public class SwiftyLlamaCore: SwiftyLlama {
             return false
         }
 
-        currentTokenCount = Int32(initialCount)
-        shouldContinuePredicting = true
         return true
     }
 
@@ -521,40 +597,59 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
     // MARK: - Token Prediction
 
-    private func predictNextToken(sampler: SLlamaSampler, llamaContext _: SLlamaContext) -> SLlamaToken {
-        guard shouldContinuePredicting, currentTokenCount < maxContextSize else {
+    private func predictNextToken(
+        sampler: SLlamaSampler,
+        llamaContext _: SLlamaContext,
+        conversationId: ConversationID
+    )
+        -> SLlamaToken
+    {
+        let state = getOrCreateConversationState(for: conversationId)
+
+        guard state.shouldContinuePredicting, state.currentTokenCount < maxContextSize else {
             return vocab.eosToken
         }
 
         // Sample next token
         guard let token = sampler.sample() else {
-            shouldContinuePredicting = false
+            updateConversationState(for: conversationId) { state in
+                state.shouldContinuePredicting = false
+            }
             return vocab.eosToken
         }
 
         // Accept the token
         sampler.accept(token)
 
-        tokenBuffer.append(token)
+        updateConversationState(for: conversationId) { state in
+            state.tokenBuffer.append(token)
+        }
 
         // Check for stop conditions
         if token == vocab.eosToken {
-            shouldContinuePredicting = false
+            updateConversationState(for: conversationId) { state in
+                state.shouldContinuePredicting = false
+            }
             return vocab.eosToken
         }
 
         // Process the token for next generation
         clearBatch()
-        addToBatch(token: token, position: currentTokenCount)
+        addToBatch(token: token, position: state.currentTokenCount)
 
         do {
             try context!.core().decode(batch!)
         } catch {
-            shouldContinuePredicting = false
+            updateConversationState(for: conversationId) { state in
+                state.shouldContinuePredicting = false
+            }
             return vocab.eosToken
         }
 
-        currentTokenCount += 1
+        updateConversationState(for: conversationId) { state in
+            state.currentTokenCount += 1
+        }
+
         return token
     }
 
