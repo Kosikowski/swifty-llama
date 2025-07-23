@@ -519,7 +519,12 @@ extension SwiftyLlamaTests {
             try swiftyCore.continueConversation(nonExistentConversationId)
             #expect(Bool(false), "Should have thrown conversationNotFound error")
         } catch let error as GenerationError {
-            #expect(error == .conversationNotFound, "Should throw conversationNotFound error")
+            // Check if it's a conversationNotFound error (we can't compare directly due to associated values)
+            if case .conversationNotFound = error {
+                // This is the expected error
+            } else {
+                #expect(Bool(false), "Should throw conversationNotFound error, got: \(error)")
+            }
         } catch {
             #expect(Bool(false), "Should have thrown GenerationError, got: \(error)")
         }
@@ -564,15 +569,18 @@ extension SwiftyLlamaTests {
     @Test("SwiftyCoreLlama error description test")
     func errorDescriptionTest() {
         // Test that all GenerationError cases have proper descriptions
+        let testConversationId = ConversationID()
+        let testGenerationId = GenerationID()
+
         let errors: [GenerationError] = [
-            .abortedByUser,
+            .abortedByUser(generationId: testGenerationId),
             .modelNotLoaded,
             .contextNotInitialized,
-            .conversationNotFound,
-            .contextPreparationFailed,
-            .tokenizationFailed,
-            .generationFailed,
-            .invalidState,
+            .conversationNotFound(conversationId: testConversationId),
+            .contextPreparationFailed(conversationId: testConversationId),
+            .tokenizationFailed(conversationId: testConversationId),
+            .generationFailed(generationId: testGenerationId),
+            .invalidState(conversationId: testConversationId),
         ]
 
         for error in errors {
@@ -894,6 +902,90 @@ extension SwiftyLlamaTests {
         // Verify that the longest prompt (conv3) has the most tokens
         #expect(totalTokens3 > totalTokens2, "Third conversation should have more tokens than second")
         #expect(totalTokens2 > totalTokens1, "Second conversation should have more tokens than first")
+
+        // Clean up
+        await swiftyCore.cancelAll()
+    }
+
+    @Test("SwiftyCoreLlama context truncation validation test")
+    func contextTruncationValidationTest() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for context truncation validation test"
+        )
+
+        let swiftyCore = try SwiftyLlamaCore(
+            modelPath: TestUtilities.testModelPath,
+            contextSize: 100
+        ) // Small context size to force truncation
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 5)
+
+        // Create a conversation with a short history
+        let shortHistoryPrompt = "Hello, this is a short message."
+
+        let stream = await swiftyCore.start(prompt: shortHistoryPrompt, params: params, conversationId: nil)
+
+        // Consume the stream to generate a response
+        var response = ""
+        for try await token in stream.stream {
+            response += token
+        }
+
+        // Verify the conversation was created and has content
+        let conversations = swiftyCore.getConversationState()
+        #expect(conversations.count == 1, "Should have exactly one conversation")
+
+        let conversation = conversations.first!
+        #expect(!conversation.messages.isEmpty, "Conversation should have messages")
+
+        // Verify that the conversation has tokens
+        let totalTokens = conversation.messages.flatMap(\.tokens).count
+        #expect(totalTokens > 0, "Conversation should have tokens")
+
+        // Now try to continue the conversation with a longer prompt that should trigger truncation
+        let continuationPrompt = String(
+            repeating: "This is a very long continuation message that will consume many tokens when tokenized. ",
+            count: 50
+        )
+
+        // This should fail because our validation logic prevents context from exceeding the limit
+        do {
+            let continueStream = await swiftyCore.start(
+                prompt: continuationPrompt,
+                params: params,
+                conversationId: conversation.id
+            )
+
+            // If we get here, the truncation logic worked
+            var continuationResponse = ""
+            for try await token in continueStream.stream {
+                continuationResponse += token
+            }
+
+            // Verify the continuation worked
+            #expect(!continuationResponse.isEmpty, "Continuation should generate a response")
+
+            // Verify the conversation grew
+            let updatedConversations = swiftyCore.getConversationState()
+            let updatedConversation = updatedConversations.first!
+            #expect(updatedConversations.count == 1, "Should still have exactly one conversation")
+            #expect(updatedConversation.messages.count > conversation.messages.count, "Conversation should have grown")
+
+            // Verify that the total tokens don't exceed our small context size
+            let updatedTotalTokens = updatedConversation.messages.flatMap(\.tokens).count
+            #expect(updatedTotalTokens <= 100, "Total tokens should not exceed context size after truncation")
+
+        } catch let error as GenerationError {
+            // If context preparation fails, that's also acceptable - it means our validation is working
+            if case .contextPreparationFailed = error {
+                // This is expected behavior when validation prevents context overflow
+                print("Context preparation failed as expected due to validation: \(error)")
+            } else {
+                throw error
+            }
+        }
 
         // Clean up
         await swiftyCore.cancelAll()

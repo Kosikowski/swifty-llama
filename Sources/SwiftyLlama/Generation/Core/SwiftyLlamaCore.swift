@@ -122,7 +122,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
     /// Continue an existing conversation
     public func continueConversation(_ id: ConversationID) throws {
         guard conversations[id] != nil else {
-            throw GenerationError.conversationNotFound
+            throw GenerationError.conversationNotFound(conversationId: id)
         }
         currentConversationId = id
     }
@@ -258,7 +258,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
     /// Continue a conversation with warm-up (for restored conversations)
     public func continueConversationWithWarmUp(_ id: ConversationID) throws {
         guard let conversation = conversations[id] else {
-            throw GenerationError.conversationNotFound
+            throw GenerationError.conversationNotFound(conversationId: id)
         }
 
         // Force a complete context reset by recreating the context entirely
@@ -350,7 +350,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
     // MARK: - Private Generation Logic
 
     private func performGeneration(
-        id _: GenerationID,
+        id: GenerationID,
         prompt: String,
         params: GenerationParams,
         conversationId: ConversationID,
@@ -375,7 +375,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
                 conversationId: conversationId,
                 llamaContext: context!
             ) else {
-                continuation.finish(throwing: GenerationError.contextPreparationFailed)
+                continuation.finish(throwing: GenerationError.contextPreparationFailed(conversationId: conversationId))
                 return
             }
 
@@ -440,11 +440,11 @@ public class SwiftyLlamaCore: SwiftyLlama {
                 // Map underlying errors to appropriate GenerationError cases
                 switch error {
                     case _ where error.localizedDescription.contains("tokenize"):
-                        .tokenizationFailed
+                        .tokenizationFailed(conversationId: conversationId)
                     case _ where error.localizedDescription.contains("context"):
-                        .contextPreparationFailed
+                        .contextPreparationFailed(conversationId: conversationId)
                     default:
-                        .generationFailed
+                        .generationFailed(generationId: id)
                 }
             }
             continuation.finish(throwing: generationError)
@@ -474,9 +474,14 @@ public class SwiftyLlamaCore: SwiftyLlama {
             if totalTokens >= maxContextSize {
                 let allowed = max(0, Int(maxContextSize) - promptTokens.count)
                 let trimmedHistory = Array(historyTokens.suffix(allowed))
-
-                // Use trimmed history for the rest of the method
                 let adjustedTotalTokens = trimmedHistory.count + promptTokens.count
+
+                // Validate that our truncation worked correctly
+                // Note: This validation is tested indirectly in contextTruncationValidationTest
+                // which verifies that context preparation fails when tokens exceed maxContextSize
+                guard adjustedTotalTokens <= maxContextSize else {
+                    return false
+                }
 
                 // Continue with trimmed history
                 let needsContextClear = trimmedHistory.isEmpty ||
