@@ -700,4 +700,202 @@ extension SwiftyLlamaTests {
             #expect(continueTokens.count > 0, "Should be able to continue warmed-up conversation")
         }
     }
+
+    @Test("SwiftyCoreLlama multi-conversation state isolation test")
+    func multiConversationStateIsolationTest() async throws {
+        // Fail if model not available
+        #expect(
+            TestUtilities.isTestModelAvailable(),
+            "Test model must be available for multi-conversation state isolation test"
+        )
+
+        let swiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath)
+
+        let params = GenerationParams(temperature: 0.7, maxTokens: 5)
+
+        // Create multiple conversations
+        let conversationId1 = swiftyCore.startNewConversation()
+        let conversationId2 = swiftyCore.startNewConversation()
+        let conversationId3 = swiftyCore.startNewConversation()
+
+        #expect(conversationId1 != conversationId2, "Conversation IDs should be different")
+        #expect(conversationId2 != conversationId3, "Conversation IDs should be different")
+        #expect(conversationId1 != conversationId3, "Conversation IDs should be different")
+
+        // Start generation in first conversation with short prompt (fewer tokens)
+        let stream1 = await swiftyCore.start(
+            prompt: "Hi",
+            params: params,
+            conversationId: conversationId1
+        )
+
+        // Wait for completion
+        for try await _ in stream1.stream {}
+
+        // Start generation in second conversation with medium prompt (more tokens)
+        let stream2 = await swiftyCore.start(
+            prompt: "Hello there, how are you doing today? I hope you're having a wonderful day.",
+            params: params,
+            conversationId: conversationId2
+        )
+
+        // Wait for completion
+        for try await _ in stream2.stream {}
+
+        // Start generation in third conversation with long prompt (many tokens)
+        let stream3 = await swiftyCore.start(
+            prompt: "This is a very long and detailed prompt that contains many different words and concepts. It discusses various topics including technology, science, philosophy, and the nature of human consciousness. We are exploring the depths of language understanding and generation capabilities.",
+            params: params,
+            conversationId: conversationId3
+        )
+
+        // Wait for completion
+        for try await _ in stream3.stream {}
+
+        // Verify all conversations exist and have content
+        let info1 = swiftyCore.getConversationInfo(conversationId1)
+        let info2 = swiftyCore.getConversationInfo(conversationId2)
+        let info3 = swiftyCore.getConversationInfo(conversationId3)
+
+        #expect(info1 != nil, "First conversation should exist")
+        #expect(info2 != nil, "Second conversation should exist")
+        #expect(info3 != nil, "Third conversation should exist")
+
+        #expect(info1?.messageCount == 2, "First conversation should have 2 messages")
+        #expect(info2?.messageCount == 2, "Second conversation should have 2 messages")
+        #expect(info3?.messageCount == 2, "Third conversation should have 2 messages")
+
+        // Test that conversations maintain separate state by continuing each one
+        // and verifying they don't interfere with each other
+
+        // Continue first conversation with short prompt
+        try swiftyCore.continueConversation(conversationId1)
+        let continueStream1 = await swiftyCore.start(
+            prompt: "Tell me more",
+            params: params,
+            conversationId: conversationId1
+        )
+
+        var response1 = ""
+        for try await token in continueStream1.stream {
+            response1 += token
+        }
+
+        // Continue second conversation with medium prompt
+        try swiftyCore.continueConversation(conversationId2)
+        let continueStream2 = await swiftyCore.start(
+            prompt: "Can you elaborate on that topic and provide some additional details?",
+            params: params,
+            conversationId: conversationId2
+        )
+
+        var response2 = ""
+        for try await token in continueStream2.stream {
+            response2 += token
+        }
+
+        // Continue third conversation with long prompt
+        try swiftyCore.continueConversation(conversationId3)
+        let continueStream3 = await swiftyCore.start(
+            prompt: "This is a continuation request that asks for detailed analysis and thorough explanation of the previous discussion points, including technical aspects, theoretical frameworks, and practical implications.",
+            params: params,
+            conversationId: conversationId3
+        )
+
+        var response3 = ""
+        for try await token in continueStream3.stream {
+            response3 += token
+        }
+
+        // Verify all conversations generated responses
+        #expect(!response1.isEmpty, "First conversation should generate response")
+        #expect(!response2.isEmpty, "Second conversation should generate response")
+        #expect(!response3.isEmpty, "Third conversation should generate response")
+
+        // Verify conversation state isolation by checking message counts
+        let finalInfo1 = swiftyCore.getConversationInfo(conversationId1)
+        let finalInfo2 = swiftyCore.getConversationInfo(conversationId2)
+        let finalInfo3 = swiftyCore.getConversationInfo(conversationId3)
+
+        #expect(finalInfo1?.messageCount == 4, "First conversation should have 4 messages (2 pairs)")
+        #expect(finalInfo2?.messageCount == 4, "Second conversation should have 4 messages (2 pairs)")
+        #expect(finalInfo3?.messageCount == 4, "Third conversation should have 4 messages (2 pairs)")
+
+        // Test that switching between conversations doesn't cause state pollution
+        // by starting a new generation in each conversation and verifying
+        // they maintain their separate contexts
+
+        // Switch to conversation 1 and generate with short prompt
+        try swiftyCore.continueConversation(conversationId1)
+        let finalStream1 = await swiftyCore.start(
+            prompt: "End",
+            params: params,
+            conversationId: conversationId1
+        )
+
+        for try await _ in finalStream1.stream {}
+
+        // Switch to conversation 2 and generate with medium prompt
+        try swiftyCore.continueConversation(conversationId2)
+        let finalStream2 = await swiftyCore.start(
+            prompt: "Please provide a summary of our discussion so far",
+            params: params,
+            conversationId: conversationId2
+        )
+
+        for try await _ in finalStream2.stream {}
+
+        // Switch to conversation 3 and generate with long prompt
+        try swiftyCore.continueConversation(conversationId3)
+        let finalStream3 = await swiftyCore.start(
+            prompt: "Based on our extensive conversation covering multiple topics and concepts, please provide a detailed analysis that synthesizes all the key points, theoretical frameworks, and practical implications we've discussed.",
+            params: params,
+            conversationId: conversationId3
+        )
+
+        for try await _ in finalStream3.stream {}
+
+        // Verify all conversations still exist and have grown
+        let veryFinalInfo1 = swiftyCore.getConversationInfo(conversationId1)
+        let veryFinalInfo2 = swiftyCore.getConversationInfo(conversationId2)
+        let veryFinalInfo3 = swiftyCore.getConversationInfo(conversationId3)
+
+        #expect(veryFinalInfo1?.messageCount == 6, "First conversation should have 6 messages")
+        #expect(veryFinalInfo2?.messageCount == 6, "Second conversation should have 6 messages")
+        #expect(veryFinalInfo3?.messageCount == 6, "Third conversation should have 6 messages")
+
+        // Verify that conversations have different token counts by checking their content
+        let conversations = swiftyCore.getConversationState()
+        #expect(conversations.count >= 3, "Should have at least 3 conversations")
+
+        // Get the three test conversations
+        let conv1 = conversations.first { $0.id == conversationId1 }
+        let conv2 = conversations.first { $0.id == conversationId2 }
+        let conv3 = conversations.first { $0.id == conversationId3 }
+
+        #expect(conv1 != nil, "First conversation should exist")
+        #expect(conv2 != nil, "Second conversation should exist")
+        #expect(conv3 != nil, "Third conversation should exist")
+
+        // Verify that conversations have different content lengths (indicating different token counts)
+        let totalTokens1 = conv1!.messages.flatMap(\.tokens).count
+        let totalTokens2 = conv2!.messages.flatMap(\.tokens).count
+        let totalTokens3 = conv3!.messages.flatMap(\.tokens).count
+
+        #expect(totalTokens1 > 0, "First conversation should have tokens")
+        #expect(totalTokens2 > 0, "Second conversation should have tokens")
+        #expect(totalTokens3 > 0, "Third conversation should have tokens")
+
+        // Verify that conversations have different token counts (they should due to different prompt lengths)
+        #expect(totalTokens1 != totalTokens2, "Conversations 1 and 2 should have different token counts")
+        #expect(totalTokens2 != totalTokens3, "Conversations 2 and 3 should have different token counts")
+        #expect(totalTokens1 != totalTokens3, "Conversations 1 and 3 should have different token counts")
+
+        // Verify that the longest prompt (conv3) has the most tokens
+        #expect(totalTokens3 > totalTokens2, "Third conversation should have more tokens than second")
+        #expect(totalTokens2 > totalTokens1, "Second conversation should have more tokens than first")
+
+        // Clean up
+        await swiftyCore.cancelAll()
+    }
 }

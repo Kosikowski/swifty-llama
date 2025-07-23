@@ -180,7 +180,12 @@ public class SwiftyLlamaCore: SwiftyLlama {
         for conversation in savedConversations {
             conversations[conversation.id] = conversation
             // Initialize conversation state for restored conversations
-            _ = getOrCreateConversationState(for: conversation.id)
+            // Mark as not warmed up since we need to reconstruct the context
+            updateConversationState(for: conversation.id) { state in
+                state.isWarmedUp = false
+                state.currentTokenCount = 0
+                state.tokenBuffer.removeAll()
+            }
         }
     }
 
@@ -196,6 +201,18 @@ public class SwiftyLlamaCore: SwiftyLlama {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let savedConversations = try decoder.decode([Conversation].self, from: data)
+
+        // Force a complete context reset by recreating the context entirely
+        // Recreate the context to ensure complete reset
+        context = try SLlamaContext(model: model)
+
+        // Reinitialize the batch to ensure no residual state
+        batch = SLlamaBatch(nTokens: maxContextSize, nSeqMax: 1)
+        clearBatch()
+
+        // Reset conversation states to ensure clean slate
+        conversationStates.removeAll()
+
         restoreConversations(savedConversations)
     }
 
@@ -242,6 +259,21 @@ public class SwiftyLlamaCore: SwiftyLlama {
     public func continueConversationWithWarmUp(_ id: ConversationID) throws {
         guard let conversation = conversations[id] else {
             throw GenerationError.conversationNotFound
+        }
+
+        // Force a complete context reset by recreating the context entirely
+        // Recreate the context to ensure complete reset
+        context = try SLlamaContext(model: model)
+
+        // Reinitialize the batch to ensure no residual state
+        batch = SLlamaBatch(nTokens: maxContextSize, nSeqMax: 1)
+        clearBatch()
+
+        // Reset conversation state to ensure clean slate
+        updateConversationState(for: id) { state in
+            state.currentTokenCount = 0
+            state.tokenBuffer.removeAll()
+            state.isWarmedUp = false
         }
 
         // Warm up the context with conversation history
@@ -428,7 +460,9 @@ public class SwiftyLlamaCore: SwiftyLlama {
     )
         -> Bool
     {
-        guard !promptTokens.isEmpty else { return false }
+        guard !promptTokens.isEmpty else {
+            return false
+        }
 
         // Check if conversation exists
         if let conversation = conversations[conversationId] {
@@ -436,31 +470,101 @@ public class SwiftyLlamaCore: SwiftyLlama {
             let historyTokens = conversation.messages.flatMap(\.tokens)
             let totalTokens = historyTokens.count + promptTokens.count
 
-            guard maxContextSize > totalTokens else {
-                // Context too long - need to truncate or start new conversation
-                return false
-            }
+            // Robust fallback: truncate oldest messages if context is too long
+            if totalTokens >= maxContextSize {
+                let allowed = max(0, Int(maxContextSize) - promptTokens.count)
+                let trimmedHistory = Array(historyTokens.suffix(allowed))
 
-            // Note: Warm-up should be done before calling this method via continueConversationWithWarmUp
-            // We don't warm up here to avoid clearing the context during generation
+                // Use trimmed history for the rest of the method
+                let adjustedTotalTokens = trimmedHistory.count + promptTokens.count
 
-            // If we have history, we need to continue from where we left off
-            if !historyTokens.isEmpty {
-                updateConversationState(for: conversationId) { state in
-                    state.currentTokenCount = Int32(historyTokens.count)
-                    state.tokenBuffer = historyTokens
+                // Continue with trimmed history
+                let needsContextClear = trimmedHistory.isEmpty ||
+                    !getOrCreateConversationState(for: conversationId).isWarmedUp ||
+                    (getOrCreateConversationState(for: conversationId).currentTokenCount == 0 && !trimmedHistory
+                        .isEmpty
+                    ) ||
+                    (getOrCreateConversationState(for: conversationId)
+                        .currentTokenCount > 0 && getOrCreateConversationState(for: conversationId).tokenBuffer.isEmpty
+                    ) ||
+                    (getOrCreateConversationState(for: conversationId)
+                        .currentTokenCount > 0 && getOrCreateConversationState(for: conversationId).tokenBuffer
+                        .count != getOrCreateConversationState(for: conversationId).currentTokenCount
+                    )
+
+                if needsContextClear {
+                    // Clear the KV cache completely for a fresh start
+                    llamaContext.clearMemory(data: true)
+
+                    updateConversationState(for: conversationId) { state in
+                        state.currentTokenCount = 0
+                        state.tokenBuffer.removeAll()
+                    }
+
+                    clearBatch()
+
+                    // If we have trimmed history, we need to warm up the context first
+                    if !trimmedHistory.isEmpty {
+                        // Warm up with trimmed historical tokens
+                        for (i, token) in trimmedHistory.enumerated() {
+                            addToBatch(token: token, position: Int32(i), isLogit: false)
+                        }
+
+                        do {
+                            try llamaContext.core().decode(batch!)
+                        } catch {
+                            return false
+                        }
+
+                        // Update state with trimmed historical tokens
+                        updateConversationState(for: conversationId) { state in
+                            state.currentTokenCount = Int32(trimmedHistory.count)
+                            state.tokenBuffer = trimmedHistory
+                        }
+                    }
                 }
 
-                // For continuation, we need to start new tokens from the next position
+                // Now add the new prompt tokens
                 clearBatch()
 
-                // Add new prompt tokens starting from the next position after history
+                let startPosition = getOrCreateConversationState(for: conversationId).currentTokenCount
                 for (i, token) in promptTokens.enumerated() {
-                    let position = Int32(historyTokens.count + i)
+                    let position = startPosition + Int32(i)
                     addToBatch(token: token, position: position, isLogit: i == promptTokens.count - 1)
                 }
-            } else {
-                // Empty conversation - need to clear KV cache since we're starting fresh
+
+                do {
+                    try llamaContext.core().decode(batch!)
+                } catch {
+                    return false
+                }
+
+                // Update token count
+                updateConversationState(for: conversationId) { state in
+                    state.currentTokenCount = startPosition + Int32(promptTokens.count)
+                    state.shouldContinuePredicting = true
+                }
+
+                return true
+            }
+
+            // Get current conversation state to check if we need to clear context
+            let currentState = getOrCreateConversationState(for: conversationId)
+
+            // Only clear context if:
+            // 1. This is a new conversation (no history)
+            // 2. This conversation hasn't been warmed up yet
+            // 3. We're switching from a different conversation that wasn't properly warmed up
+            // 4. The conversation state is inconsistent (has history but no token count)
+            // 5. We're continuing a conversation that was loaded from JSON (needs fresh context)
+            let needsContextClear = historyTokens.isEmpty ||
+                !currentState.isWarmedUp ||
+                (currentState.currentTokenCount == 0 && !historyTokens.isEmpty) ||
+                (currentState.currentTokenCount > 0 && currentState.tokenBuffer.isEmpty) ||
+                (currentState.currentTokenCount > 0 && currentState.tokenBuffer.count != currentState.currentTokenCount)
+
+            if needsContextClear {
+                // Clear the KV cache completely for a fresh start
                 llamaContext.clearMemory(data: true)
 
                 updateConversationState(for: conversationId) { state in
@@ -470,10 +574,34 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
                 clearBatch()
 
-                // For new conversation, start from position 0 since we cleared the cache
-                for (i, token) in promptTokens.enumerated() {
-                    addToBatch(token: token, position: Int32(i), isLogit: i == promptTokens.count - 1)
+                // If we have history, we need to warm up the context first
+                if !historyTokens.isEmpty {
+                    // Warm up with historical tokens
+                    for (i, token) in historyTokens.enumerated() {
+                        addToBatch(token: token, position: Int32(i), isLogit: false)
+                    }
+
+                    do {
+                        try llamaContext.core().decode(batch!)
+                    } catch {
+                        return false
+                    }
+
+                    // Update state with historical tokens
+                    updateConversationState(for: conversationId) { state in
+                        state.currentTokenCount = Int32(historyTokens.count)
+                        state.tokenBuffer = historyTokens
+                    }
                 }
+            }
+
+            // Now add the new prompt tokens
+            clearBatch()
+
+            let startPosition = currentState.currentTokenCount
+            for (i, token) in promptTokens.enumerated() {
+                let position = startPosition + Int32(i)
+                addToBatch(token: token, position: position, isLogit: i == promptTokens.count - 1)
             }
 
             do {
@@ -482,41 +610,23 @@ public class SwiftyLlamaCore: SwiftyLlama {
                 return false
             }
 
-            // Update token count based on whether we have history or not
-            if !historyTokens.isEmpty {
-                updateConversationState(for: conversationId) { state in
-                    state.currentTokenCount = Int32(historyTokens.count + promptTokens.count)
-                }
-            } else {
-                updateConversationState(for: conversationId) { state in
-                    state.currentTokenCount = Int32(promptTokens.count)
-                }
-            }
-
+            // Update token count
             updateConversationState(for: conversationId) { state in
+                state.currentTokenCount = startPosition + Int32(promptTokens.count)
                 state.shouldContinuePredicting = true
             }
 
             return true
         } else {
             // New conversation - start fresh
-            updateConversationState(for: conversationId) { state in
-                state.currentTokenCount = 0
-                state.tokenBuffer.removeAll()
-            }
-
-            // For new conversation, we need to reset the context completely
-            // Reset our state
-            updateConversationState(for: conversationId) { state in
-                state.currentTokenCount = 0
-                state.tokenBuffer.removeAll()
-            }
-
             // Clear the KV cache completely for a brand-new conversation
             llamaContext.clearMemory(data: true)
 
-            // Recreate the batch
-            batch = SLlamaBatch(nTokens: maxContextSize, nSeqMax: 1)
+            // Initialize conversation state
+            updateConversationState(for: conversationId) { state in
+                state.currentTokenCount = 0
+                state.tokenBuffer.removeAll()
+            }
 
             clearBatch()
 
