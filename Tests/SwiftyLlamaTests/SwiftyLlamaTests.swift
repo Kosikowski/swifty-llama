@@ -23,7 +23,7 @@ struct SwiftyLlamaTests {
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for initialization test")
 
         // Create SwiftyCoreLlama with real model
-        let swiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath, maxCtx: 2048)
+        let swiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath, contextSize: 2048)
 
         // Test model info
         let modelInfo = swiftyCore.modelInfo
@@ -42,7 +42,7 @@ struct SwiftyLlamaTests {
         // Fail if model not available
         #expect(TestUtilities.isTestModelAvailable(), "Test model must be available for generation test")
 
-        let swiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath, maxCtx: 2048)
+        let swiftyCore = try SwiftyLlamaCore(modelPath: TestUtilities.testModelPath, contextSize: 2048)
 
         let prompt = "Hello"
         let params = GenerationParams(temperature: 0.7, maxTokens: 5)

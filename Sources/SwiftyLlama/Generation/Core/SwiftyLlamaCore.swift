@@ -48,11 +48,11 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
     // MARK: - Initialization
 
-    public init(modelPath: String, maxCtx: Int32 = 2048) throws {
+    public init(modelPath: String, contextSize: Int32 = 2048) throws {
         SLlama.initialize()
         model = try SLlamaModel(modelPath: modelPath)
         vocab = SLlamaVocab(model)
-        maxContextSize = maxCtx
+        maxContextSize = contextSize
     }
 
     // MARK: - Private Context Management
