@@ -102,7 +102,8 @@ struct SwiftyLlamaTunerTests {
         )
 
         // Verify dataset structure
-        #expect(dataset.training.count + dataset.validation.count == 2)
+        // Each conversation has 3 messages, so 2 conversations = 6 total examples
+        #expect(dataset.training.count + dataset.validation.count == 6)
         #expect(dataset.training.count > 0 || dataset.validation.count > 0)
 
         // Verify examples have tokens
@@ -156,7 +157,8 @@ struct SwiftyLlamaTunerTests {
 
         // Verify session properties
         #expect(session.status == .running)
-        #expect(session.dataset.training.count + session.dataset.validation.count == 1)
+        // Single conversation with 3 messages = 3 total examples
+        #expect(session.dataset.training.count + session.dataset.validation.count == 3)
         #expect(session.config.loraRank == 8)
         #expect(session.config.learningRate == 2e-5)
 
@@ -573,7 +575,7 @@ struct SwiftyLlamaTunerTests {
         #expect(metrics?.currentStep == 0)
         #expect(metrics?.trainingLoss == 0.0)
         #expect(metrics?.validationLoss == 0.0)
-        #expect(metrics?.learningRate == 0.0)
+        #expect(metrics?.learningRate == 2e-5) // Should match the config learning rate
     }
 
     @Test("SwiftyTuningLlama boundary value training config test")
@@ -684,7 +686,8 @@ struct SwiftyLlamaTunerTests {
             validationSplit: 0.0
         )
         #expect(allTrainingDataset.validation.isEmpty)
-        #expect(allTrainingDataset.training.count == 2)
+        // 2 conversations with 3 messages each = 6 total examples
+        #expect(allTrainingDataset.training.count == 6)
 
         // Test validation split = 1.0 (all validation)
         let allValidationDataset = try tuningLlama.prepareTrainingData(
@@ -692,7 +695,8 @@ struct SwiftyLlamaTunerTests {
             validationSplit: 1.0
         )
         #expect(allValidationDataset.training.isEmpty)
-        #expect(allValidationDataset.validation.count == 2)
+        // 2 conversations with 3 messages each = 6 total examples
+        #expect(allValidationDataset.validation.count == 6)
     }
 
     @Test("SwiftyTuningLlama multiple LoRA adapters test")

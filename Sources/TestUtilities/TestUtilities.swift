@@ -19,44 +19,11 @@ public enum TestUtilities {
         // Get the current working directory
         let currentDirectory = FileManager.default.currentDirectoryPath
 
-        let url = Bundle.module.url(forResource: "tinystories-gpt-0.1-3m.fp16", withExtension: "gguf")!
-        print(url)
-        print(url.path())
+        let urlPath = Bundle.module.url(forResource: "tinystories-gpt-0.1-3m.fp16", withExtension: "gguf")!.path()
+
         // Try to find the model in common locations, including Xcode's working directory
         let sourcePaths = [
-            url.path(),
-//            // Relative to current working directory
-//            "Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "./Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "../Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "../../Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//
-//            // Try to find the project root by looking for Package.swift
-//            findProjectRoot() + "/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//
-//            // Common Xcode test working directories
-//            "/Users/\(NSUserName())/Projects/swifty-llama-cpp/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "/Users/\(NSUserName())/Development/swifty-llama-cpp/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//
-//            // Relative to project root (common Xcode working directory)
-//            "swifty-llama/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "./swifty-llama/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "../swifty-llama/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "../../swifty-llama/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//
-//            // Relative to DerivedData (Xcode test working directory)
-//            "SourcePackages/checkouts/swifty-llama-cpp/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "./SourcePackages/checkouts/swifty-llama-cpp/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//
-//            // Absolute paths based on common Xcode working directories
-//            "\(currentDirectory)/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "\(currentDirectory)/swifty-llama-cpp/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//
-//            // Test-specific paths
-//            "Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "./Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "../Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
-//            "../../Tests/Models/tinystories-gpt-0.1-3m.fp16.gguf",
+            urlPath,
         ]
 
         // Debug: Print current directory and search paths

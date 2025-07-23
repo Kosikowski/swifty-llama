@@ -274,7 +274,7 @@ public final class SwiftyLlamaTuner {
             throw TuningError.noLoRAApplied
         }
 
-        guard let ctx = context else {
+        guard context != nil else {
             throw TuningError.contextNotInitialized
         }
 
@@ -324,7 +324,7 @@ public final class SwiftyLlamaTuner {
         format: ModelFormat = .gguf,
         metadata: ModelMetadata? = nil
     ) throws {
-        guard let ctx = context else {
+        guard context != nil else {
             throw TuningError.contextNotInitialized
         }
 
@@ -371,7 +371,7 @@ public final class SwiftyLlamaTuner {
         format: ModelFormat,
         quantization: ModelQuantization? = nil
     ) throws {
-        guard let ctx = context else {
+        guard context != nil else {
             throw TuningError.contextNotInitialized
         }
 

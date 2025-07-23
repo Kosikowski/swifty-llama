@@ -41,13 +41,19 @@ let package = Package(
             name: "TestUtilities",
             path: "Sources/TestUtilities",
             resources: [
-                .copy("../../Models/tinystories-gpt-0.1-3m.fp16.gguf"),
+                .copy("Models/tinystories-gpt-0.1-3m.fp16.gguf"),
             ]
         ),
         .target(
             name: "SwiftyLlama",
             dependencies: ["SLlama", "Omen", .product(name: "Atomics", package: "swift-atomics")],
-            path: "Sources/SwiftyLlama"
+            path: "Sources/SwiftyLlama",
+            exclude: [
+                "README.md",
+                "API_DOCUMENTATION.md",
+                "QUICK_REFERENCE.md",
+                "SwiftyCoreLlamaSolution.md",
+            ]
         ),
         .binaryTarget(
             name: "llama",
