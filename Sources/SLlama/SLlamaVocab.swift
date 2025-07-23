@@ -147,6 +147,10 @@ public class SLlamaVocab: @unchecked Sendable {
         self.vocab = vocab
     }
 
+    public init(_ model: SLlamaModel) {
+        vocab = model.vocab
+    }
+
     // MARK: Functions
 
     /// Get text for a token
