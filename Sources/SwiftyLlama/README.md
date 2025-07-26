@@ -115,6 +115,70 @@ let restoredConversations = try llama.loadConversationsFromJSON(path: "conversat
 try llama.restoreConversations(restoredConversations)
 ```
 
+#### Advanced Conversation Management
+
+```swift
+// Get all current conversations
+let allConversations = llama.getConversationState()
+
+// Save specific conversation
+let conversation = allConversations.first { $0.id == conversationId }
+if let conversation = conversation {
+    let conversationsToSave = [conversation]
+    // Save to custom path
+    try llama.saveConversationsToJSON(path: "my_conversation.json")
+}
+
+// Load and restore multiple conversations
+let loadedConversations = try llama.loadConversationsFromJSON(path: "all_conversations.json")
+try llama.restoreConversations(loadedConversations)
+
+// Continue with specific conversation
+let specificConversation = loadedConversations.first { $0.id == targetId }
+if let conversation = specificConversation {
+    let stream = llama.start(
+        prompt: "Continue our discussion",
+        conversationId: conversation.id,
+        continueConversation: true
+    )
+}
+
+// Clear conversation history
+let emptyConversations: [Conversation] = []
+try llama.restoreConversations(emptyConversations)
+```
+
+#### Conversation Persistence Best Practices
+
+```swift
+// Auto-save conversations periodically
+Task {
+    while true {
+        try await Task.sleep(nanoseconds: 30_000_000_000) // 30 seconds
+        try llama.saveConversationsToJSON(path: "auto_save.json")
+    }
+}
+
+// Save on app termination
+NotificationCenter.default.addObserver(
+    forName: UIApplication.willTerminateNotification,
+    object: nil,
+    queue: .main
+) { _ in
+    try? llama.saveConversationsToJSON(path: "final_save.json")
+}
+
+// Load conversations on app start
+func loadSavedConversations() {
+    do {
+        let conversations = try llama.loadConversationsFromJSON(path: "saved_conversations.json")
+        try llama.restoreConversations(conversations)
+    } catch {
+        print("No saved conversations found or error loading: \(error)")
+    }
+}
+```
+
 #### Cancellation Support
 
 ```swift
