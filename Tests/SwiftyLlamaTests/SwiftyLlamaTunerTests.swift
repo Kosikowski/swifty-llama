@@ -36,7 +36,7 @@ struct SwiftyLlamaTunerTests {
     }
 
     @Test("SwiftyTuningLlama LoRA adapter management test")
-    func loRAAdapterManagement() async throws {
+    func loraAdapterManagement() async throws {
         // Fail if model not available
         #expect(
             TestUtilities.isTestModelAvailable(),
@@ -274,7 +274,7 @@ struct SwiftyLlamaTunerTests {
     }
 
     @Test("SwiftyTuningLlama LoRA compatibility test")
-    func loRACompatibility() async throws {
+    func loraCompatibility() async throws {
         // Fail if model not available
         #expect(
             TestUtilities.isTestModelAvailable(),
@@ -297,7 +297,7 @@ struct SwiftyLlamaTunerTests {
     }
 
     @Test("SwiftyTuningLlama LoRA fallback mode test")
-    func loRAFallbackMode() async throws {
+    func loraFallbackMode() async throws {
         // Fail if model not available
         #expect(
             TestUtilities.isTestModelAvailable(),
@@ -463,7 +463,7 @@ struct SwiftyLlamaTunerTests {
     }
 
     @Test("SwiftyTuningLlama LoRA removal test")
-    func loRARemoval() async throws {
+    func loraRemoval() async throws {
         // Fail if model not available
         #expect(
             TestUtilities.isTestModelAvailable(),
