@@ -151,26 +151,30 @@ public class SLlamaSamplerChain: @unchecked Sendable {
             ))
         }
 
-        var tokenDataArray = SLlamaTokenDataArray(
-            data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
-            size: candidates.count,
-            selected: 0,
-            sorted: false
-        )
+        let sampledToken: SLlamaToken? = candidates.withUnsafeMutableBufferPointer { buffer in
+            var tokenDataArray = SLlamaTokenDataArray(
+                data: buffer.baseAddress,
+                size: buffer.count,
+                selected: 0,
+                sorted: false
+            )
 
-        // Apply the entire chain - each sampler processes the array in sequence
-        // **IMPLEMENTATION NOTE**: This calls each sampler's apply() method in order:
-        // 1. Penalty samplers modify logits based on their internal token history
-        // 2. Temperature/top-k/top-p samplers filter/scale the candidates
-        // 3. Final sampler (e.g., greedy, dist) makes the selection
-        llama_sampler_apply(chain, &tokenDataArray)
+            // Apply the entire chain - each sampler processes the array in sequence
+            // **IMPLEMENTATION NOTE**: This calls each sampler's apply() method in order:
+            // 1. Penalty samplers modify logits based on their internal token history
+            // 2. Temperature/top-k/top-p samplers filter/scale the candidates
+            // 3. Final sampler (e.g., greedy, dist) makes the selection
+            llama_sampler_apply(chain, &tokenDataArray)
 
-        // Find the token with highest probability
-        guard let maxIndex = candidates.enumerated().max(by: { $0.element.p < $1.element.p })?.offset else {
-            return nil
+            // Find the token with highest probability
+            guard let maxIndex = buffer.enumerated().max(by: { $0.element.p < $1.element.p })?.offset else {
+                return nil
+            }
+
+            return SLlamaToken(maxIndex)
         }
 
-        return SLlamaToken(maxIndex)
+        return sampledToken
     }
 
     /// Accept a token (updates internal state of samplers in the chain)
