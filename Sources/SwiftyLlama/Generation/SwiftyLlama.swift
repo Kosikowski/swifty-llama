@@ -25,7 +25,7 @@ public protocol SwiftyLlama: AnyObject {
     /// - Returns: Conversation information, or nil if conversation doesn't exist
     func getConversationInfo(_ id: ConversationID) -> ConversationInfo?
 
-    /// Clear a conversation and reset context
+    /// Clear a conversation and remove its state without resetting the model's overall context
     /// - Parameter id: The conversation ID to clear
     func clearConversation(_ id: ConversationID)
 
