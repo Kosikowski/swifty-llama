@@ -152,7 +152,8 @@ public class SwiftyLlamaCore: SwiftyLlama {
         )
     }
 
-    /// Clear a conversation (removes context)
+    /// Clear a conversation by removing its state without resetting the model context.
+    /// Context memory remains untouched unless explicitly reset elsewhere.
     public func clearConversation(_ id: ConversationID) {
         conversations.removeValue(forKey: id)
         clearConversationState(for: id)
