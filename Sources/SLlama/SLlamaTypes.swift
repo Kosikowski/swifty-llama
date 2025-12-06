@@ -493,6 +493,7 @@ public enum SLlamaError: Error {
 
     case invalidBatch(String)
     case batchOperationFailed(String)
+    case batchCapacityExceeded
 
     // MARK: - General Operations
 
@@ -601,6 +602,8 @@ extension SLlamaError: LocalizedError {
                 "Invalid batch: \(details)"
             case let .batchOperationFailed(details):
                 "Batch operation failed: \(details)"
+            case .batchCapacityExceeded:
+                "Batch capacity exceeded"
             // General Operations
             case let .operationFailed(details):
                 "Operation failed: \(details)"

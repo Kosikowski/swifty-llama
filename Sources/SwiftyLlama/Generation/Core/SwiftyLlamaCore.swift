@@ -38,19 +38,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
         var isWarmedUp: Bool = false
     }
 
-    private var conversationStates: [ConversationID: ConversationState] = [:]
-    private var conversations: [ConversationID: Conversation] = [:]
-    private var currentConversationId: ConversationID?
-
-    // Generation tracking
-    private struct LiveGeneration {
-        let id: GenerationID
-        let conversationId: ConversationID?
-        var params: GenerationParams
-        let startTime: Date
-        var task: Task<Void, Never>?
-    }
-
+    /
     private var activeGenerations: [GenerationID: LiveGeneration] = [:]
 
     // MARK: - Initialization
@@ -67,8 +55,12 @@ public class SwiftyLlamaCore: SwiftyLlama {
     private func ensureContextInitialized() throws {
         guard !isContextInitialized else { return }
 
-        // Create context only once per instance
-        context = try SLlamaContext(model: model)
+        // Create context with the configured context size
+        let contextParams = SLlamaContext.createParams(
+            contextSize: UInt32(maxContextSize),
+            batchSize: UInt32(maxContextSize)
+        )
+        context = try SLlamaContext(model: model, contextParams: contextParams)
 
         // Create single batch instance
         batch = SLlamaBatch(nTokens: maxContextSize, nSeqMax: 1)
@@ -325,8 +317,12 @@ public class SwiftyLlamaCore: SwiftyLlama {
         let savedConversations = try decoder.decode([Conversation].self, from: data)
 
         // Force a complete context reset by recreating the context entirely
-        // Recreate the context to ensure complete reset
-        context = try SLlamaContext(model: model)
+        // Recreate the context to ensure complete reset with proper size
+        let contextParams = SLlamaContext.createParams(
+            contextSize: UInt32(maxContextSize),
+            batchSize: UInt32(maxContextSize)
+        )
+        context = try SLlamaContext(model: model, contextParams: contextParams)
 
         // Reinitialize the batch to ensure no residual state
         batch = SLlamaBatch(nTokens: maxContextSize, nSeqMax: 1)
@@ -384,8 +380,12 @@ public class SwiftyLlamaCore: SwiftyLlama {
         }
 
         // Force a complete context reset by recreating the context entirely
-        // Recreate the context to ensure complete reset
-        context = try SLlamaContext(model: model)
+        // Recreate the context to ensure complete reset with proper size
+        let contextParams = SLlamaContext.createParams(
+            contextSize: UInt32(maxContextSize),
+            batchSize: UInt32(maxContextSize)
+        )
+        context = try SLlamaContext(model: model, contextParams: contextParams)
 
         // Reinitialize the batch to ensure no residual state
         batch = SLlamaBatch(nTokens: maxContextSize, nSeqMax: 1)
@@ -501,17 +501,17 @@ public class SwiftyLlamaCore: SwiftyLlama {
                 return
             }
 
-            // Recreate sampler with updated context
-            let sampler = createSampler(with: params, llamaContext: context!)
-            sampler.reset()
+            // Recreate sampler chain with updated context
+            guard let sampler = createSampler(with: params, llamaContext: context!) else {
+                continuation.finish(throwing: GenerationError.samplerInitializationFailed)
+                return
+            }
+            // Note: No need to reset a freshly created chain
 
             // Generate tokens
             var generatedTokens: [SLlamaToken] = []
-            let currentState = getOrCreateConversationState(for: conversationId)
-            let maxNewTokens = max(0, Int32(params.maxTokens) - currentState.currentTokenCount)
-
-            // If we already have more tokens than requested, we can still generate a minimum number
-            let minNewTokens = maxNewTokens > 0 ? maxNewTokens : 1
+            // maxTokens limits the response length, not the total context
+            let maxNewTokens = Int(params.maxTokens)
 
             // Update conversation state for generation
             updateConversationState(for: conversationId) { state in
@@ -521,7 +521,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
             }
 
             while getOrCreateConversationState(for: conversationId).shouldContinuePredicting,
-                  generatedTokens.count < minNewTokens
+                  generatedTokens.count < maxNewTokens
             {
                 let token = predictNextToken(sampler: sampler, llamaContext: context!, conversationId: conversationId)
 
@@ -835,7 +835,7 @@ public class SwiftyLlamaCore: SwiftyLlama {
     // MARK: - Token Prediction
 
     private func predictNextToken(
-        sampler: SLlamaSampler,
+        sampler: SLlamaSamplerChain,
         llamaContext _: SLlamaContext,
         conversationId: ConversationID
     )
@@ -890,14 +890,21 @@ public class SwiftyLlamaCore: SwiftyLlama {
         return token
     }
 
-    private func createSampler(with params: GenerationParams, llamaContext: SLlamaContext) -> SLlamaSampler {
-        // Create a temperature sampler with the given parameters
-        let sampler = SLlamaSampler.temperature(
+    private func createSampler(with params: GenerationParams, llamaContext: SLlamaContext) -> SLlamaSamplerChain? {
+        // Create a proper sampler chain with all sampling stages:
+        // 1. Repetition penalty
+        // 2. Top-K filtering
+        // 3. Top-P filtering
+        // 4. Temperature scaling
+        // 5. Distribution sampler (REQUIRED to actually select a token)
+        SLlamaSamplerChain.custom(
             context: llamaContext,
-            temperature: params.temperature
-        ) ?? SLlamaSampler.greedy(context: llamaContext) ?? SLlamaSampler(context: llamaContext)
-
-        return sampler
+            temperature: params.temperature,
+            topK: params.topK,
+            topP: params.topP,
+            repetitionPenalty: params.repeatPenalty,
+            seed: params.seed
+        )
     }
 
     // MARK: - Public Management Methods

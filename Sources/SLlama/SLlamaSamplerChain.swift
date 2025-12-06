@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaSamplerChain
 
 /// A wrapper for llama sampler chain operations
-public class SLlamaSamplerChain: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaSamplerChain {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -60,12 +62,16 @@ public class SLlamaSamplerChain: @unchecked Sendable {
 
     /// Add a sampler to the chain
     /// - Parameter sampler: The sampler to add to the chain
+    /// - Note: The chain takes ownership of the sampler. The sampler wrapper
+    ///         should not be used after this call.
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
-    public func addSampler(_ sampler: PLlamaSampler) {
+    public func addSampler(_ sampler: SLlamaSampler) {
         guard let chain, let samplerPtr = sampler.cSampler else { return }
         llama_sampler_chain_add(chain, samplerPtr)
+        // The chain now owns this sampler - prevent the wrapper from freeing it
+        sampler.sampler = nil
     }
 
     /// Get a sampler from the chain by index
@@ -129,52 +135,19 @@ public class SLlamaSamplerChain: @unchecked Sendable {
         @inlinable
     #endif
     public func sample() -> SLlamaToken? {
-        guard let chain else { return nil }
-        guard let ctx = context.pointer else { return nil }
+        // Use the proper llama_sampler_sample API which handles all sampling internally
+        sampleFromIndex(-1)
+    }
 
-        // Get logits from the last token
-        guard let logits = llama_get_logits_ith(ctx, -1) else { return nil }
-
-        // Get vocabulary size
-        guard let model = context.associatedModel else { return nil }
-        let vocabSize = model.vocab != nil ? llama_vocab_n_tokens(model.vocab!) : 0
-
-        if vocabSize == 0 { return nil }
-
-        // Create token data array
-        var candidates = [SLlamaTokenData]()
-        for i in 0 ..< vocabSize {
-            candidates.append(SLlamaTokenData(
-                id: SLlamaToken(i),
-                logit: logits[Int(i)],
-                p: 0.0
-            ))
-        }
-
-        let sampledToken: SLlamaToken? = candidates.withUnsafeMutableBufferPointer { buffer in
-            var tokenDataArray = SLlamaTokenDataArray(
-                data: buffer.baseAddress,
-                size: buffer.count,
-                selected: 0,
-                sorted: false
-            )
-
-            // Apply the entire chain - each sampler processes the array in sequence
-            // **IMPLEMENTATION NOTE**: This calls each sampler's apply() method in order:
-            // 1. Penalty samplers modify logits based on their internal token history
-            // 2. Temperature/top-k/top-p samplers filter/scale the candidates
-            // 3. Final sampler (e.g., greedy, dist) makes the selection
-            llama_sampler_apply(chain, &tokenDataArray)
-
-            // Find the token with highest probability
-            guard let maxIndex = buffer.enumerated().max(by: { $0.element.p < $1.element.p })?.offset else {
-                return nil
-            }
-
-            return SLlamaToken(maxIndex)
-        }
-
-        return sampledToken
+    /// Sample a token from a specific position in the context
+    /// - Parameter index: The position to sample from (-1 for last token)
+    /// - Returns: The sampled token ID, or nil if sampling failed
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
+    public func sampleFromIndex(_ index: Int32) -> SLlamaToken? {
+        guard let chain, let ctx = context.pointer else { return nil }
+        return llama_sampler_sample(chain, ctx, index)
     }
 
     /// Accept a token (updates internal state of samplers in the chain)
@@ -347,6 +320,7 @@ public extension SLlamaSamplerChain {
     /// 2. **Top-k filtering** - Limits vocabulary to k most likely tokens
     /// 3. **Top-p filtering** - Further filters by cumulative probability
     /// 4. **Temperature scaling** - Controls randomness of final selection
+    /// 5. **Distribution sampler** - Final token selection based on probabilities
     ///
     /// - Parameters:
     ///   - context: The llama context
@@ -354,13 +328,15 @@ public extension SLlamaSamplerChain {
     ///   - topK: Number of top tokens to consider
     ///   - topP: Cumulative probability threshold
     ///   - repetitionPenalty: Repetition penalty factor
+    ///   - seed: Random seed for distribution sampler (default: random)
     /// - Returns: A configured sampler chain, or nil if initialization failed
     static func custom(
         context: SLlamaContext,
         temperature: Float = 0.7,
         topK: Int32 = 40,
         topP: Float = 0.9,
-        repetitionPenalty: Float = 1.1
+        repetitionPenalty: Float = 1.1,
+        seed: UInt32 = UInt32.random(in: 0 ... UInt32.max)
     )
         -> SLlamaSamplerChain?
     {
@@ -384,9 +360,15 @@ public extension SLlamaSamplerChain {
             chain.addSampler(topPSampler)
         }
 
-        // 4. Add temperature sampler - controls randomness of final selection
+        // 4. Add temperature sampler - controls randomness
         if let tempSampler = SLlamaSampler.temperature(context: context, temperature: temperature) {
             chain.addSampler(tempSampler)
+        }
+
+        // 5. Add distribution sampler - REQUIRED to actually select a token
+        // This sets the `selected` field in the token data array
+        if let distSampler = SLlamaSampler.distribution(context: context, seed: seed) {
+            chain.addSampler(distSampler)
         }
 
         return chain

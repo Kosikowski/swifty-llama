@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaSampler
 
 /// A wrapper for llama sampling operations
-public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaSampler: PLlamaSampler {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -123,43 +125,9 @@ public class SLlamaSampler: @unchecked Sendable, PLlamaSampler {
         @inlinable
     #endif
     public func sample() -> SLlamaToken? {
-        guard let ctx = context.pointer else { return nil }
-
-        // Get logits from the last token
-        guard let logits = llama_get_logits_ith(ctx, -1) else { return nil }
-
-        // Get vocabulary size
-        guard let model = context.associatedModel else { return nil }
-        let vocabSize = model.vocab != nil ? llama_vocab_n_tokens(model.vocab!) : 0
-
-        if vocabSize == 0 { return nil }
-
-        // Create token data array
-        var candidates = [SLlamaTokenData]()
-        for i in 0 ..< vocabSize {
-            candidates.append(SLlamaTokenData(
-                id: SLlamaToken(i),
-                logit: logits[Int(i)],
-                p: 0.0
-            ))
-        }
-
-        var tokenDataArray = SLlamaTokenDataArray(
-            data: candidates.withUnsafeMutableBufferPointer { $0.baseAddress },
-            size: candidates.count,
-            selected: 0,
-            sorted: false
-        )
-
-        // Apply sampling (uses any configured samplers attached to this instance)
-        apply(to: &tokenDataArray)
-
-        // Find the token with highest probability
-        guard let maxIndex = candidates.enumerated().max(by: { $0.element.p < $1.element.p })?.offset else {
-            return nil
-        }
-
-        return SLlamaToken(maxIndex)
+        // Use the proper llama_sampler_sample API which handles all the internal state correctly
+        // This samples from the last token position (-1)
+        sampleFromIndex(-1)
     }
 
     /// Sample a token from the provided token data array (PLlamaSampler protocol method)

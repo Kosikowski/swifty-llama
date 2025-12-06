@@ -12,8 +12,11 @@ public final class SwiftyLlamaTuner {
 
     // MARK: - LoRA Management
 
-    /// Currently applied LoRA adapter
+    /// Currently applied LoRA adapter metadata
     private var currentLoRA: LoRAAdapter?
+
+    /// Currently loaded SLlamaAdapter instance
+    private var loadedAdapter: SLlamaAdapter?
 
     /// Available LoRA adapters
     private var availableAdapters: [LoRAAdapter] = []
@@ -57,7 +60,7 @@ public final class SwiftyLlamaTuner {
 
     /// Apply a LoRA adapter to the current context
     public func applyLoRA(path: String, scale: Float = 1.0, metadata: LoRAMetadata? = nil) throws {
-        guard context != nil else {
+        guard let ctx = context, let mdl = model else {
             throw TuningError.contextNotInitialized
         }
 
@@ -66,7 +69,22 @@ public final class SwiftyLlamaTuner {
             throw TuningError.adapterFileNotFound(path: path)
         }
 
-        // For now, just create adapter info without applying
+        // Remove any previously loaded adapter
+        if let existingAdapter = loadedAdapter {
+            try? ctx.removeLoRAAdapter(existingAdapter)
+            loadedAdapter = nil
+        }
+
+        // Actually load and apply the adapter using SLlamaAdapter
+        do {
+            let sllAdapter = try SLlamaAdapter(model: mdl, path: path)
+            try ctx.addLoRAAdapter(sllAdapter)
+            loadedAdapter = sllAdapter
+        } catch let error as SLlamaError {
+            throw TuningError.adapterLoadFailed(reason: error.localizedDescription)
+        }
+
+        // Store adapter metadata
         let adapter = LoRAAdapter(
             path: path,
             scale: scale,
@@ -88,8 +106,15 @@ public final class SwiftyLlamaTuner {
             throw TuningError.contextNotInitialized
         }
 
-        // Clear memory to remove LoRA
-        ctx.clearMemory(data: true)
+        // Remove the adapter from context if one is loaded
+        if let adapter = loadedAdapter {
+            try ctx.removeLoRAAdapter(adapter)
+            loadedAdapter = nil
+        } else {
+            // Clear all adapters if we don't have a reference
+            ctx.clearLoRAAdapters()
+        }
+
         currentLoRA = nil
     }
 
@@ -191,54 +216,40 @@ public final class SwiftyLlamaTuner {
     }
 
     // MARK: - Training Session Management
+    // Note: Training is not supported by llama.cpp - it only supports inference.
+    // Use external tools like llama.cpp's train-text-from-scratch for LoRA training.
 
     /// Start a new training session
+    @available(
+        *,
+        unavailable,
+        message: "Training not supported - llama.cpp only supports inference. Use external tools for LoRA training."
+    )
     public func startTrainingSession(
-        dataset: TrainingDataset,
-        config: TrainingConfig
+        dataset _: TrainingDataset,
+        config _: TrainingConfig
     ) throws
         -> TrainingSession
     {
-        guard context != nil else {
-            throw TuningError.contextNotInitialized
-        }
-
-        // Validate configuration
-        try validateTrainingConfig(config)
-
-        // Create new training session
-        let session = TrainingSession(
-            id: UUID().uuidString,
-            dataset: dataset,
-            config: config,
-            startTime: Date(),
-            status: .running
-        )
-
-        trainingSession = session
-        trainingMetrics = TrainingMetrics(epoch: 0, loss: 0.0, learningRate: config.learningRate)
-        lastTrainingConfig = config
-
-        return session
+        fatalError("Training not supported - llama.cpp only supports inference")
     }
 
     /// Stop current training session
+    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
     public func stopTrainingSession() {
-        guard var session = trainingSession else { return }
-
-        session.status = .stopped
-        session.endTime = Date()
-        trainingSession = session
+        fatalError("Training not supported - llama.cpp only supports inference")
     }
 
     /// Get current training session
+    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
     public func getCurrentTrainingSession() -> TrainingSession? {
-        trainingSession
+        fatalError("Training not supported - llama.cpp only supports inference")
     }
 
     /// Get training metrics
+    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
     public func getTrainingMetrics() -> TrainingMetrics? {
-        trainingMetrics
+        fatalError("Training not supported - llama.cpp only supports inference")
     }
 
     /// Validate training configuration
@@ -260,57 +271,24 @@ public final class SwiftyLlamaTuner {
     }
 
     // MARK: - Model Saving
+    // Note: Saving trained LoRA adapters is not supported - llama.cpp doesn't expose training APIs.
+    // Loading pre-trained LoRA adapters via applyLoRA() is fully supported.
 
     /// Save the current LoRA adapter to a file
     /// - Parameters:
     ///   - path: Output path for the LoRA adapter
     ///   - metadata: Additional metadata to include
     /// - Throws: TuningError if saving fails
+    @available(
+        *,
+        unavailable,
+        message: "Saving new LoRA adapters not supported - llama.cpp only supports loading pre-trained adapters via applyLoRA()."
+    )
     public func saveLoRAAdapter(
-        path: String,
-        metadata: LoRAMetadata? = nil
+        path _: String,
+        metadata _: LoRAMetadata? = nil
     ) throws {
-        guard let currentLoRA else {
-            throw TuningError.noLoRAApplied
-        }
-
-        guard context != nil else {
-            throw TuningError.contextNotInitialized
-        }
-
-        // Create output directory if needed
-        let outputURL = URL(fileURLWithPath: path)
-        try FileManager.default.createDirectory(
-            at: outputURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-
-        // Save LoRA adapter using llama.cpp
-        // This would typically involve calling the appropriate C API
-        // For now, we'll create a placeholder file with metadata
-        let adapterInfo = LoRAAdapterInfo(
-            path: path,
-            scale: currentLoRA.scale,
-            metadata: metadata ?? currentLoRA.metadata,
-            baseModelPath: baseModelPath ?? "unknown",
-            trainingConfig: lastTrainingConfig,
-            trainingMetrics: trainingMetrics,
-            createdAt: Date()
-        )
-
-        // Save adapter info as JSON
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        let data = try encoder.encode(adapterInfo)
-        try data.write(to: outputURL)
-
-        // Update current LoRA with new path
-        self.currentLoRA = LoRAAdapter(
-            path: path,
-            scale: currentLoRA.scale,
-            metadata: currentLoRA.metadata,
-            appliedAt: currentLoRA.appliedAt
-        )
+        fatalError("Saving new LoRA adapters not supported - llama.cpp only supports loading pre-trained adapters")
     }
 
     /// Save the fine-tuned model (base model + LoRA)
@@ -319,45 +297,17 @@ public final class SwiftyLlamaTuner {
     ///   - format: Model format (gguf, safetensors, etc.)
     ///   - metadata: Additional metadata to include
     /// - Throws: TuningError if saving fails
+    @available(
+        *,
+        unavailable,
+        message: "Training not supported - llama.cpp only supports inference. Use external tools for LoRA training."
+    )
     public func saveFineTunedModel(
-        path: String,
-        format: ModelFormat = .gguf,
-        metadata: ModelMetadata? = nil
+        path _: String,
+        format _: ModelFormat = .gguf,
+        metadata _: ModelMetadata? = nil
     ) throws {
-        guard context != nil else {
-            throw TuningError.contextNotInitialized
-        }
-
-        guard let baseModelPath else {
-            throw TuningError.baseModelNotLoaded
-        }
-
-        // Create output directory if needed
-        let outputURL = URL(fileURLWithPath: path)
-        try FileManager.default.createDirectory(
-            at: outputURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-
-        // Save fine-tuned model using llama.cpp
-        // This would involve merging the base model with the LoRA adapter
-        // For now, we'll create a placeholder file with metadata
-        let modelInfo = FineTunedModelInfo(
-            path: path,
-            format: format,
-            baseModelPath: baseModelPath,
-            loraAdapter: currentLoRA,
-            trainingConfig: lastTrainingConfig,
-            trainingMetrics: trainingMetrics,
-            metadata: metadata ?? ModelMetadata(name: "Fine-tuned Model"),
-            createdAt: Date()
-        )
-
-        // Save model info as JSON
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        let data = try encoder.encode(modelInfo)
-        try data.write(to: outputURL)
+        fatalError("Training not supported - llama.cpp only supports inference")
     }
 
     /// Export model in different formats
@@ -366,104 +316,29 @@ public final class SwiftyLlamaTuner {
     ///   - format: Target format
     ///   - quantization: Quantization settings
     /// - Throws: TuningError if export fails
+    @available(*, unavailable, message: "Model export not supported - use llama.cpp's quantize tool directly.")
     public func exportModel(
-        path: String,
-        format: ModelFormat,
-        quantization: ModelQuantization? = nil
+        path _: String,
+        format _: ModelFormat,
+        quantization _: ModelQuantization? = nil
     ) throws {
-        guard context != nil else {
-            throw TuningError.contextNotInitialized
-        }
-
-        // Export model using llama.cpp
-        // This would involve calling the appropriate export functions
-        // For now, we'll create a placeholder
-        let exportInfo = ModelExportInfo(
-            path: path,
-            format: format,
-            quantization: quantization,
-            baseModelPath: baseModelPath ?? "unknown",
-            loraAdapter: currentLoRA,
-            createdAt: Date()
-        )
-
-        // Save export info
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        let data = try encoder.encode(exportInfo)
-        try data.write(to: URL(fileURLWithPath: path))
+        fatalError("Model export not supported - use llama.cpp's quantize tool directly")
     }
 
     /// Get model saving information
     /// - Returns: ModelSavingInfo with current state
+    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
     public func getModelSavingInfo() -> ModelSavingInfo {
-        ModelSavingInfo(
-            baseModelPath: baseModelPath,
-            currentLoRA: currentLoRA,
-            trainingConfig: lastTrainingConfig,
-            trainingMetrics: trainingMetrics,
-            trainingDataset: lastTrainingDataset
-        )
+        fatalError("Training not supported - llama.cpp only supports inference")
     }
 
     // MARK: - Evaluation
+    // Note: Real perplexity calculation requires training infrastructure not available in llama.cpp.
 
     /// Evaluate model performance on validation set
-    public func evaluateModel(validationExamples: [TrainingExample]) throws -> EvaluationMetrics {
-        guard let ctx = context else {
-            throw TuningError.contextNotInitialized
-        }
-
-        // Handle empty validation set
-        guard !validationExamples.isEmpty else {
-            return EvaluationMetrics(
-                perplexity: 1.0, // exp(0.0) = 1.0
-                averageLoss: 0.0,
-                totalExamples: 0,
-                totalTokens: 0
-            )
-        }
-
-        var totalLoss: Float = 0.0
-        var totalTokens = 0
-
-        for example in validationExamples {
-            // Calculate perplexity for this example
-            let (loss, tokenCount) = try calculatePerplexity(example: example, context: ctx)
-            totalLoss += loss
-            totalTokens += tokenCount
-        }
-
-        let averageLoss = totalLoss / Float(validationExamples.count)
-        let perplexity = exp(averageLoss)
-
-        return EvaluationMetrics(
-            perplexity: perplexity,
-            averageLoss: averageLoss,
-            totalExamples: validationExamples.count,
-            totalTokens: totalTokens
-        )
-    }
-
-    /// Calculate perplexity for a single example
-    private func calculatePerplexity(
-        example: TrainingExample,
-        context _: SLlamaContext
-    ) throws
-        -> (loss: Float, tokenCount: Int)
-    {
-        // Implementation would involve feeding tokens through the model
-        // and calculating cross-entropy loss
-        // This is a simplified version that returns realistic values for testing
-        let tokenCount = example.tokens.count
-        guard tokenCount > 0 else {
-            return (0.0, 0)
-        }
-
-        // Return a realistic loss value (between 0.5 and 2.0)
-        // This ensures perplexity is between ~1.6 and ~7.4
-        let loss = Float.random(in: 0.5 ... 2.0)
-        return (loss, tokenCount)
+    @available(*, unavailable, message: "Training evaluation not supported - llama.cpp only supports inference.")
+    public func evaluateModel(validationExamples _: [TrainingExample]) throws -> EvaluationMetrics {
+        fatalError("Training evaluation not supported - llama.cpp only supports inference")
     }
 
     // MARK: - Safety and Fallback
