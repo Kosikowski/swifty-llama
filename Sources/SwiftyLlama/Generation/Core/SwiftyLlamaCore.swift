@@ -38,8 +38,28 @@ public class SwiftyLlamaCore: SwiftyLlama {
         var isWarmedUp: Bool = false
     }
 
-    /
+    // Live generation tracking
+    private struct LiveGeneration {
+        let id: GenerationID
+        let conversationId: ConversationID
+        var params: GenerationParams
+        let startTime: Date
+        let task: Task<Void, Never>?
+    }
+
+    // MARK: - Conversation and Generation State
+
+    /// Active generations being tracked
     private var activeGenerations: [GenerationID: LiveGeneration] = [:]
+
+    /// Per-conversation state (token counts, warmup status, etc.)
+    private var conversationStates: [ConversationID: ConversationState] = [:]
+
+    /// All conversations
+    private var conversations: [ConversationID: Conversation] = [:]
+
+    /// Currently active conversation
+    private var currentConversationId: ConversationID?
 
     // MARK: - Initialization
 
@@ -273,7 +293,9 @@ public class SwiftyLlamaCore: SwiftyLlama {
 
     private func addToBatch(token: SLlamaToken, position: Int32, isLogit: Bool = true) {
         guard let batch else { return }
-        batch.addToken(token, position: position, sequenceIds: [0], logits: isLogit)
+        // Safe to use try! since batch is created with maxContextSize capacity
+        // and we ensure we never exceed that limit
+        try! batch.addToken(token, position: position, sequenceIds: [0], logits: isLogit)
     }
 
     // MARK: - Persistence Support

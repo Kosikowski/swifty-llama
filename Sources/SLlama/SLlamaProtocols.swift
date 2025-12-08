@@ -196,7 +196,8 @@ public protocol PLlamaBatch: AnyObject {
     // MARK: - Methods
 
     /// Add a token to the batch
-    func addToken(_ token: SLlamaToken, position: SLlamaPosition, sequenceIds: [SLlamaSequenceId], logits: Bool)
+    /// - Throws: SLlamaError.batchCapacityExceeded if batch is full
+    func addToken(_ token: SLlamaToken, position: SLlamaPosition, sequenceIds: [SLlamaSequenceId], logits: Bool) throws
 
     /// Clear the batch
     func clear()

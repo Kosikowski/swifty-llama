@@ -30,7 +30,9 @@ public struct SLlamaTokenizerConfig: Sendable {
 // MARK: - SLlamaTokenizer
 
 /// A wrapper for llama tokenization functions
-public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaTokenizer: PLlamaTokenizer {
     /// Tokenize text into tokens
     /// - Parameters:
     ///   - text: The text to tokenize

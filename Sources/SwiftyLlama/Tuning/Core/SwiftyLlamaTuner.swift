@@ -81,7 +81,7 @@ public final class SwiftyLlamaTuner {
             try ctx.addLoRAAdapter(sllAdapter)
             loadedAdapter = sllAdapter
         } catch let error as SLlamaError {
-            throw TuningError.adapterLoadFailed(reason: error.localizedDescription)
+            throw TuningError.adapterApplicationFailed(path: path, errorDescription: error.localizedDescription)
         }
 
         // Store adapter metadata
@@ -216,129 +216,84 @@ public final class SwiftyLlamaTuner {
     }
 
     // MARK: - Training Session Management
-    // Note: Training is not supported by llama.cpp - it only supports inference.
+    // Note: Training is NOT supported by llama.cpp - it only supports inference.
     // Use external tools like llama.cpp's train-text-from-scratch for LoRA training.
 
     /// Start a new training session
-    @available(
-        *,
-        unavailable,
-        message: "Training not supported - llama.cpp only supports inference. Use external tools for LoRA training."
-    )
+    /// - Important: Training is not supported by llama.cpp. This method always throws.
     public func startTrainingSession(
         dataset _: TrainingDataset,
         config _: TrainingConfig
     ) throws
         -> TrainingSession
     {
-        fatalError("Training not supported - llama.cpp only supports inference")
+        throw TuningError.trainingNotSupported
     }
 
     /// Stop current training session
-    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
-    public func stopTrainingSession() {
-        fatalError("Training not supported - llama.cpp only supports inference")
+    /// - Important: Training is not supported by llama.cpp. This method always throws.
+    public func stopTrainingSession() throws {
+        throw TuningError.trainingNotSupported
     }
 
     /// Get current training session
-    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
-    public func getCurrentTrainingSession() -> TrainingSession? {
-        fatalError("Training not supported - llama.cpp only supports inference")
+    /// - Important: Training is not supported by llama.cpp. This method always throws.
+    public func getCurrentTrainingSession() throws -> TrainingSession? {
+        throw TuningError.trainingNotSupported
     }
 
     /// Get training metrics
-    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
-    public func getTrainingMetrics() -> TrainingMetrics? {
-        fatalError("Training not supported - llama.cpp only supports inference")
-    }
-
-    /// Validate training configuration
-    private func validateTrainingConfig(_ config: TrainingConfig) throws {
-        // Validate LoRA rank
-        if config.loraRank < 1 || config.loraRank > 128 {
-            throw TuningError.invalidLoRARank(rank: config.loraRank)
-        }
-
-        // Validate learning rate
-        if config.learningRate <= 0 || config.learningRate > 1.0 {
-            throw TuningError.invalidLearningRate(rate: config.learningRate)
-        }
-
-        // Validate epochs
-        if config.epochs < 1 || config.epochs > 100 {
-            throw TuningError.invalidEpochs(epochs: config.epochs)
-        }
+    /// - Important: Training is not supported by llama.cpp. This method always throws.
+    public func getTrainingMetrics() throws -> TrainingMetrics? {
+        throw TuningError.trainingNotSupported
     }
 
     // MARK: - Model Saving
-    // Note: Saving trained LoRA adapters is not supported - llama.cpp doesn't expose training APIs.
+    // Note: Saving trained LoRA adapters is NOT supported - llama.cpp doesn't expose training APIs.
     // Loading pre-trained LoRA adapters via applyLoRA() is fully supported.
 
     /// Save the current LoRA adapter to a file
-    /// - Parameters:
-    ///   - path: Output path for the LoRA adapter
-    ///   - metadata: Additional metadata to include
-    /// - Throws: TuningError if saving fails
-    @available(
-        *,
-        unavailable,
-        message: "Saving new LoRA adapters not supported - llama.cpp only supports loading pre-trained adapters via applyLoRA()."
-    )
+    /// - Important: Saving new LoRA adapters is not supported. This method always throws.
     public func saveLoRAAdapter(
         path _: String,
         metadata _: LoRAMetadata? = nil
     ) throws {
-        fatalError("Saving new LoRA adapters not supported - llama.cpp only supports loading pre-trained adapters")
+        throw TuningError.trainingNotSupported
     }
 
     /// Save the fine-tuned model (base model + LoRA)
-    /// - Parameters:
-    ///   - path: Output path for the fine-tuned model
-    ///   - format: Model format (gguf, safetensors, etc.)
-    ///   - metadata: Additional metadata to include
-    /// - Throws: TuningError if saving fails
-    @available(
-        *,
-        unavailable,
-        message: "Training not supported - llama.cpp only supports inference. Use external tools for LoRA training."
-    )
+    /// - Important: Training is not supported by llama.cpp. This method always throws.
     public func saveFineTunedModel(
         path _: String,
         format _: ModelFormat = .gguf,
         metadata _: ModelMetadata? = nil
     ) throws {
-        fatalError("Training not supported - llama.cpp only supports inference")
+        throw TuningError.trainingNotSupported
     }
 
     /// Export model in different formats
-    /// - Parameters:
-    ///   - path: Output path
-    ///   - format: Target format
-    ///   - quantization: Quantization settings
-    /// - Throws: TuningError if export fails
-    @available(*, unavailable, message: "Model export not supported - use llama.cpp's quantize tool directly.")
+    /// - Important: Model export is not supported. Use llama.cpp's quantize tool directly.
     public func exportModel(
         path _: String,
         format _: ModelFormat,
         quantization _: ModelQuantization? = nil
     ) throws {
-        fatalError("Model export not supported - use llama.cpp's quantize tool directly")
+        throw TuningError.trainingNotSupported
     }
 
     /// Get model saving information
-    /// - Returns: ModelSavingInfo with current state
-    @available(*, unavailable, message: "Training not supported - llama.cpp only supports inference.")
-    public func getModelSavingInfo() -> ModelSavingInfo {
-        fatalError("Training not supported - llama.cpp only supports inference")
+    /// - Important: Training is not supported by llama.cpp. This method always throws.
+    public func getModelSavingInfo() throws -> ModelSavingInfo {
+        throw TuningError.trainingNotSupported
     }
 
     // MARK: - Evaluation
     // Note: Real perplexity calculation requires training infrastructure not available in llama.cpp.
 
     /// Evaluate model performance on validation set
-    @available(*, unavailable, message: "Training evaluation not supported - llama.cpp only supports inference.")
+    /// - Important: Training evaluation is not supported by llama.cpp. This method always throws.
     public func evaluateModel(validationExamples _: [TrainingExample]) throws -> EvaluationMetrics {
-        fatalError("Training evaluation not supported - llama.cpp only supports inference")
+        throw TuningError.trainingNotSupported
     }
 
     // MARK: - Safety and Fallback

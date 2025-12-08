@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaAdapter
 
 /// A wrapper for llama LoRA adapter operations
-public class SLlamaAdapter: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaAdapter {
     // MARK: Properties
 
     var adapter: SLlamaAdapterLoraPointer?

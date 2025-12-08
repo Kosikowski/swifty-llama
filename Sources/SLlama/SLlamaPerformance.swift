@@ -119,7 +119,7 @@ public class SLlamaPerformance: @unchecked Sendable {
                 // Process prompt tokens
                 let batch = SLlamaBatch(nTokens: Int32(promptTokens.count), nSeqMax: 1)
                 for (index, token) in promptTokens.enumerated() {
-                    batch.addToken(
+                    try batch.addToken(
                         token,
                         position: Int32(index),
                         sequenceIds: [0],
@@ -144,7 +144,7 @@ public class SLlamaPerformance: @unchecked Sendable {
 
                     // Process single token
                     let generationBatch = SLlamaBatch(nTokens: 1, nSeqMax: 1)
-                    generationBatch.addToken(
+                    try generationBatch.addToken(
                         nextToken,
                         position: Int32(currentPosition),
                         sequenceIds: [0],

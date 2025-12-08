@@ -2,7 +2,9 @@ import Foundation
 import llama
 
 /// A wrapper for llama context
-public class SLlamaContext: @unchecked Sendable, PLlamaContext {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaContext: PLlamaContext {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

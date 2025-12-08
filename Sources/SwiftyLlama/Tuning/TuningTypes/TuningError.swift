@@ -22,6 +22,9 @@ public enum TuningError: Error, LocalizedError, Equatable {
     case modelExportFailed(path: String, errorDescription: String)
     case unsupportedModelFormat(format: String)
     case invalidQuantizationSettings(description: String)
+    /// Training is not supported by llama.cpp - it only supports inference.
+    /// Use external tools for LoRA training.
+    case trainingNotSupported
 
     public var errorDescription: String? {
         switch self {
@@ -61,6 +64,8 @@ public enum TuningError: Error, LocalizedError, Equatable {
                 "Unsupported model format: \(format)"
             case let .invalidQuantizationSettings(description):
                 "Invalid quantization settings: \(description)"
+            case .trainingNotSupported:
+                "Training is not supported by llama.cpp - it only supports inference. Use external tools for LoRA training."
         }
     }
 }
