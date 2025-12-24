@@ -466,6 +466,20 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
         try decode(concreteBatch)
     }
 
+    // MARK: - Async Methods
+
+    /// Encode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    public func encodeAsync(_ batch: PLlamaBatch) async throws {
+        try encode(batch)
+    }
+
+    /// Decode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    public func decodeAsync(_ batch: PLlamaBatch) async throws {
+        try decode(batch)
+    }
+
     // MARK: - 🕰️ Legacy Artifacts (Deprecated) 🕰️
 
     /// 📜 **Legacy Encoding Ritual** (Deprecated)
@@ -648,6 +662,20 @@ public extension SLlamaContext {
     /// ```
     func synchronize() {
         core().synchronize()
+    }
+
+    // MARK: - Async Methods
+
+    /// Encode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func encodeAsync(_ batch: PLlamaBatch) async throws {
+        try await core().encodeAsync(batch)
+    }
+
+    /// Decode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func decodeAsync(_ batch: PLlamaBatch) async throws {
+        try await core().decodeAsync(batch)
     }
 
     // MARK: - 🕰️ Ancient Direct Rituals (Deprecated) 🕰️

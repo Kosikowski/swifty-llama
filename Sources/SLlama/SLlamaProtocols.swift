@@ -89,7 +89,7 @@ public protocol PLlamaContext: AnyObject {
     /// Get pooling type from context
     var poolingType: SLlamaPoolingType { get }
 
-    // MARK: - Methods
+    // MARK: - Synchronous Methods
 
     /// Create a core operations wrapper for this context
     func core() -> PLlamaCore
@@ -114,6 +114,16 @@ public protocol PLlamaContext: AnyObject {
 
     /// Synchronize computations
     func synchronize()
+
+    // MARK: - Async Methods
+
+    /// Encode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func encodeAsync(_ batch: PLlamaBatch) async throws
+
+    /// Decode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func decodeAsync(_ batch: PLlamaBatch) async throws
 }
 
 /// Protocol for SLlama core operations (encoding, decoding, and configuration)
@@ -123,7 +133,7 @@ public protocol PLlamaCore: AnyObject {
     /// Get the model from core context
     var coreModel: PLlamaModel? { get }
 
-    // MARK: - Methods
+    // MARK: - Synchronous Methods
 
     /// Encode a batch of tokens
     func encode(_ batch: PLlamaBatch) throws
@@ -163,6 +173,16 @@ public protocol PLlamaCore: AnyObject {
 
     /// Get pooling type
     func getPoolingType() -> SLlamaPoolingType
+
+    // MARK: - Async Methods
+
+    /// Encode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func encodeAsync(_ batch: PLlamaBatch) async throws
+
+    /// Decode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func decodeAsync(_ batch: PLlamaBatch) async throws
 }
 
 /// Protocol for SLlama batch operations
