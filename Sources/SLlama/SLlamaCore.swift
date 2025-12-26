@@ -489,7 +489,7 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// - Parameter batch: The batch to encode using ancient methods
     /// - Returns: `0` for success, negative values for various forms of darkness
-    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -509,7 +509,7 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// - Parameter batch: The batch to decode using ancient methods
     /// - Returns: `0` for success, positive for warnings, negative for errors
-    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -686,7 +686,7 @@ public extension SLlamaContext {
     ///
     /// - Parameter batch: The batch to encode using ancient methods
     /// - Returns: `0` for success, negative values for darkness
-    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead. Will be removed in v2.0")
     func _encode(_ batch: SLlamaBatch) -> Int32 {
         (core() as! SLlamaCore)._encode(batch)
     }
@@ -697,7 +697,7 @@ public extension SLlamaContext {
     ///
     /// - Parameter batch: The batch to decode using ancient methods
     /// - Returns: `0` for success, positive for warnings, negative for errors
-    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead. Will be removed in v2.0")
     func _decode(_ batch: SLlamaBatch) -> Int32 {
         (core() as! SLlamaCore)._decode(batch)
     }

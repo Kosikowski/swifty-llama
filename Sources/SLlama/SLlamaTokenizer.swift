@@ -448,7 +448,11 @@ public final class SLlamaTokenizer: PLlamaTokenizer {
     // MARK: - Legacy Methods (Deprecated)
 
     /// Legacy tokenize method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use tokenize(text:vocab:addSpecial:parseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenize(text:vocab:addSpecial:parseSpecial:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -464,7 +468,11 @@ public final class SLlamaTokenizer: PLlamaTokenizer {
     }
 
     /// Legacy tokenToPiece method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use tokenToPiece(token:vocab:lstrip:special:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenToPiece(token:vocab:lstrip:special:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -480,7 +488,11 @@ public final class SLlamaTokenizer: PLlamaTokenizer {
     }
 
     /// Legacy detokenize method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use detokenize(tokens:vocab:removeSpecial:unparseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use detokenize(tokens:vocab:removeSpecial:unparseSpecial:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -496,7 +508,11 @@ public final class SLlamaTokenizer: PLlamaTokenizer {
     }
 
     /// Legacy applyChatTemplate method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use applyChatTemplate(template:messages:addAssistant:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use applyChatTemplate(template:messages:addAssistant:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -511,7 +527,7 @@ public final class SLlamaTokenizer: PLlamaTokenizer {
     }
 
     /// Legacy getBuiltinTemplates method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use getBuiltinTemplates() throws instead")
+    @available(*, deprecated, message: "Use getBuiltinTemplates() throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -596,7 +612,11 @@ public extension SLlamaVocab {
     ///   - addSpecial: Whether to add special tokens
     ///   - parseSpecial: Whether to parse special tokens
     /// - Returns: Array of tokens, or nil if tokenization failed
-    @available(*, deprecated, message: "Use tokenize(text:addSpecial:parseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenize(text:addSpecial:parseSpecial:) throws instead. Will be removed in v2.0"
+    )
     func _tokenize(
         text: String,
         addSpecial: Bool = true,
@@ -613,7 +633,11 @@ public extension SLlamaVocab {
     ///   - lstrip: Number of leading spaces to skip
     ///   - special: Whether to render special tokens
     /// - Returns: The text representation, or nil if conversion failed
-    @available(*, deprecated, message: "Use tokenToPiece(token:lstrip:special:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenToPiece(token:lstrip:special:) throws instead. Will be removed in v2.0"
+    )
     func _tokenToPiece(
         token: SLlamaToken,
         lstrip: Int32 = 0,
@@ -630,7 +654,11 @@ public extension SLlamaVocab {
     ///   - removeSpecial: Whether to remove special tokens
     ///   - unparseSpecial: Whether to render special tokens in output
     /// - Returns: The text representation, or nil if conversion failed
-    @available(*, deprecated, message: "Use detokenize(tokens:removeSpecial:unparseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use detokenize(tokens:removeSpecial:unparseSpecial:) throws instead. Will be removed in v2.0"
+    )
     func _detokenize(
         tokens: [SLlamaToken],
         removeSpecial: Bool = true,

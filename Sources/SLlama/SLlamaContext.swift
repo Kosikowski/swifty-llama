@@ -133,7 +133,7 @@ public final class SLlamaContext: PLlamaContext {
     ///   - model: The model to create context from
     ///   - contextParams: Optional context parameters
     /// - Returns: SLlamaContext instance or nil if creation fails
-    @available(*, deprecated, message: "Use init(model:contextParams:) throws instead")
+    @available(*, deprecated, message: "Use init(model:contextParams:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif

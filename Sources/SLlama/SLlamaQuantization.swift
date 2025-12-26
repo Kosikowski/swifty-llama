@@ -127,7 +127,11 @@ public class SLlamaQuantization: @unchecked Sendable {
     ///   - outputPath: Path where the quantized model will be saved
     ///   - params: Quantization parameters (optional, uses defaults if nil)
     /// - Returns: 0 on success, non-zero on error
-    @available(*, deprecated, message: "Use quantizeModel(inputPath:outputPath:params:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use quantizeModel(inputPath:outputPath:params:) throws instead. Will be removed in v2.0"
+    )
     @discardableResult
     #if SLLAMA_INLINE_ALL
         @inlinable
