@@ -373,6 +373,86 @@ public extension SLlamaSamplerChain {
 
         return chain
     }
+
+    /// Create a custom sampling chain with grammar constraints
+    ///
+    /// This method creates a sampler chain that enforces grammar constraints on the output.
+    /// The grammar sampler is added first to ensure only grammatically valid tokens are considered.
+    ///
+    /// **Chain composition**:
+    /// 1. **Grammar sampler** - Filters tokens to only those valid according to the grammar
+    /// 2. **Repetition penalty** - Reduces repetition by penalizing recently used tokens
+    /// 3. **Top-k filtering** - Limits vocabulary to k most likely tokens
+    /// 4. **Top-p filtering** - Further filters by cumulative probability
+    /// 5. **Temperature scaling** - Controls randomness of final selection
+    /// 6. **Distribution sampler** - Final token selection based on probabilities
+    ///
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - grammarRules: The grammar rules in GBNF format
+    ///   - grammarRoot: The root symbol name (default: "root")
+    ///   - temperature: Temperature for sampling
+    ///   - topK: Number of top tokens to consider
+    ///   - topP: Cumulative probability threshold
+    ///   - repetitionPenalty: Repetition penalty factor
+    ///   - seed: Random seed for distribution sampler (default: random)
+    /// - Returns: A configured sampler chain with grammar constraint, or nil if initialization failed
+    static func withGrammar(
+        context: SLlamaContext,
+        grammarRules: String,
+        grammarRoot: String = "root",
+        temperature: Float = 0.7,
+        topK: Int32 = 40,
+        topP: Float = 0.9,
+        repetitionPenalty: Float = 1.1,
+        seed: UInt32 = UInt32.random(in: 0 ... UInt32.max)
+    )
+        -> SLlamaSamplerChain?
+    {
+        guard let vocab = context.associatedModel?.vocab else { return nil }
+
+        let chain = SLlamaSamplerChain(context: context)
+        guard chain.initialize() else { return nil }
+
+        // **ORDER MATTERS**: Grammar sampler goes FIRST to constrain valid tokens
+
+        // 1. Add grammar sampler - MUST be first to enforce grammar constraints
+        if let grammarSampler = SLlamaSampler.grammar(
+            context: context,
+            vocab: vocab,
+            grammarString: grammarRules,
+            grammarRoot: grammarRoot
+        ) {
+            chain.addSampler(grammarSampler)
+        }
+
+        // 2. Add repetition penalty - modifies logits based on token history
+        if let penaltySampler = SLlamaSampler.repetitionPenalty(context: context, penalty: repetitionPenalty) {
+            chain.addSampler(penaltySampler)
+        }
+
+        // 3. Add top-k sampler - reduces vocabulary to k most likely tokens
+        if let topKSampler = SLlamaSampler.topK(context: context, k: topK) {
+            chain.addSampler(topKSampler)
+        }
+
+        // 4. Add top-p sampler - further filters by cumulative probability
+        if let topPSampler = SLlamaSampler.topP(context: context, p: topP) {
+            chain.addSampler(topPSampler)
+        }
+
+        // 5. Add temperature sampler - controls randomness
+        if let tempSampler = SLlamaSampler.temperature(context: context, temperature: temperature) {
+            chain.addSampler(tempSampler)
+        }
+
+        // 6. Add distribution sampler - REQUIRED to actually select a token
+        if let distSampler = SLlamaSampler.distribution(context: context, seed: seed) {
+            chain.addSampler(distSampler)
+        }
+
+        return chain
+    }
 }
 
 // MARK: - Extension to SLlamaContext for Chain Sampling

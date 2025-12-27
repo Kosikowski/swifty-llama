@@ -225,13 +225,27 @@ public extension SwiftyLlamaCore {
     // MARK: - Sampler Creation
 
     internal func createSampler(with params: GenerationParams, llamaContext: SLlamaContext) -> SLlamaSamplerChain? {
+        // If grammar constraint is specified, use grammar-enabled chain
+        if let grammar = params.grammar {
+            return SLlamaSamplerChain.withGrammar(
+                context: llamaContext,
+                grammarRules: grammar.rules,
+                grammarRoot: grammar.rootSymbol,
+                temperature: params.temperature,
+                topK: params.topK,
+                topP: params.topP,
+                repetitionPenalty: params.repeatPenalty,
+                seed: params.seed
+            )
+        }
+
         // Create a proper sampler chain with all sampling stages:
         // 1. Repetition penalty
         // 2. Top-K filtering
         // 3. Top-P filtering
         // 4. Temperature scaling
         // 5. Distribution sampler (REQUIRED to actually select a token)
-        SLlamaSamplerChain.custom(
+        return SLlamaSamplerChain.custom(
             context: llamaContext,
             temperature: params.temperature,
             topK: params.topK,
