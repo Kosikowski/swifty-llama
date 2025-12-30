@@ -85,6 +85,9 @@ public typealias SLlamaLogitBias = llama_logit_bias
 /// Type alias for sampler chain parameters
 public typealias SLlamaSamplerChainParams = llama_sampler_chain_params
 
+/// Type alias for batch structure
+public typealias SLlamaBatchStruct = llama_batch
+
 /// Type alias for chat message
 public typealias SLlamaChatMessage = llama_chat_message
 

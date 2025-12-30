@@ -190,7 +190,7 @@ public protocol PLlamaBatch: AnyObject {
     // MARK: - Properties
 
     /// Get the underlying C batch structure
-    var cBatch: llama_batch { get }
+    var cBatch: SLlamaBatchStruct { get }
 
     /// Number of tokens in the batch
     var tokenCount: Int32 { get }
