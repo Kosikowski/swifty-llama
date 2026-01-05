@@ -116,6 +116,41 @@ let conversations = try llama.loadConversationsFromJSON(path: "conversations.jso
 try llama.restoreConversations(conversations)
 ```
 
+#### 7. Grammar Constraints (Structured Output)
+```swift
+// Generate valid JSON
+let jsonStream = llama.start(
+    prompt: "List 3 programming languages as JSON:",
+    params: GenerationParams(grammar: .json, maxTokens: 200)
+)
+
+// Generate yes/no answer
+let yesNoStream = llama.start(
+    prompt: "Is the sky blue?",
+    params: GenerationParams(grammar: .yesNo, maxTokens: 10)
+)
+
+// Generate boolean
+let boolStream = llama.start(
+    prompt: "Is 2+2=4?",
+    params: GenerationParams(grammar: .boolean, maxTokens: 10)
+)
+
+// Custom grammar
+let customGrammar = GrammarConstraint(
+    rules: """
+    root ::= "Option " [1-3]
+    """,
+    rootSymbol: "root"
+)
+let customStream = llama.start(
+    prompt: "Choose an option:",
+    params: GenerationParams(grammar: customGrammar, maxTokens: 20)
+)
+```
+
+**Available Presets:** `.json`, `.jsonArray`, `.list`, `.boolean`, `.yesNo`, `.integer`, `.decimal`
+
 ### Fine-tuning Patterns
 
 #### 1. LoRA Management

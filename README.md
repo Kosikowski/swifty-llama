@@ -17,6 +17,7 @@ SwiftyLlama provides a complete, production-ready solution for LLM operations wi
 - **Streaming Generation**: Real-time token streaming with `AsyncThrowingStream`
 - **Actor-based Design**: Thread-safe operations with `@SwiftyLlamaActor`
 - **Rich Parameters**: Temperature, top-k, top-p, repetition penalty, and more
+- **Grammar Constraints**: Structured output generation with GBNF grammars (JSON, lists, etc.)
 - **Cancellation Support**: Full cancellation with proper cleanup
 - **Memory Management**: Efficient Metal GPU support with automatic resource management
 
@@ -81,6 +82,24 @@ let stream = llama.start(
 for try await token in stream.stream {
     print(token, terminator: "")
 }
+```
+
+### Structured Output with Grammar
+
+```swift
+// Generate valid JSON output
+let stream = llama.start(
+    prompt: "List 3 colors as JSON:",
+    params: GenerationParams(
+        grammar: .json,
+        maxTokens: 200
+    )
+)
+
+for try await token in stream.stream {
+    print(token, terminator: "")
+}
+// Output: {"colors": ["red", "blue", "green"]}
 ```
 
 ### Conversation Management
@@ -167,6 +186,7 @@ let session = try tuner.startTrainingSession(
 - ✅ **Actor-based Design** - Thread-safe operations with `@SwiftyLlamaActor`
 - ✅ **Conversation Persistence** - Save/restore conversation state
 - ✅ **Streaming Generation** - Real-time token streaming with cancellation
+- ✅ **Grammar Constraints** - Structured output (JSON, lists, boolean, etc.)
 - ✅ **Fine-tuning Support** - LoRA adapter management and training
 - ✅ **Error Handling** - Complete error types and handling
 - ✅ **Memory Management** - Efficient Metal GPU support
