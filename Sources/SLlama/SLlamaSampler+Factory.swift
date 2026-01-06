@@ -351,6 +351,127 @@ public extension SLlamaSampler {
         return sampler
     }
 
+    /// Create a DRY (Don't Repeat Yourself) sampler
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - vocab: The vocabulary to use
+    ///   - nCtxTrain: Training context size (used for scaling)
+    ///   - dryMultiplier: Multiplier for the DRY penalty (0.0 = disabled)
+    ///   - dryBase: Base for exponential penalty growth
+    ///   - dryAllowedLength: Minimum length of repeated sequence to penalize
+    ///   - dryPenaltyLastN: Number of last tokens to check for repetitions (0 = disable, -1 = context size)
+    ///   - seqBreakers: Strings that break the repetition detection (e.g., "\n", ":", "\"")
+    /// - Returns: A DRY sampler, or nil if initialization failed
+    static func dry(
+        context: SLlamaContext,
+        vocab: SLlamaVocabPointer,
+        nCtxTrain: Int32,
+        dryMultiplier: Float = 0.0,
+        dryBase: Float = 1.75,
+        dryAllowedLength: Int32 = 2,
+        dryPenaltyLastN: Int32 = -1,
+        seqBreakers: [String] = ["\n", ":", "\"", "*"]
+    )
+        -> SLlamaSampler?
+    {
+        // Convert Swift strings to C strings
+        var cStringPointers: [UnsafePointer<CChar>?] = []
+        var cStringBuffers: [UnsafeMutablePointer<CChar>] = []
+
+        for breaker in seqBreakers {
+            let cString = strdup(breaker)
+            cStringBuffers.append(cString!)
+            cStringPointers.append(UnsafePointer(cString))
+        }
+
+        defer {
+            // Free allocated C strings
+            for buffer in cStringBuffers {
+                free(buffer)
+            }
+        }
+
+        let samplerPtr: SLlamaSamplerPointer? = cStringPointers.withUnsafeMutableBufferPointer { breakersPtr in
+            llama_sampler_init_dry(
+                vocab,
+                nCtxTrain,
+                dryMultiplier,
+                dryBase,
+                dryAllowedLength,
+                dryPenaltyLastN,
+                breakersPtr.baseAddress,
+                seqBreakers.count
+            )
+        }
+
+        guard let samplerPtr else { return nil }
+
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+
+    /// Create a lazy grammar sampler with trigger patterns
+    /// Grammar constraints are only applied after a trigger pattern or token is detected.
+    /// - Parameters:
+    ///   - context: The llama context
+    ///   - vocab: The vocabulary to use
+    ///   - grammarString: The grammar rules as a string (GBNF format)
+    ///   - grammarRoot: The root symbol name
+    ///   - triggerPatterns: Regex patterns that trigger grammar enforcement (e.g., ["```json", "\\{"])
+    ///   - triggerTokens: Specific tokens that trigger grammar enforcement
+    /// - Returns: A lazy grammar sampler, or nil if initialization failed
+    static func grammarLazyPatterns(
+        context: SLlamaContext,
+        vocab: SLlamaVocabPointer,
+        grammarString: String,
+        grammarRoot: String = "root",
+        triggerPatterns: [String] = [],
+        triggerTokens: [SLlamaToken] = []
+    )
+        -> SLlamaSampler?
+    {
+        // Convert Swift strings to C strings for patterns
+        var cPatternPointers: [UnsafePointer<CChar>?] = []
+        var cPatternBuffers: [UnsafeMutablePointer<CChar>] = []
+
+        for pattern in triggerPatterns {
+            let cString = strdup(pattern)
+            cPatternBuffers.append(cString!)
+            cPatternPointers.append(UnsafePointer(cString))
+        }
+
+        defer {
+            // Free allocated C strings
+            for buffer in cPatternBuffers {
+                free(buffer)
+            }
+        }
+
+        // Make mutable copy of tokens for the C API
+        var mutableTokens = triggerTokens
+
+        let samplerPtr: SLlamaSamplerPointer? = cPatternPointers.withUnsafeMutableBufferPointer { patternsPtr in
+            mutableTokens.withUnsafeMutableBufferPointer { tokensPtr in
+                llama_sampler_init_grammar_lazy_patterns(
+                    vocab,
+                    grammarString,
+                    grammarRoot,
+                    patternsPtr.baseAddress,
+                    triggerPatterns.count,
+                    tokensPtr.baseAddress,
+                    triggerTokens.count
+                )
+            }
+        }
+
+        guard let samplerPtr else { return nil }
+
+        let sampler = SLlamaSampler(context: context)
+        sampler.sampler = samplerPtr
+        return sampler
+    }
+
     /// Get the seed used by the sampler
     /// - Returns: The seed value, or LLAMA_DEFAULT_SEED if not applicable
     func getSeed() -> UInt32 {
