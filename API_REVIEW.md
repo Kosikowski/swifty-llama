@@ -233,11 +233,11 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 - ✅ **llama_sampler_init_mirostat** - Wrapped in `SLlamaSampler.mirostat()`
 - ✅ **llama_sampler_init_mirostat_v2** - Wrapped in `SLlamaSampler.mirostatV2()`
 - ✅ **llama_sampler_init_grammar** - Wrapped in `SLlamaSampler.grammar()`
-- ✅ **llama_sampler_init_grammar_lazy** - Available but not wrapped
-- ✅ **llama_sampler_init_grammar_lazy_patterns** - Available but not wrapped
+- ⚠️ **llama_sampler_init_grammar_lazy** - DEPRECATED, use grammar_lazy_patterns instead
+- ✅ **llama_sampler_init_grammar_lazy_patterns** - Wrapped in `SLlamaSampler.grammarLazyPatterns()`
 - ✅ **llama_sampler_init_penalties** - Wrapped in `SLlamaSampler.penalties()`
-- ✅ **llama_sampler_init_dry** - Available but not wrapped
-- ✅ **llama_sampler_init_bias** - Available but not wrapped
+- ✅ **llama_sampler_init_dry** - Wrapped in `SLlamaSampler.dry()`
+- ✅ **llama_sampler_init_bias** - Wrapped in `SLlamaSampler.logitBias()`
 - ✅ **llama_sampler_init_infill** - Wrapped in `SLlamaSampler.infill()`
 - ✅ **llama_sampler_get_seed** - Wrapped in `SLlamaSampler.getSeed()`
 - ✅ **llama_sampler_sample** - Available but not wrapped
@@ -301,9 +301,9 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 #### Backend and System
 - ✅ **llama_backend_init** - Wrapped in `SLlamaBackend.initialize()` and `SLlama.initialize()`
 - ✅ **llama_backend_free** - Wrapped in `SLlamaBackend.free()` and `SLlama.free()`
-- ❌ **llama_numa_init** - Available but not wrapped
-- ❌ **llama_attach_threadpool** - Available but not wrapped
-- ❌ **llama_detach_threadpool** - Available but not wrapped
+- ✅ **llama_numa_init** - Wrapped in `SLlamaBackend.initializeNUMA()` with `SLlamaNUMAStrategy` enum
+- ✅ **llama_attach_threadpool** - Wrapped in `SLlamaContext.attachThreadpool()`
+- ✅ **llama_detach_threadpool** - Wrapped in `SLlamaContext.detachThreadpool()`
 - ✅ **llama_time_us** - Wrapped in `SLlamaSystemInfo.getCurrentTimeMicroseconds()`
 - ✅ **llama_max_devices** - Wrapped in `SLlamaSystemInfo.getMaxDevices()`
 - ✅ **llama_max_parallel_sequences** - Wrapped in `SLlamaSystemInfo.getMaxParallelSequences()`
@@ -312,9 +312,9 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 - ✅ **llama_supports_gpu_offload** - Wrapped in `SLlamaSystemInfo.supportsGpuOffload()`
 - ✅ **llama_supports_rpc** - Wrapped in `SLlamaSystemInfo.supportsRpc()`
 
-#### Optimization
-- ❌ **llama_opt_init** - Available but not wrapped
-- ❌ **llama_opt_epoch** - Available but not wrapped
+#### Optimization (Training - Not Applicable)
+- ⛔ **llama_opt_init** - Not wrapped (training not supported by llama.cpp inference API)
+- ⛔ **llama_opt_epoch** - Not wrapped (training not supported by llama.cpp inference API)
 
 #### Utilities
 - ✅ **llama_split_path** - Wrapped in `SLlamaModelSplitting.buildSplitPath()`
@@ -349,7 +349,7 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 22. **System Capabilities**: `SLlamaSystemCapabilities` for aggregated system information
 
 ### 🔄 Partially Implemented
-1. **Advanced Sampling**: Some specialized samplers available but not wrapped (grammar_lazy, grammar_lazy_patterns, dry, bias, etc.)
+1. **Advanced Sampling**: All major samplers now wrapped including DRY, grammar_lazy_patterns, and logit bias
 
 ### 🆕 Recent Improvements
 1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
@@ -373,23 +373,23 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 - **✅ 4 enums actively used** in main codebase: `SLlamaVocabType`, `SLlamaRopeType`, `SLlamaTokenAttribute`, `SLlamaPoolingType`
 - **❌ 6 enums only defined** but not used in main codebase: `SLlamaTokenType`, `SLlamaFileType`, `SLlamaRopeScalingType`, `SLlamaAttentionType`, `SLlamaSplitMode`, `SLlamaModelKvOverrideType`
 
-### ❌ Not Implemented
-1. **Advanced Sampling**: Some specialized samplers not wrapped (grammar_lazy, grammar_lazy_patterns, dry, bias, etc.)
-2. **System Utilities**: Some system-level functions not wrapped (NUMA, threadpool, etc.)
-3. **Optimization**: No wrapper for training optimization functions
+### ⛔ Not Applicable (Training Not Supported)
+1. **Optimization Functions**: `llama_opt_init`, `llama_opt_epoch` are not wrapped
+   - llama.cpp is an inference-only library - training is not supported
+   - Use external tools (e.g., PyTorch, transformers) for LoRA training, then load adapters via `SLlamaAdapter`
 
 ## Recommendations
 
-### High Priority
-1. **Advanced Sampling**: Complete the sampling strategy implementations (grammar, penalties, dry, bias, infill)
-2. **Model Quantization**: Important for model optimization
+### ✅ Completed (High Priority)
+1. **Advanced Sampling**: All major sampling strategies implemented (grammar, penalties, DRY, logit bias, infill, grammar_lazy_patterns)
+2. **Model Quantization**: Complete implementation with parameter support
 
-### Medium Priority
-1. **System Utilities**: Useful for system information and optimization
-2. **Model Splitting**: Useful for large model management
+### ✅ Completed (Medium Priority)
+1. **System Utilities**: NUMA initialization, threadpool management now wrapped
+2. **Model Splitting**: Complete implementation for large model management
 
-### Low Priority
-1. **Optimization Functions**: Only needed for training scenarios
+### ⛔ Not Applicable
+1. **Training/Optimization Functions**: llama.cpp is inference-only; training not supported
 
 ## Summary
 
