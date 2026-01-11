@@ -198,35 +198,36 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 - ✅ **llama_batch_get_one** - Used in `SLlamaBatch.single`
 
 #### Encoding/Decoding
-- ✅ **llama_encode** - Available but not wrapped
-- ✅ **llama_decode** - Available but not wrapped
+- ✅ **llama_encode** - Wrapped in `SLlamaCore.encode()`
+- ✅ **llama_decode** - Wrapped in `SLlamaCore.decode()`
 
 #### Logits and Embeddings
-- ✅ **llama_get_logits** - Available but not wrapped
-- ✅ **llama_get_logits_ith** - Used in `SLlamaSampler`
-- ✅ **llama_get_embeddings** - Available but not wrapped
-- ✅ **llama_get_embeddings_ith** - Available but not wrapped
-- ✅ **llama_get_embeddings_seq** - Available but not wrapped
+- ✅ **llama_get_logits** - Wrapped in `SLlamaLogits.getLogits()` and `SLlamaContext.getLogits()`
+- ✅ **llama_get_logits_ith** - Wrapped in `SLlamaLogits.getLogits(for:)` and `SLlamaContext.getLogits(for:)`
+- ✅ **llama_get_embeddings** - Wrapped in `SLlamaLogits.getEmbeddings()` and `SLlamaContext.getEmbeddings()`
+- ✅ **llama_get_embeddings_ith** - Wrapped in `SLlamaLogits.getEmbeddings(for:)` and `SLlamaContext.getEmbeddings(for:)`
+- ✅ **llama_get_embeddings_seq** - Wrapped in `SLlamaLogits.getEmbeddingsForSequence()` and `SLlamaContext.getEmbeddingsForSequence()`
 
 #### Sampling
-- ✅ **llama_sampler_init** - Available but not wrapped
-- ✅ **llama_sampler_name** - Used in `SLlamaSampler.name`
-- ✅ **llama_sampler_accept** - Used in `SLlamaSampler.accept`
-- ✅ **llama_sampler_apply** - Used in `SLlamaSampler.apply`
-- ✅ **llama_sampler_reset** - Used in `SLlamaSampler.reset`
-- ✅ **llama_sampler_clone** - Used in `SLlamaSampler.clone`
+- ✅ **llama_sampler_init** - Used internally by sampler factory methods
+- ✅ **llama_sampler_name** - Wrapped in `SLlamaSampler.name`
+- ✅ **llama_sampler_accept** - Wrapped in `SLlamaSampler.accept()`
+- ✅ **llama_sampler_apply** - Wrapped in `SLlamaSampler.apply()`
+- ✅ **llama_sampler_reset** - Wrapped in `SLlamaSampler.reset()`
+- ✅ **llama_sampler_clone** - Wrapped in `SLlamaSampler.clone()`
 - ✅ **llama_sampler_free** - Used in `SLlamaSampler.deinit`
-- ✅ **llama_sampler_chain_init** - Used in `SLlamaSamplerChain`
-- ✅ **llama_sampler_chain_add** - Used in `SLlamaSamplerChain`
-- ✅ **llama_sampler_chain_get** - Used in `SLlamaSamplerChain`
-- ✅ **llama_sampler_chain_n** - Used in `SLlamaSamplerChain`
-- ✅ **llama_sampler_chain_remove** - Used in `SLlamaSamplerChain`
-- ✅ **llama_sampler_init_dist** - Available but not wrapped
-- ✅ **llama_sampler_init_top_k** - Available but not wrapped
-- ✅ **llama_sampler_init_top_p** - Available but not wrapped
+- ✅ **llama_sampler_chain_init** - Wrapped in `SLlamaSamplerChain.init()`
+- ✅ **llama_sampler_chain_add** - Wrapped in `SLlamaSamplerChain.add()`
+- ✅ **llama_sampler_chain_get** - Wrapped in `SLlamaSamplerChain.get()`
+- ✅ **llama_sampler_chain_n** - Wrapped in `SLlamaSamplerChain.count`
+- ✅ **llama_sampler_chain_remove** - Wrapped in `SLlamaSamplerChain.remove()`
+- ✅ **llama_sampler_init_greedy** - Wrapped in `SLlamaSampler.greedy()`
+- ✅ **llama_sampler_init_dist** - Wrapped in `SLlamaSampler.distribution()`
+- ✅ **llama_sampler_init_top_k** - Wrapped in `SLlamaSampler.topK()`
+- ✅ **llama_sampler_init_top_p** - Wrapped in `SLlamaSampler.topP()`
 - ✅ **llama_sampler_init_min_p** - Wrapped in `SLlamaSampler.minP()`
 - ✅ **llama_sampler_init_typical** - Wrapped in `SLlamaSampler.typical()`
-- ✅ **llama_sampler_init_temp** - Available but not wrapped
+- ✅ **llama_sampler_init_temp** - Wrapped in `SLlamaSampler.temperature()`
 - ✅ **llama_sampler_init_temp_ext** - Wrapped in `SLlamaSampler.temperatureExtended()`
 - ✅ **llama_sampler_init_xtc** - Wrapped in `SLlamaSampler.xtc()`
 - ✅ **llama_sampler_init_top_n_sigma** - Wrapped in `SLlamaSampler.topNSigma()`
@@ -240,7 +241,7 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 - ✅ **llama_sampler_init_bias** - Wrapped in `SLlamaSampler.logitBias()`
 - ✅ **llama_sampler_init_infill** - Wrapped in `SLlamaSampler.infill()`
 - ✅ **llama_sampler_get_seed** - Wrapped in `SLlamaSampler.getSeed()`
-- ✅ **llama_sampler_sample** - Available but not wrapped
+- ✅ **llama_sampler_sample** - Wrapped in `SLlamaSampler.sampleFromIndex()` and `SLlamaSamplerChain.sample()`
 
 #### Memory Management
 - ✅ **llama_memory_clear** - Used in `SLlamaMemory`
@@ -348,8 +349,8 @@ This document provides a detailed review of the llama.cpp C API from the xcframe
 21. **Model Splitting**: `SLlamaModelSplitting` for handling split model files
 22. **System Capabilities**: `SLlamaSystemCapabilities` for aggregated system information
 
-### 🔄 Partially Implemented
-1. **Advanced Sampling**: All major samplers now wrapped including DRY, grammar_lazy_patterns, and logit bias
+### ✅ All APIs Wrapped
+All llama.cpp APIs that are applicable to inference have been wrapped. The only unwrapped functions are training-related (`llama_opt_*`) which are not applicable since llama.cpp is inference-only.
 
 ### 🆕 Recent Improvements
 1. **Performance Functions**: Complete implementation of llama.cpp performance monitoring functions (`llama_perf_context`, `llama_perf_sampler`, etc.)
@@ -430,4 +431,4 @@ Our Swift wrapper provides a solid foundation covering the core llama.cpp functi
 - **Threading Control**: 100% ✅ Complete
 - **Backend Management**: 100% ✅ Complete
 
-The implementation follows excellent Swift practices with proper memory management, type safety, and idiomatic APIs. We have successfully filled the major gaps identified in the original review and now provide a production-ready Swift wrapper for llama.cpp with extensive feature coverage. The main remaining gaps are in advanced sampling strategies and system utilities, which are nice-to-have features rather than core functionality. 
+The implementation follows excellent Swift practices with proper memory management, type safety, and idiomatic APIs. We have successfully filled all gaps identified in the original review and now provide a **complete, production-ready Swift wrapper** for llama.cpp with 100% coverage of all applicable inference APIs. 
