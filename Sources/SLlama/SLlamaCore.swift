@@ -57,7 +57,9 @@ import llama
 /// - Thread configuration affects **this specific context** only, not the global realm
 ///
 /// **OMEN INTEGRATION**: All core operations are blessed with mystical insights through Omen logging. ✨
-public class SLlamaCore: @unchecked Sendable, PLlamaCore {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaCore: PLlamaCore {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

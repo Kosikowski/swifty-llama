@@ -4,7 +4,8 @@ import llama
 // MARK: - SLlamaBackend
 
 /// A wrapper for llama backend operations
-public class SLlamaBackend: @unchecked Sendable {
+/// Note: This class contains only static methods and has no instance state.
+public enum SLlamaBackend {
     // MARK: Static Properties
 
     #if SLLAMA_INLINE_ALL

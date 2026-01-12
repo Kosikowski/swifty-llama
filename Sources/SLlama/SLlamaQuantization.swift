@@ -4,7 +4,8 @@ import llama
 // MARK: - SLlamaQuantization
 
 /// A wrapper for llama quantization operations
-public class SLlamaQuantization: @unchecked Sendable {
+/// Note: This class contains only static methods and has no instance state.
+public enum SLlamaQuantization {
     /// Quantize a model to reduce its size and memory usage
     /// - Parameters:
     ///   - inputPath: Path to the input model file

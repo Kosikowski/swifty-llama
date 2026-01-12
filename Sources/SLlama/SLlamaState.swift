@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaState
 
 /// A wrapper for llama state operations
-public class SLlamaState: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaState {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

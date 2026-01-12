@@ -3,7 +3,9 @@ import Foundation
 // MARK: - SLlamaModelAdvanced
 
 /// Advanced model features and utilities
-public class SLlamaModelAdvanced: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaModelAdvanced {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

@@ -22,7 +22,8 @@ public struct SLlamaModelSplittingConfig: Sendable {
 // MARK: - SLlamaModelSplitting
 
 /// A wrapper for llama model splitting operations
-public class SLlamaModelSplitting: @unchecked Sendable {
+/// Note: This class contains only static methods and has no instance state.
+public enum SLlamaModelSplitting {
     /// Build a split model file path
     /// - Parameters:
     ///   - pathPrefix: Base path for the model files

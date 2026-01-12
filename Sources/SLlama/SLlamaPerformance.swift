@@ -16,7 +16,9 @@ public typealias SSamplerPerformanceMetrics = SDetailedSamplerMetrics
 ///
 /// **ARCHITECTURAL DECISION**: Using structured logging instead of print statements
 /// for performance metrics provides better observability and integration with system tools.
-public class SLlamaPerformance: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaPerformance {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -505,7 +507,9 @@ public class SLlamaPerformance: @unchecked Sendable {
 // MARK: - SPerformanceMonitor
 
 /// Real-time performance monitoring
-public final class SPerformanceMonitor: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SPerformanceMonitor {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
