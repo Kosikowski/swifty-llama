@@ -35,7 +35,8 @@ let package = Package(
         .target(
             name: "SLlama",
             dependencies: ["llama", "Omen"],
-            path: "Sources/SLlama"
+            path: "Sources/SLlama",
+            exclude: ["README.md"]
         ),
         .target(
             name: "TestUtilities",

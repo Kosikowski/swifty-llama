@@ -1,4 +1,4 @@
-import Foundation
+@preconcurrency import Foundation
 import llama
 import Omen
 
@@ -130,18 +130,26 @@ public final class SLlamaPerformance {
                 }
                 try context.core().decode(batch)
 
-                // Generate tokens
-                let sampler = SLlamaSampler.temperature(context: context, temperature: 0.7) ?? SLlamaSampler
-                    .greedy(context: context) ?? SLlamaSampler(context: context)
+                // Generate tokens using a proper sampler chain (temperature + distribution)
+                let samplerChain = SLlamaSamplerChain(context: context)
+                guard samplerChain.initialize() else {
+                    continue // Skip if chain init fails
+                }
+                if let tempSampler = SLlamaSampler.temperature(context: context, temperature: 0.7) {
+                    samplerChain.addSampler(tempSampler)
+                }
+                if let distSampler = SLlamaSampler.distribution(context: context, seed: 42) {
+                    samplerChain.addSampler(distSampler)
+                }
                 var tokensGenerated = 0
                 var currentPosition = promptTokens.count
 
                 for _ in 0 ..< maxTokens {
-                    guard let nextToken = sampler.sample() else { break }
+                    guard let nextToken = samplerChain.sample() else { break }
 
                     if nextToken == vocab.eosToken { break }
 
-                    sampler.accept(nextToken)
+                    samplerChain.accept(nextToken)
                     tokensGenerated += 1
 
                     // Process single token
@@ -509,6 +517,7 @@ public final class SLlamaPerformance {
 /// Real-time performance monitoring
 /// Thread Safety: This class wraps llama.cpp which is single-threaded.
 /// All access must be serialized via @SLlamaActor isolation.
+@SLlamaActor
 public final class SPerformanceMonitor {
     // MARK: Properties
 
@@ -523,7 +532,7 @@ public final class SPerformanceMonitor {
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
-    var monitoringTimer: Timer?
+    var monitoringTask: Task<Void, Never>?
     #if SLLAMA_INLINE_ALL
         @usableFromInline
     #endif
@@ -538,7 +547,6 @@ public final class SPerformanceMonitor {
     // MARK: Functions
 
     /// Start monitoring
-    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -546,27 +554,26 @@ public final class SPerformanceMonitor {
         guard !isMonitoring else { return }
 
         isMonitoring = true
-        monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            Task { @SLlamaActor in
-                self.recordMetrics()
+        monitoringTask = Task {
+            while isMonitoring {
+                recordMetrics()
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
             }
         }
     }
 
     /// Stop monitoring
-    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
     public func stop() {
         isMonitoring = false
-        monitoringTimer?.invalidate()
-        monitoringTimer = nil
+        monitoringTask?.cancel()
+        monitoringTask = nil
     }
 
     /// Get monitoring results
     /// - Returns: Array of recorded performance metrics
-    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -575,7 +582,6 @@ public final class SPerformanceMonitor {
     }
 
     /// Clear monitoring results
-    @SLlamaActor
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
