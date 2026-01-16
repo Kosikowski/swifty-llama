@@ -125,6 +125,36 @@ public final class SLlamaTokenizer: PLlamaTokenizer {
     ) throws
         -> String
     {
+        let bytes = try tokenToBytes(token: token, vocab: vocab, lstrip: lstrip, special: special, config: config)
+        guard let string = String(bytes: bytes, encoding: .utf8) else {
+            throw SLlamaError.encodingFailure
+        }
+        return string
+    }
+
+    /// Convert a single token to raw bytes
+    /// This is useful for streaming UTF-8 decoding where individual tokens may represent
+    /// partial multi-byte UTF-8 sequences (common with byte-level BPE tokenizers).
+    /// - Parameters:
+    ///   - token: The token to convert
+    ///   - vocab: The vocabulary to use
+    ///   - lstrip: Number of leading whitespace characters to strip
+    ///   - special: Whether to render special tokens
+    ///   - config: Tokenizer configuration (optional, uses defaults if nil)
+    /// - Returns: Raw bytes for this token
+    /// - Throws: SLlamaError if conversion fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
+    public static func tokenToBytes(
+        token: SLlamaToken,
+        vocab: SLlamaVocabPointer?,
+        lstrip: Int32 = 0,
+        special: Bool = false,
+        config: SLlamaTokenizerConfig? = nil
+    ) throws
+        -> [UInt8]
+    {
         guard let vocab else {
             throw SLlamaError.invalidVocabulary
         }
@@ -156,13 +186,8 @@ public final class SLlamaTokenizer: PLlamaTokenizer {
             }
         }
 
-        // Convert C string to Swift string, handling null termination
-        let bytes = Array(buffer.prefix(Int(result))).map { UInt8(bitPattern: $0) }
-        guard let string = String(bytes: bytes, encoding: .utf8) else {
-            throw SLlamaError.encodingFailure
-        }
-
-        return string
+        // Return raw bytes without UTF-8 conversion
+        return Array(buffer.prefix(Int(result))).map { UInt8(bitPattern: $0) }
     }
 
     /// Convert tokens back to text
@@ -575,6 +600,30 @@ public extension SLlamaVocab {
         -> String
     {
         try SLlamaTokenizer.tokenToPiece(
+            token: token,
+            vocab: pointer,
+            lstrip: lstrip,
+            special: special
+        )
+    }
+
+    /// Convert a single token to raw bytes
+    /// This is useful for streaming UTF-8 decoding where individual tokens may represent
+    /// partial multi-byte UTF-8 sequences (common with byte-level BPE tokenizers).
+    /// - Parameters:
+    ///   - token: The token to convert
+    ///   - lstrip: Number of leading spaces to skip
+    ///   - special: Whether to render special tokens
+    /// - Returns: Raw bytes for this token
+    /// - Throws: SLlamaError if conversion fails
+    func tokenToBytes(
+        token: SLlamaToken,
+        lstrip: Int32 = 0,
+        special: Bool = false
+    ) throws
+        -> [UInt8]
+    {
+        try SLlamaTokenizer.tokenToBytes(
             token: token,
             vocab: pointer,
             lstrip: lstrip,

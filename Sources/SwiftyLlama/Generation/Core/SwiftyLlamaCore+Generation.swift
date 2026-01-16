@@ -111,6 +111,10 @@ public extension SwiftyLlamaCore {
                 state.isActive = true
             }
 
+            // Buffer for incomplete UTF-8 sequences (byte-level BPE tokenizers may
+            // produce tokens that represent partial multi-byte UTF-8 characters)
+            var utf8Buffer: [UInt8] = []
+
             while getOrCreateConversationState(for: conversationId).shouldContinuePredicting,
                   generatedTokens.count < maxNewTokens
             {
@@ -120,15 +124,26 @@ public extension SwiftyLlamaCore {
                     break
                 }
 
-                // Try to convert token to text - skip tokens with encoding issues
-                do {
-                    let tokenText = try vocab.tokenToPiece(token: token)
-                    generatedTokens.append(token)
-                    continuation.yield(tokenText)
-                } catch {
-                    // Skip tokens that can't be converted to valid UTF-8
-                    // This can happen with certain special tokens or partial byte sequences
-                    continue
+                generatedTokens.append(token)
+
+                // Get raw bytes for this token and add to buffer
+                let tokenBytes = try vocab.tokenToBytes(token: token)
+                utf8Buffer.append(contentsOf: tokenBytes)
+
+                // Try to decode complete UTF-8 characters from the buffer
+                let (decodedText, remainingBytes) = decodeCompleteUTF8(from: utf8Buffer)
+                utf8Buffer = remainingBytes
+
+                if !decodedText.isEmpty {
+                    continuation.yield(decodedText)
+                }
+            }
+
+            // Flush any remaining bytes in the buffer (use replacement character for invalid sequences)
+            if !utf8Buffer.isEmpty {
+                let finalText = String(decoding: utf8Buffer, as: UTF8.self)
+                if !finalText.isEmpty {
+                    continuation.yield(finalText)
                 }
             }
 
@@ -141,7 +156,8 @@ public extension SwiftyLlamaCore {
             )
 
             if !generatedTokens.isEmpty {
-                let responseContent = try generatedTokens.map { try vocab.tokenToPiece(token: $0) }.joined()
+                // Use batch detokenization which properly handles multi-byte UTF-8 sequences
+                let responseContent = try vocab.detokenize(tokens: generatedTokens)
                 await storeConversationMessage(
                     conversationId: conversationId,
                     role: "assistant",
@@ -260,6 +276,59 @@ public extension SwiftyLlamaCore {
             repetitionPenalty: params.repeatPenalty,
             seed: params.seed
         )
+    }
+
+    // MARK: - UTF-8 Streaming Decoder
+
+    /// Decode complete UTF-8 characters from a byte buffer.
+    /// Returns the decoded string and any remaining incomplete bytes.
+    /// This handles byte-level BPE tokenizers where tokens may represent
+    /// partial multi-byte UTF-8 sequences.
+    internal func decodeCompleteUTF8(from bytes: [UInt8]) -> (decoded: String, remaining: [UInt8]) {
+        guard !bytes.isEmpty else {
+            return ("", [])
+        }
+
+        // Find the last position where we can safely decode UTF-8
+        // UTF-8 continuation bytes start with 10xxxxxx (0x80-0xBF)
+        // UTF-8 leading bytes start with 0xxxxxxx (ASCII), 110xxxxx, 1110xxxx, or 11110xxx
+        var safeEndIndex = bytes.count
+
+        // Check the last few bytes to see if they're part of an incomplete sequence
+        for i in stride(from: bytes.count - 1, through: max(0, bytes.count - 4), by: -1) {
+            let byte = bytes[i]
+
+            // If this is a leading byte (not a continuation byte), check if the sequence is complete
+            if byte & 0b1100_0000 != 0b1000_0000 {
+                // This is a leading byte
+                let expectedLength: Int
+                if byte & 0b1000_0000 == 0 {
+                    expectedLength = 1 // ASCII
+                } else if byte & 0b1110_0000 == 0b1100_0000 {
+                    expectedLength = 2
+                } else if byte & 0b1111_0000 == 0b1110_0000 {
+                    expectedLength = 3
+                } else if byte & 0b1111_1000 == 0b1111_0000 {
+                    expectedLength = 4
+                } else {
+                    // Invalid leading byte - include it and let String handle it
+                    break
+                }
+
+                let actualLength = bytes.count - i
+                if actualLength < expectedLength {
+                    // Incomplete sequence - exclude it from decoding
+                    safeEndIndex = i
+                }
+                break
+            }
+        }
+
+        let safeToDecode = Array(bytes.prefix(safeEndIndex))
+        let remaining = Array(bytes.suffix(from: safeEndIndex))
+
+        let decoded = String(decoding: safeToDecode, as: UTF8.self)
+        return (decoded, remaining)
     }
 
     // MARK: - Generation Management
