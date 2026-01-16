@@ -120,9 +120,16 @@ public extension SwiftyLlamaCore {
                     break
                 }
 
-                generatedTokens.append(token)
-                let tokenText = try vocab.tokenToPiece(token: token)
-                continuation.yield(tokenText)
+                // Try to convert token to text - skip tokens with encoding issues
+                do {
+                    let tokenText = try vocab.tokenToPiece(token: token)
+                    generatedTokens.append(token)
+                    continuation.yield(tokenText)
+                } catch {
+                    // Skip tokens that can't be converted to valid UTF-8
+                    // This can happen with certain special tokens or partial byte sequences
+                    continue
+                }
             }
 
             // Store the conversation
