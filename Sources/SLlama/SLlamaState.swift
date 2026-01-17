@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaState
 
 /// A wrapper for llama state operations
-public class SLlamaState: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaState {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -176,7 +178,11 @@ public class SLlamaState: @unchecked Sendable {
     ///   - nTokenCapacity: Capacity of the token buffer
     ///   - nTokenCountOut: Output parameter for number of tokens
     /// - Returns: True if the state was loaded successfully, false otherwise
-    @available(*, deprecated, message: "Use loadFromFile(_:tokensOut:nTokenCapacity:nTokenCountOut:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use loadFromFile(_:tokensOut:nTokenCapacity:nTokenCountOut:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -202,7 +208,7 @@ public class SLlamaState: @unchecked Sendable {
     ///   - tokens: Array of tokens to save
     ///   - nTokenCount: Number of tokens
     /// - Returns: True if the state was saved successfully, false otherwise
-    @available(*, deprecated, message: "Use saveToFile(_:tokens:nTokenCount:) throws instead")
+    @available(*, deprecated, message: "Use saveToFile(_:tokens:nTokenCount:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -434,7 +440,11 @@ public extension SLlamaContext {
     ///   - tokens: Array of tokens to save
     ///   - nTokenCount: Number of tokens
     /// - Returns: True if the state was saved successfully, false otherwise
-    @available(*, deprecated, message: "Use saveStateToFile(_:tokens:nTokenCount:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use saveStateToFile(_:tokens:nTokenCount:) throws instead. Will be removed in v2.0"
+    )
     func _saveStateToFile(
         _ path: String,
         tokens: UnsafePointer<SLlamaToken>,
@@ -560,7 +570,7 @@ public extension SLlamaContext {
     /// Legacy save complete state method that returns bool (deprecated)
     /// - Parameter path: Path to the state file
     /// - Returns: True if the state was saved successfully, false otherwise
-    @available(*, deprecated, message: "Use saveCompleteState(_:) throws instead")
+    @available(*, deprecated, message: "Use saveCompleteState(_:) throws instead. Will be removed in v2.0")
     func _saveCompleteState(_ path: String) -> Bool {
         do {
             try saveCompleteState(path)
@@ -573,7 +583,7 @@ public extension SLlamaContext {
     /// Legacy load complete state method that returns bool (deprecated)
     /// - Parameter path: Path to the state file
     /// - Returns: True if the state was loaded successfully, false otherwise
-    @available(*, deprecated, message: "Use loadCompleteState(_:) throws instead")
+    @available(*, deprecated, message: "Use loadCompleteState(_:) throws instead. Will be removed in v2.0")
     func _loadCompleteState(_ path: String) -> Bool {
         do {
             try loadCompleteState(path)

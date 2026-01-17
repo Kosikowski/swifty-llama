@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaMemoryManager
 
 /// A wrapper for llama memory operations
-public class SLlamaMemoryManager: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaMemoryManager {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

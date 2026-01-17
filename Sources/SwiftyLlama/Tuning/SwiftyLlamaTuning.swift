@@ -2,6 +2,21 @@ import Foundation
 
 /// Public protocol for fine-tuning operations with llama.cpp
 /// This protocol defines the interface for SwiftyTuningLlama functionality
+///
+/// ## Supported Operations
+/// - Loading base models
+/// - Loading and applying pre-trained LoRA adapters
+/// - Removing LoRA adapters
+/// - Preparing training data (tokenization)
+///
+/// ## Unsupported Operations (will throw TuningError.trainingNotSupported)
+/// - Training sessions (llama.cpp only supports inference)
+/// - Saving new LoRA adapters
+/// - Saving fine-tuned models
+/// - Model export
+/// - Training evaluation
+///
+/// Use external tools for LoRA training.
 @SwiftyLlamaActor
 public protocol SwiftyLlamaTuning: AnyObject {
     // MARK: - Model Loading
@@ -48,13 +63,17 @@ public protocol SwiftyLlamaTuning: AnyObject {
         -> TrainingDataset
 
     // MARK: - Training Session Management
+    // Note: Training is NOT supported by llama.cpp - it only supports inference.
+    // These methods will throw TuningError.trainingNotSupported when called.
+    // Use external tools like llama.cpp's train-text-from-scratch for LoRA training.
 
     /// Start a new training session
+    /// - Important: Training is not supported by llama.cpp. This method will throw TuningError.trainingNotSupported.
     /// - Parameters:
     ///   - dataset: Training dataset with training and validation examples
     ///   - config: Training configuration parameters
     /// - Returns: TrainingSession with session information
-    /// - Throws: TuningError if context is not initialized or config is invalid
+    /// - Throws: TuningError.trainingNotSupported - always thrown as training is not supported
     func startTrainingSession(
         dataset: TrainingDataset,
         config: TrainingConfig
@@ -62,31 +81,42 @@ public protocol SwiftyLlamaTuning: AnyObject {
         -> TrainingSession
 
     /// Stop current training session
-    func stopTrainingSession()
+    /// - Important: Training is not supported by llama.cpp. This method will throw TuningError.trainingNotSupported.
+    /// - Throws: TuningError.trainingNotSupported
+    func stopTrainingSession() throws
 
     /// Get current training session
+    /// - Important: Training is not supported by llama.cpp. This method will throw TuningError.trainingNotSupported.
     /// - Returns: Current training session or nil if no session is active
-    func getCurrentTrainingSession() -> TrainingSession?
+    /// - Throws: TuningError.trainingNotSupported
+    func getCurrentTrainingSession() throws -> TrainingSession?
 
     /// Get training metrics
+    /// - Important: Training is not supported by llama.cpp. This method will throw TuningError.trainingNotSupported.
     /// - Returns: Current training metrics or nil if no session is active
-    func getTrainingMetrics() -> TrainingMetrics?
+    /// - Throws: TuningError.trainingNotSupported
+    func getTrainingMetrics() throws -> TrainingMetrics?
 
     // MARK: - Model Saving
+    // Note: Saving trained LoRA adapters is NOT supported - llama.cpp doesn't expose training APIs.
+    // Loading pre-trained LoRA adapters via applyLoRA() is fully supported.
+    // These methods will throw TuningError.trainingNotSupported when called.
 
     /// Save the current LoRA adapter to a file
+    /// - Important: Saving new LoRA adapters is not supported. This method will throw TuningError.trainingNotSupported.
     /// - Parameters:
     ///   - path: Output path for the LoRA adapter
     ///   - metadata: Additional metadata to include
-    /// - Throws: TuningError if saving fails
+    /// - Throws: TuningError.trainingNotSupported
     func saveLoRAAdapter(path: String, metadata: LoRAMetadata?) throws
 
     /// Save the fine-tuned model (base model + LoRA)
+    /// - Important: Training is not supported by llama.cpp. This method will throw TuningError.trainingNotSupported.
     /// - Parameters:
     ///   - path: Output path for the fine-tuned model
     ///   - format: Model format (gguf, safetensors, etc.)
     ///   - metadata: Additional metadata to include
-    /// - Throws: TuningError if saving fails
+    /// - Throws: TuningError.trainingNotSupported
     func saveFineTunedModel(
         path: String,
         format: ModelFormat,
@@ -94,11 +124,12 @@ public protocol SwiftyLlamaTuning: AnyObject {
     ) throws
 
     /// Export model in different formats
+    /// - Important: Model export is not supported. Use llama.cpp's quantize tool directly.
     /// - Parameters:
     ///   - path: Output path
     ///   - format: Target format
     ///   - quantization: Quantization settings
-    /// - Throws: TuningError if export fails
+    /// - Throws: TuningError.trainingNotSupported
     func exportModel(
         path: String,
         format: ModelFormat,
@@ -106,15 +137,20 @@ public protocol SwiftyLlamaTuning: AnyObject {
     ) throws
 
     /// Get model saving information
+    /// - Important: Training is not supported by llama.cpp. This method will throw TuningError.trainingNotSupported.
     /// - Returns: ModelSavingInfo with current state
-    func getModelSavingInfo() -> ModelSavingInfo
+    /// - Throws: TuningError.trainingNotSupported
+    func getModelSavingInfo() throws -> ModelSavingInfo
 
     // MARK: - Evaluation
+    // Note: Real perplexity calculation requires training infrastructure not available in llama.cpp.
 
     /// Evaluate model performance on validation set
+    /// - Important: Training evaluation is not supported by llama.cpp. This method will throw
+    /// TuningError.trainingNotSupported.
     /// - Parameter validationExamples: Array of validation examples
     /// - Returns: EvaluationMetrics with perplexity, loss, and token counts
-    /// - Throws: TuningError if context is not initialized
+    /// - Throws: TuningError.trainingNotSupported
     func evaluateModel(validationExamples: [TrainingExample]) throws -> EvaluationMetrics
 
     // MARK: - Safety and Fallback
@@ -143,15 +179,17 @@ public extension SwiftyLlamaTuning {
     }
 
     /// Save LoRA adapter with default metadata
+    /// - Important: Saving new LoRA adapters is not supported. This method will throw TuningError.trainingNotSupported.
     /// - Parameter path: Output path for the LoRA adapter
-    /// - Throws: TuningError if saving fails
+    /// - Throws: TuningError.trainingNotSupported
     func saveLoRAAdapter(path: String) throws {
         try saveLoRAAdapter(path: path, metadata: nil)
     }
 
     /// Save fine-tuned model with default format and metadata
+    /// - Important: Training is not supported. This method will throw TuningError.trainingNotSupported.
     /// - Parameter path: Output path for the fine-tuned model
-    /// - Throws: TuningError if saving fails
+    /// - Throws: TuningError.trainingNotSupported
     func saveFineTunedModel(path: String) throws {
         try saveFineTunedModel(
             path: path,
@@ -161,10 +199,11 @@ public extension SwiftyLlamaTuning {
     }
 
     /// Export model with default quantization
+    /// - Important: Model export is not supported. Use llama.cpp's quantize tool directly.
     /// - Parameters:
     ///   - path: Output path
     ///   - format: Target format
-    /// - Throws: TuningError if export fails
+    /// - Throws: TuningError.trainingNotSupported
     func exportModel(path: String, format: ModelFormat) throws {
         try exportModel(path: path, format: format, quantization: nil)
     }

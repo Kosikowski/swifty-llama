@@ -2,7 +2,9 @@ import Foundation
 import llama
 
 /// A wrapper for llama model
-public class SLlamaModel: @unchecked Sendable, PLlamaModel {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaModel: PLlamaModel {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -217,7 +219,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     /// Legacy initializer that returns nil on failure (deprecated)
     /// - Parameter modelPath: Path to the model file
     /// - Returns: SLlamaModel instance or nil if loading fails
-    @available(*, deprecated, message: "Use init(modelPath:) throws instead")
+    @available(*, deprecated, message: "Use init(modelPath:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -232,7 +234,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     /// Legacy initializer that returns nil on failure (deprecated)
     /// - Parameter modelPointer: The model pointer
     /// - Returns: SLlamaModel instance or nil if pointer is invalid
-    @available(*, deprecated, message: "Use init(modelPointer:) throws instead")
+    @available(*, deprecated, message: "Use init(modelPointer:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -400,7 +402,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     // MARK: - Legacy Methods (Deprecated)
 
     /// Legacy method that returns nil on failure (deprecated)
-    @available(*, deprecated, message: "Use metadataValue(for:bufferSize:) throws instead")
+    @available(*, deprecated, message: "Use metadataValue(for:bufferSize:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -409,7 +411,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     }
 
     /// Legacy method that returns nil on failure (deprecated)
-    @available(*, deprecated, message: "Use metadataKey(at:bufferSize:) throws instead")
+    @available(*, deprecated, message: "Use metadataKey(at:bufferSize:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -418,7 +420,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     }
 
     /// Legacy method that returns nil on failure (deprecated)
-    @available(*, deprecated, message: "Use metadataValue(at:bufferSize:) throws instead")
+    @available(*, deprecated, message: "Use metadataValue(at:bufferSize:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -427,7 +429,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     }
 
     /// Legacy method that returns nil on failure (deprecated)
-    @available(*, deprecated, message: "Use description(bufferSize:) throws instead")
+    @available(*, deprecated, message: "Use description(bufferSize:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -436,7 +438,7 @@ public class SLlamaModel: @unchecked Sendable, PLlamaModel {
     }
 
     /// Legacy method that returns nil on failure (deprecated)
-    @available(*, deprecated, message: "Use chatTemplate(named:) throws instead")
+    @available(*, deprecated, message: "Use chatTemplate(named:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif

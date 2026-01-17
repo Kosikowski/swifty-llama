@@ -122,6 +122,7 @@ public struct GenerationParams: Hashable, Sendable {
     public let batchThreads: Int32       // Batch threads (default: 4)
     public let enableEmbeddings: Bool    // Enable embeddings (default: false)
     public let enableCausalAttention: Bool // Enable causal attention (default: true)
+    public let grammar: GrammarConstraint? // Grammar constraint (default: nil)
 }
 ```
 
@@ -139,7 +140,8 @@ public init(
     threads: Int32 = 4,
     batchThreads: Int32 = 4,
     enableEmbeddings: Bool = false,
-    enableCausalAttention: Bool = true
+    enableCausalAttention: Bool = true,
+    grammar: GrammarConstraint? = nil
 )
 ```
 
@@ -150,6 +152,73 @@ let params = GenerationParams(
     maxTokens: 200,
     topK: 50,
     topP: 0.95
+)
+
+// With grammar constraint for JSON output
+let jsonParams = GenerationParams(
+    grammar: .json,
+    maxTokens: 500
+)
+```
+
+### GrammarConstraint
+
+Grammar constraints enforce specific output formats during text generation by filtering the vocabulary at each step to only allow tokens valid according to the grammar rules.
+
+#### Properties
+
+```swift
+public struct GrammarConstraint: Hashable, Sendable {
+    public let rules: String      // Grammar rules in GBNF format
+    public let rootSymbol: String // Root symbol name (default: "root")
+}
+```
+
+#### Initialization
+
+```swift
+public init(rules: String, rootSymbol: String = "root")
+```
+
+#### Built-in Presets
+
+| Preset | Description |
+|--------|-------------|
+| `.json` | Valid JSON object output |
+| `.jsonArray` | Valid JSON array output |
+| `.list` | Numbered or bulleted lists |
+| `.boolean` | Only "true" or "false" |
+| `.yesNo` | Only "yes" or "no" |
+| `.integer` | Integer numbers only |
+| `.decimal` | Decimal numbers only |
+
+**Examples:**
+
+```swift
+// Use preset grammar for JSON
+let params = GenerationParams(
+    grammar: .json,
+    maxTokens: 500
+)
+
+// Use preset for boolean output
+let boolParams = GenerationParams(
+    grammar: .boolean,
+    maxTokens: 10
+)
+
+// Custom grammar
+let customGrammar = GrammarConstraint(
+    rules: """
+    root ::= greeting name
+    greeting ::= "Hello, " | "Hi, " | "Hey, "
+    name ::= [A-Z] [a-z]+
+    """,
+    rootSymbol: "root"
+)
+let customParams = GenerationParams(
+    grammar: customGrammar,
+    maxTokens: 50
 )
 ```
 

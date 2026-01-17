@@ -57,7 +57,9 @@ import llama
 /// - Thread configuration affects **this specific context** only, not the global realm
 ///
 /// **OMEN INTEGRATION**: All core operations are blessed with mystical insights through Omen logging. ✨
-public class SLlamaCore: @unchecked Sendable, PLlamaCore {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaCore: PLlamaCore {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -466,6 +468,20 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
         try decode(concreteBatch)
     }
 
+    // MARK: - Async Methods
+
+    /// Encode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    public func encodeAsync(_ batch: PLlamaBatch) async throws {
+        try encode(batch)
+    }
+
+    /// Decode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    public func decodeAsync(_ batch: PLlamaBatch) async throws {
+        try decode(batch)
+    }
+
     // MARK: - 🕰️ Legacy Artifacts (Deprecated) 🕰️
 
     /// 📜 **Legacy Encoding Ritual** (Deprecated)
@@ -475,7 +491,7 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// - Parameter batch: The batch to encode using ancient methods
     /// - Returns: `0` for success, negative values for various forms of darkness
-    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -495,7 +511,7 @@ public class SLlamaCore: @unchecked Sendable, PLlamaCore {
     ///
     /// - Parameter batch: The batch to decode using ancient methods
     /// - Returns: `0` for success, positive for warnings, negative for errors
-    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -650,6 +666,20 @@ public extension SLlamaContext {
         core().synchronize()
     }
 
+    // MARK: - Async Methods
+
+    /// Encode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func encodeAsync(_ batch: PLlamaBatch) async throws {
+        try await core().encodeAsync(batch)
+    }
+
+    /// Decode a batch of tokens asynchronously
+    /// - Note: Useful for structured concurrency patterns
+    func decodeAsync(_ batch: PLlamaBatch) async throws {
+        try await core().decodeAsync(batch)
+    }
+
     // MARK: - 🕰️ Ancient Direct Rituals (Deprecated) 🕰️
 
     /// 📜 **Ancient Direct Encoding** (Deprecated)
@@ -658,7 +688,7 @@ public extension SLlamaContext {
     ///
     /// - Parameter batch: The batch to encode using ancient methods
     /// - Returns: `0` for success, negative values for darkness
-    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened encode(_:) throws method instead. Will be removed in v2.0")
     func _encode(_ batch: SLlamaBatch) -> Int32 {
         (core() as! SLlamaCore)._encode(batch)
     }
@@ -669,7 +699,7 @@ public extension SLlamaContext {
     ///
     /// - Parameter batch: The batch to decode using ancient methods
     /// - Returns: `0` for success, positive for warnings, negative for errors
-    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead")
+    @available(*, deprecated, message: "Use the enlightened decode(_:) throws method instead. Will be removed in v2.0")
     func _decode(_ batch: SLlamaBatch) -> Int32 {
         (core() as! SLlamaCore)._decode(batch)
     }

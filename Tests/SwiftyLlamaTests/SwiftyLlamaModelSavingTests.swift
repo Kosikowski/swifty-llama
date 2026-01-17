@@ -198,20 +198,18 @@ struct SwiftyLlamaModelSavingTests {
 //        #expect(info.currentLoRA?.scale == 1.0)
 //    }
 
-    @Test("Get model saving info without model test")
-    mutating func getModelSavingInfoWithoutModel() async throws {
+    @Test("Get model saving info not supported test")
+    mutating func getModelSavingInfoNotSupported() async throws {
         // Given: No model loaded
         tuner = SwiftyLlamaTuner()
 
-        // When: Get model saving info
-        let info = tuner.getModelSavingInfo()
-
-        // Then: Verify info is empty
-        #expect(info.baseModelPath == nil)
-        #expect(info.currentLoRA == nil)
-        #expect(info.trainingConfig == nil)
-        #expect(info.trainingMetrics == nil)
-        #expect(info.trainingDataset == nil)
+        // When/Then: getModelSavingInfo now throws trainingNotSupported
+        do {
+            _ = try tuner.getModelSavingInfo()
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
     }
 
 //    @Test("Complete model saving workflow test")

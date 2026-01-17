@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaAdapter
 
 /// A wrapper for llama LoRA adapter operations
-public class SLlamaAdapter: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaAdapter {
     // MARK: Properties
 
     var adapter: SLlamaAdapterLoraPointer?
@@ -83,7 +85,7 @@ public class SLlamaAdapter: @unchecked Sendable {
     ///   - model: The model to attach the adapter to
     ///   - path: Path to the LoRA adapter file
     /// - Returns: SLlamaAdapter instance or nil if loading fails
-    @available(*, deprecated, message: "Use init(model:path:) throws instead")
+    @available(*, deprecated, message: "Use init(model:path:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -206,7 +208,7 @@ public extension SLlamaContext {
     /// Legacy method that returns bool (deprecated)
     /// - Parameter adapter: The LoRA adapter to add
     /// - Returns: true if the adapter was successfully added, false otherwise
-    @available(*, deprecated, message: "Use addLoRAAdapter(_:) throws instead")
+    @available(*, deprecated, message: "Use addLoRAAdapter(_:) throws instead. Will be removed in v2.0")
     func _addLoRAAdapter(_ adapter: SLlamaAdapter) -> Bool {
         do {
             try addLoRAAdapter(adapter)
@@ -219,7 +221,7 @@ public extension SLlamaContext {
     /// Legacy method that returns bool (deprecated)
     /// - Parameter adapter: The LoRA adapter to remove
     /// - Returns: true if the adapter was successfully removed, false otherwise
-    @available(*, deprecated, message: "Use removeLoRAAdapter(_:) throws instead")
+    @available(*, deprecated, message: "Use removeLoRAAdapter(_:) throws instead. Will be removed in v2.0")
     func _removeLoRAAdapter(_ adapter: SLlamaAdapter) -> Bool {
         do {
             try removeLoRAAdapter(adapter)
@@ -232,7 +234,7 @@ public extension SLlamaContext {
     /// Legacy method that returns optional adapter (deprecated)
     /// - Parameter path: Path to the LoRA adapter file
     /// - Returns: The loaded adapter, or nil if loading failed
-    @available(*, deprecated, message: "Use loadLoRAAdapter(from:) throws instead")
+    @available(*, deprecated, message: "Use loadLoRAAdapter(from:) throws instead. Will be removed in v2.0")
     func _loadLoRAAdapter(from path: String) -> SLlamaAdapter? {
         try? loadLoRAAdapter(from: path)
     }
@@ -275,7 +277,7 @@ public extension SLlamaContext {
 
     /// Legacy method that returns error code (deprecated)
     /// - Returns: 0 on success, negative value on error
-    @available(*, deprecated, message: "Use clearControlVector() throws instead")
+    @available(*, deprecated, message: "Use clearControlVector() throws instead. Will be removed in v2.0")
     func _clearControlVector() -> Int32 {
         do {
             try clearControlVector()

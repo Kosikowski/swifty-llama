@@ -45,6 +45,11 @@ public struct GenerationParams: Hashable, Sendable {
     /// (standard for text generation). When false, tokens can attend to all tokens (bidirectional).
     public let enableCausalAttention: Bool
 
+    /// Optional grammar constraint for structured output generation.
+    /// When set, the model output will be constrained to match the specified grammar.
+    /// Use preset grammars like `.json` or define custom GBNF grammars.
+    public let grammar: GrammarConstraint?
+
     /// Initialize generation parameters with sensible defaults for text generation.
     ///
     /// - Parameters:
@@ -59,6 +64,7 @@ public struct GenerationParams: Hashable, Sendable {
     ///   - batchThreads: CPU threads for batch processing (default: 4)
     ///   - enableEmbeddings: Enable embedding generation (default: false)
     ///   - enableCausalAttention: Enable causal attention (default: true)
+    ///   - grammar: Optional grammar constraint for structured output (default: nil)
     public init(
         seed: UInt32 = 42,
         topK: Int32 = 40,
@@ -70,7 +76,8 @@ public struct GenerationParams: Hashable, Sendable {
         threads: Int32 = 4,
         batchThreads: Int32 = 4,
         enableEmbeddings: Bool = false,
-        enableCausalAttention: Bool = true
+        enableCausalAttention: Bool = true,
+        grammar: GrammarConstraint? = nil
     ) {
         self.seed = seed
         self.topK = topK
@@ -83,5 +90,6 @@ public struct GenerationParams: Hashable, Sendable {
         self.batchThreads = batchThreads
         self.enableEmbeddings = enableEmbeddings
         self.enableCausalAttention = enableCausalAttention
+        self.grammar = grammar
     }
 }

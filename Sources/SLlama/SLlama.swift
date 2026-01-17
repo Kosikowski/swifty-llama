@@ -50,9 +50,11 @@ private let _initializeOmenCategories: Void = {
 ///
 /// **OMEN INTEGRATION**: All operations are blessed with mystical logging through the Omen framework.
 /// Categories are automatically registered during the oracle's awakening. ✨
-public final class SLlama: @unchecked Sendable {
+/// Note: This class contains only static methods and a singleton accessor.
+public final class SLlama {
     /// Ensure Omen categories are registered when SLlama is first accessed
-    public static let shared = SLlama()
+    /// Note: This is safe as the singleton is effectively immutable after initialization
+    public nonisolated(unsafe) static let shared = SLlama()
 
     private init() {
         // Trigger category registration

@@ -8,6 +8,7 @@ public enum GenerationError: Error, LocalizedError {
     case conversationNotFound(conversationId: ConversationID)
     case contextPreparationFailed(conversationId: ConversationID)
     case tokenizationFailed(conversationId: ConversationID)
+    case samplerInitializationFailed
     case generationFailed(generationId: GenerationID)
     case invalidState(conversationId: ConversationID?)
     case titleTooLong(conversationId: ConversationID, maxLength: Int)
@@ -27,6 +28,8 @@ public enum GenerationError: Error, LocalizedError {
                 "Failed to prepare context (ConversationID: \(conversationId))"
             case let .tokenizationFailed(conversationId):
                 "Failed to tokenize input (ConversationID: \(conversationId))"
+            case .samplerInitializationFailed:
+                "Failed to initialize sampler chain"
             case let .generationFailed(generationId):
                 "Generation failed (GenerationID: \(generationId))"
             case let .invalidState(conversationId):

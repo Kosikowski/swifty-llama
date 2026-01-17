@@ -2,7 +2,9 @@ import Foundation
 import llama
 
 /// A wrapper for llama context
-public class SLlamaContext: @unchecked Sendable, PLlamaContext {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaContext: PLlamaContext {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -131,7 +133,7 @@ public class SLlamaContext: @unchecked Sendable, PLlamaContext {
     ///   - model: The model to create context from
     ///   - contextParams: Optional context parameters
     /// - Returns: SLlamaContext instance or nil if creation fails
-    @available(*, deprecated, message: "Use init(model:contextParams:) throws instead")
+    @available(*, deprecated, message: "Use init(model:contextParams:) throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif

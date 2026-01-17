@@ -35,7 +35,8 @@ let package = Package(
         .target(
             name: "SLlama",
             dependencies: ["llama", "Omen"],
-            path: "Sources/SLlama"
+            path: "Sources/SLlama",
+            exclude: ["README.md"]
         ),
         .target(
             name: "TestUtilities",
@@ -57,7 +58,8 @@ let package = Package(
         ),
         .binaryTarget(
             name: "llama",
-            path: "Sources/llama.cpp/llama.xcframework"
+            url: "https://github.com/ggml-org/llama.cpp/releases/download/b7592/llama-b7592-xcframework.zip",
+            checksum: "bfe20219cd0f981d6000ba2269363e578737943357b5f8854f64ad65723b20fb"
         ),
         .testTarget(
             name: "SLlamaTests",

@@ -4,7 +4,8 @@ import llama
 // MARK: - SLlamaBackend
 
 /// A wrapper for llama backend operations
-public class SLlamaBackend: @unchecked Sendable {
+/// Note: This class contains only static methods and has no instance state.
+public enum SLlamaBackend {
     // MARK: Static Properties
 
     #if SLLAMA_INLINE_ALL
@@ -48,6 +49,28 @@ public class SLlamaBackend: @unchecked Sendable {
             _isInitialized = false
         }
     }
+
+    /// Initialize NUMA (Non-Uniform Memory Access) optimization
+    /// Call this once after backend initialization for better performance on NUMA systems (multi-socket)
+    /// - Parameter strategy: The NUMA strategy to use
+    /// - Note: This should be called before creating any contexts for best results
+    @SLlamaActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
+    public static func initializeNUMA(_ strategy: SLlamaNUMAStrategy = .disabled) {
+        llama_numa_init(strategy.rawStrategy)
+    }
+
+    /// Initialize NUMA with raw strategy value
+    /// - Parameter strategy: The raw ggml_numa_strategy value
+    @SLlamaActor
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
+    public static func initializeNUMA(rawStrategy: SLlamaNUMAStrategyRaw) {
+        llama_numa_init(rawStrategy)
+    }
 }
 
 // MARK: - Extension to SLlamaContext for Performance Optimization
@@ -86,5 +109,23 @@ public extension SLlamaContext {
         }
 
         setThreadCount(threadCount)
+    }
+
+    /// Attach custom threadpools to this context
+    /// - Parameters:
+    ///   - threadpool: The main threadpool for inference operations
+    ///   - batchThreadpool: The threadpool for batch processing (can be the same as threadpool)
+    /// - Note: An automatic threadpool is created by ggml if not attached explicitly.
+    ///         Use this for fine-grained control over thread management.
+    func attachThreadpool(_ threadpool: SLlamaThreadpool, batchThreadpool: SLlamaThreadpool? = nil) {
+        guard let context = pointer else { return }
+        llama_attach_threadpool(context, threadpool, batchThreadpool ?? threadpool)
+    }
+
+    /// Detach any attached threadpools from this context
+    /// - Note: After detaching, the context will use its default threading behavior
+    func detachThreadpool() {
+        guard let context = pointer else { return }
+        llama_detach_threadpool(context)
     }
 }

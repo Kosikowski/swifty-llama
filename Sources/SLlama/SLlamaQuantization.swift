@@ -4,7 +4,8 @@ import llama
 // MARK: - SLlamaQuantization
 
 /// A wrapper for llama quantization operations
-public class SLlamaQuantization: @unchecked Sendable {
+/// Note: This class contains only static methods and has no instance state.
+public enum SLlamaQuantization {
     /// Quantize a model to reduce its size and memory usage
     /// - Parameters:
     ///   - inputPath: Path to the input model file
@@ -127,7 +128,11 @@ public class SLlamaQuantization: @unchecked Sendable {
     ///   - outputPath: Path where the quantized model will be saved
     ///   - params: Quantization parameters (optional, uses defaults if nil)
     /// - Returns: 0 on success, non-zero on error
-    @available(*, deprecated, message: "Use quantizeModel(inputPath:outputPath:params:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use quantizeModel(inputPath:outputPath:params:) throws instead. Will be removed in v2.0"
+    )
     @discardableResult
     #if SLLAMA_INLINE_ALL
         @inlinable

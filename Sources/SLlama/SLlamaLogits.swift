@@ -4,7 +4,9 @@ import llama
 // MARK: - SLlamaLogits
 
 /// A wrapper for llama logits and embeddings access
-public class SLlamaLogits: @unchecked Sendable {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaLogits {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL

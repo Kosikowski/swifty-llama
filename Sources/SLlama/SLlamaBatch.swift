@@ -2,7 +2,9 @@ import Foundation
 import llama
 
 /// A wrapper for llama batch operations
-public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaBatch: PLlamaBatch {
     // MARK: Properties
 
     #if SLLAMA_INLINE_ALL
@@ -103,7 +105,8 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     #endif
     public static func fromTokens(_ tokens: [SLlamaToken]) -> SLlamaBatch {
         let batch = SLlamaBatch(nTokens: Int32(tokens.count), nSeqMax: 1)
-        batch.setTokens(tokens)
+        // Safe to use try! since batch is created with exact capacity needed
+        try! batch.setTokens(tokens)
         return batch
     }
 
@@ -117,7 +120,8 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     #endif
     public static func fromEmbeddings(_ embeddings: [Float], embeddingSize: Int32) -> SLlamaBatch {
         let batch = SLlamaBatch(nTokens: Int32(embeddings.count / Int(embeddingSize)), embd: embeddingSize, nSeqMax: 1)
-        batch.setEmbeddings(embeddings)
+        // Safe to use try! since batch is created with exact capacity needed
+        try! batch.setEmbeddings(embeddings)
         return batch
     }
 
@@ -125,12 +129,13 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set tokens for the batch
     /// - Parameter tokens: Array of token IDs
+    /// - Throws: SLlamaError.bufferTooSmall if too many tokens for batch capacity
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
-    public func setTokens(_ tokens: [SLlamaToken]) {
-        guard tokens.count <= tokenCount else {
-            fatalError("Too many tokens for batch capacity")
+    public func setTokens(_ tokens: [SLlamaToken]) throws {
+        guard tokens.count <= maxTokens else {
+            throw SLlamaError.bufferTooSmall
         }
 
         batch.n_tokens = Int32(tokens.count)
@@ -141,12 +146,13 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set embeddings for the batch
     /// - Parameter embeddings: Array of embedding values
+    /// - Throws: SLlamaError.bufferTooSmall if too many embeddings for batch capacity
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
-    public func setEmbeddings(_ embeddings: [Float]) {
-        guard embeddings.count <= tokenCount * (batch.embd != nil ? 1 : 0) else {
-            fatalError("Too many embeddings for batch capacity")
+    public func setEmbeddings(_ embeddings: [Float]) throws {
+        guard embeddings.count <= maxTokens * (batch.embd != nil ? 1 : 0) else {
+            throw SLlamaError.bufferTooSmall
         }
 
         embeddings.withUnsafeBufferPointer { buffer in
@@ -156,12 +162,13 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set positions for the batch
     /// - Parameter positions: Array of position values
+    /// - Throws: SLlamaError.bufferTooSmall if too many positions for batch capacity
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
-    public func setPositions(_ positions: [SLlamaPosition]) {
-        guard positions.count <= tokenCount else {
-            fatalError("Too many positions for batch capacity")
+    public func setPositions(_ positions: [SLlamaPosition]) throws {
+        guard positions.count <= maxTokens else {
+            throw SLlamaError.bufferTooSmall
         }
 
         positions.withUnsafeBufferPointer { buffer in
@@ -171,12 +178,13 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
 
     /// Set logits output flags for the batch
     /// - Parameter logits: Array of logits flags (0 = no output, 1 = output)
+    /// - Throws: SLlamaError.bufferTooSmall if too many logits flags for batch capacity
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
-    public func setLogits(_ logits: [Int8]) {
-        guard logits.count <= tokenCount else {
-            fatalError("Too many logits flags for batch capacity")
+    public func setLogits(_ logits: [Int8]) throws {
+        guard logits.count <= maxTokens else {
+            throw SLlamaError.bufferTooSmall
         }
 
         logits.withUnsafeBufferPointer { buffer in
@@ -188,12 +196,13 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     /// - Parameters:
     ///   - tokenIndex: Index of the token
     ///   - sequenceIds: Array of sequence IDs for this token
+    /// - Throws: SLlamaError.invalidBatch if token index is out of bounds
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
-    public func setSequenceIds(for tokenIndex: Int, sequenceIds: [SLlamaSeqId]) {
-        guard tokenIndex < tokenCount else {
-            fatalError("Token index out of bounds")
+    public func setSequenceIds(for tokenIndex: Int, sequenceIds: [SLlamaSeqId]) throws {
+        guard tokenIndex < maxTokens else {
+            throw SLlamaError.invalidBatch("Token index \(tokenIndex) out of bounds")
         }
 
         batch.n_seq_id?[tokenIndex] = Int32(sequenceIds.count)
@@ -208,6 +217,7 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
     ///   - position: Position of the token in the sequence
     ///   - sequenceIds: Array of sequence IDs for this token
     ///   - logits: Whether to output logits for this token
+    /// - Throws: SLlamaError.batchCapacityExceeded if batch is full
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -216,12 +226,12 @@ public class SLlamaBatch: @unchecked Sendable, PLlamaBatch {
         position: SLlamaPosition,
         sequenceIds: [SLlamaSequenceId],
         logits: Bool
-    ) {
+    ) throws {
         let currentIndex = Int(batch.n_tokens)
 
         // Ensure we don't exceed capacity
         guard currentIndex < maxTokens else {
-            fatalError("Batch capacity exceeded")
+            throw SLlamaError.batchCapacityExceeded
         }
 
         // Add token

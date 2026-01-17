@@ -14,8 +14,21 @@ struct SwiftyLlamaTuningProtocolTests {
         // Test that we can call protocol methods
         #expect(tuningLlama.getCurrentLoRA() == nil)
         #expect(tuningLlama.getAvailableAdapters().isEmpty)
-        #expect(tuningLlama.getCurrentTrainingSession() == nil)
-        #expect(tuningLlama.getTrainingMetrics() == nil)
+
+        // Training methods now throw trainingNotSupported
+        do {
+            _ = try tuningLlama.getCurrentTrainingSession()
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+
+        do {
+            _ = try tuningLlama.getTrainingMetrics()
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
     }
 
     @Test("SwiftyTuningLlamaProtocol default parameter extensions test")
@@ -51,10 +64,77 @@ struct SwiftyLlamaTuningProtocolTests {
         let availableAdapters = tuningLlama.getAvailableAdapters()
         #expect(availableAdapters.isEmpty)
 
-        let currentSession = tuningLlama.getCurrentTrainingSession()
-        #expect(currentSession == nil)
+        // Training methods now throw trainingNotSupported
+        do {
+            _ = try tuningLlama.getCurrentTrainingSession()
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
 
-        let trainingMetrics = tuningLlama.getTrainingMetrics()
-        #expect(trainingMetrics == nil)
+        do {
+            _ = try tuningLlama.getTrainingMetrics()
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+    }
+
+    @Test("Training not supported error")
+    func trainingNotSupported() async throws {
+        let tuningLlama: SwiftyLlamaTuning = SwiftyLlamaTuner()
+
+        // All training-related methods should throw trainingNotSupported
+        do {
+            _ = try tuningLlama.startTrainingSession(
+                dataset: TrainingDataset(training: [], validation: []),
+                config: TrainingConfig()
+            )
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+
+        do {
+            try tuningLlama.stopTrainingSession()
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+
+        do {
+            try tuningLlama.saveLoRAAdapter(path: "/tmp/test.gguf")
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+
+        do {
+            try tuningLlama.saveFineTunedModel(path: "/tmp/test.gguf")
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+
+        do {
+            try tuningLlama.exportModel(path: "/tmp/test.gguf", format: .gguf)
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+
+        do {
+            _ = try tuningLlama.getModelSavingInfo()
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
+
+        do {
+            _ = try tuningLlama.evaluateModel(validationExamples: [])
+            Issue.record("Expected trainingNotSupported error")
+        } catch let error as TuningError {
+            #expect(error == .trainingNotSupported)
+        }
     }
 }

@@ -30,7 +30,9 @@ public struct SLlamaTokenizerConfig: Sendable {
 // MARK: - SLlamaTokenizer
 
 /// A wrapper for llama tokenization functions
-public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
+/// Thread Safety: This class wraps llama.cpp which is single-threaded.
+/// All access must be serialized via @SLlamaActor isolation.
+public final class SLlamaTokenizer: PLlamaTokenizer {
     /// Tokenize text into tokens
     /// - Parameters:
     ///   - text: The text to tokenize
@@ -123,6 +125,36 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     ) throws
         -> String
     {
+        let bytes = try tokenToBytes(token: token, vocab: vocab, lstrip: lstrip, special: special, config: config)
+        guard let string = String(bytes: bytes, encoding: .utf8) else {
+            throw SLlamaError.encodingFailure
+        }
+        return string
+    }
+
+    /// Convert a single token to raw bytes
+    /// This is useful for streaming UTF-8 decoding where individual tokens may represent
+    /// partial multi-byte UTF-8 sequences (common with byte-level BPE tokenizers).
+    /// - Parameters:
+    ///   - token: The token to convert
+    ///   - vocab: The vocabulary to use
+    ///   - lstrip: Number of leading whitespace characters to strip
+    ///   - special: Whether to render special tokens
+    ///   - config: Tokenizer configuration (optional, uses defaults if nil)
+    /// - Returns: Raw bytes for this token
+    /// - Throws: SLlamaError if conversion fails
+    #if SLLAMA_INLINE_ALL
+        @inlinable
+    #endif
+    public static func tokenToBytes(
+        token: SLlamaToken,
+        vocab: SLlamaVocabPointer?,
+        lstrip: Int32 = 0,
+        special: Bool = false,
+        config: SLlamaTokenizerConfig? = nil
+    ) throws
+        -> [UInt8]
+    {
         guard let vocab else {
             throw SLlamaError.invalidVocabulary
         }
@@ -154,13 +186,8 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
             }
         }
 
-        // Convert C string to Swift string, handling null termination
-        let bytes = Array(buffer.prefix(Int(result))).map { UInt8(bitPattern: $0) }
-        guard let string = String(bytes: bytes, encoding: .utf8) else {
-            throw SLlamaError.encodingFailure
-        }
-
-        return string
+        // Return raw bytes without UTF-8 conversion
+        return Array(buffer.prefix(Int(result))).map { UInt8(bitPattern: $0) }
     }
 
     /// Convert tokens back to text
@@ -446,7 +473,11 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     // MARK: - Legacy Methods (Deprecated)
 
     /// Legacy tokenize method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use tokenize(text:vocab:addSpecial:parseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenize(text:vocab:addSpecial:parseSpecial:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -462,7 +493,11 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     }
 
     /// Legacy tokenToPiece method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use tokenToPiece(token:vocab:lstrip:special:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenToPiece(token:vocab:lstrip:special:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -478,7 +513,11 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     }
 
     /// Legacy detokenize method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use detokenize(tokens:vocab:removeSpecial:unparseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use detokenize(tokens:vocab:removeSpecial:unparseSpecial:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -494,7 +533,11 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     }
 
     /// Legacy applyChatTemplate method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use applyChatTemplate(template:messages:addAssistant:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use applyChatTemplate(template:messages:addAssistant:) throws instead. Will be removed in v2.0"
+    )
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -509,7 +552,7 @@ public class SLlamaTokenizer: @unchecked Sendable, PLlamaTokenizer {
     }
 
     /// Legacy getBuiltinTemplates method that returns nil (deprecated)
-    @available(*, deprecated, message: "Use getBuiltinTemplates() throws instead")
+    @available(*, deprecated, message: "Use getBuiltinTemplates() throws instead. Will be removed in v2.0")
     #if SLLAMA_INLINE_ALL
         @inlinable
     #endif
@@ -564,6 +607,30 @@ public extension SLlamaVocab {
         )
     }
 
+    /// Convert a single token to raw bytes
+    /// This is useful for streaming UTF-8 decoding where individual tokens may represent
+    /// partial multi-byte UTF-8 sequences (common with byte-level BPE tokenizers).
+    /// - Parameters:
+    ///   - token: The token to convert
+    ///   - lstrip: Number of leading spaces to skip
+    ///   - special: Whether to render special tokens
+    /// - Returns: Raw bytes for this token
+    /// - Throws: SLlamaError if conversion fails
+    func tokenToBytes(
+        token: SLlamaToken,
+        lstrip: Int32 = 0,
+        special: Bool = false
+    ) throws
+        -> [UInt8]
+    {
+        try SLlamaTokenizer.tokenToBytes(
+            token: token,
+            vocab: pointer,
+            lstrip: lstrip,
+            special: special
+        )
+    }
+
     /// Convert tokens back to text
     /// - Parameters:
     ///   - tokens: Array of tokens to convert
@@ -594,7 +661,11 @@ public extension SLlamaVocab {
     ///   - addSpecial: Whether to add special tokens
     ///   - parseSpecial: Whether to parse special tokens
     /// - Returns: Array of tokens, or nil if tokenization failed
-    @available(*, deprecated, message: "Use tokenize(text:addSpecial:parseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenize(text:addSpecial:parseSpecial:) throws instead. Will be removed in v2.0"
+    )
     func _tokenize(
         text: String,
         addSpecial: Bool = true,
@@ -611,7 +682,11 @@ public extension SLlamaVocab {
     ///   - lstrip: Number of leading spaces to skip
     ///   - special: Whether to render special tokens
     /// - Returns: The text representation, or nil if conversion failed
-    @available(*, deprecated, message: "Use tokenToPiece(token:lstrip:special:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use tokenToPiece(token:lstrip:special:) throws instead. Will be removed in v2.0"
+    )
     func _tokenToPiece(
         token: SLlamaToken,
         lstrip: Int32 = 0,
@@ -628,7 +703,11 @@ public extension SLlamaVocab {
     ///   - removeSpecial: Whether to remove special tokens
     ///   - unparseSpecial: Whether to render special tokens in output
     /// - Returns: The text representation, or nil if conversion failed
-    @available(*, deprecated, message: "Use detokenize(tokens:removeSpecial:unparseSpecial:) throws instead")
+    @available(
+        *,
+        deprecated,
+        message: "Use detokenize(tokens:removeSpecial:unparseSpecial:) throws instead. Will be removed in v2.0"
+    )
     func _detokenize(
         tokens: [SLlamaToken],
         removeSpecial: Bool = true,

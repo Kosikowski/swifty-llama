@@ -85,6 +85,9 @@ public typealias SLlamaLogitBias = llama_logit_bias
 /// Type alias for sampler chain parameters
 public typealias SLlamaSamplerChainParams = llama_sampler_chain_params
 
+/// Type alias for batch structure
+public typealias SLlamaBatchStruct = llama_batch
+
 /// Type alias for chat message
 public typealias SLlamaChatMessage = llama_chat_message
 
@@ -378,6 +381,72 @@ public extension SLlamaModelKvOverrideType {
     static let string = LLAMA_KV_OVERRIDE_TYPE_STR
 }
 
+// MARK: - GGML Type Aliases
+
+/// Type alias for GGML NUMA strategy
+public typealias SLlamaNUMAStrategyRaw = ggml_numa_strategy
+
+/// Type alias for GGML threadpool
+public typealias SLlamaThreadpool = ggml_threadpool_t
+
+// MARK: - NUMA Strategy
+
+/// NUMA (Non-Uniform Memory Access) strategy for memory allocation optimization
+/// Use this to optimize performance on multi-socket systems
+public enum SLlamaNUMAStrategy: Int32, CaseIterable, Sendable {
+    /// NUMA optimization disabled (default)
+    case disabled = 0
+
+    /// Distribute memory allocations across NUMA nodes
+    case distribute = 1
+
+    /// Isolate to a single NUMA node
+    case isolate = 2
+
+    /// Use numactl for memory allocation
+    case numactl = 3
+
+    /// Mirror memory across NUMA nodes
+    case mirror = 4
+
+    /// Get the raw ggml_numa_strategy value
+    public var rawStrategy: SLlamaNUMAStrategyRaw {
+        SLlamaNUMAStrategyRaw(rawValue: UInt32(rawValue))
+    }
+
+    /// Display name for the strategy
+    public var displayName: String {
+        switch self {
+            case .disabled:
+                "Disabled"
+            case .distribute:
+                "Distribute"
+            case .isolate:
+                "Isolate"
+            case .numactl:
+                "Numactl"
+            case .mirror:
+                "Mirror"
+        }
+    }
+
+    /// Description of what this strategy does
+    public var description: String {
+        switch self {
+            case .disabled:
+                "NUMA optimization disabled"
+            case .distribute:
+                "Distribute memory allocations across NUMA nodes"
+            case .isolate:
+                "Isolate to a single NUMA node"
+            case .numactl:
+                "Use numactl for memory allocation"
+            case .mirror:
+                "Mirror memory across NUMA nodes"
+        }
+    }
+}
+
 // MARK: - Backend Selection
 
 /// Backend selection for model computation
@@ -493,6 +562,7 @@ public enum SLlamaError: Error {
 
     case invalidBatch(String)
     case batchOperationFailed(String)
+    case batchCapacityExceeded
 
     // MARK: - General Operations
 
@@ -601,6 +671,8 @@ extension SLlamaError: LocalizedError {
                 "Invalid batch: \(details)"
             case let .batchOperationFailed(details):
                 "Batch operation failed: \(details)"
+            case .batchCapacityExceeded:
+                "Batch capacity exceeded"
             // General Operations
             case let .operationFailed(details):
                 "Operation failed: \(details)"
